@@ -1,0 +1,35 @@
+[project]
+name = "intelligent-meal-planner"
+version = "0.1.0"
+description = "基于强化学习与多Agent协作的智能配餐系统"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "streamlit>=1.40.0",
+    "crewai>=0.95.0",
+    "gymnasium>=0.29.1",
+    "stable-baselines3>=2.4.0",
+    "numpy>=1.26.0",
+    "torch>=2.5.0",
+    "pydantic>=2.10.0",
+    "tensorboard>=2.15.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/intelligent_meal_planner"]
+
+[tool.uv.sources]
+# 确保使用 uv 管理的 Python 环境
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.0",
+    "black>=24.10.0",
+    "ruff>=0.8.0",
+]
