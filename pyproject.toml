@@ -9,6 +9,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "streamlit>=1.40.0",
     "crewai>=0.95.0",
+    "crewai-tools>=0.18.0",
     "gymnasium>=0.29.1",
     "stable-baselines3>=2.4.0",
     "numpy>=1.26.0",
