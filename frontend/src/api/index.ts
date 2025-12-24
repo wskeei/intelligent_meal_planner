@@ -65,30 +65,30 @@ export interface MealPlan {
 
 // API 方法
 export const recipeApi = {
-  getList: (params?: Record<string, any>) => 
+  getList: (params?: Record<string, any>) =>
     api.get<{ total: number; items: Recipe[] }>('/recipes', { params }),
-  
-  getById: (id: number) => 
+
+  getById: (id: number) =>
     api.get<Recipe>(`/recipes/${id}`),
-  
-  getCategories: () => 
+
+  getCategories: () =>
     api.get<string[]>('/recipes/categories'),
-  
-  getTags: () => 
+
+  getTags: () =>
     api.get<string[]>('/recipes/tags')
 }
 
 export const mealPlanApi = {
-  create: (preferences: Partial<UserPreferences>) => 
-    api.post<MealPlan>('/meal-plans', { preferences }),
-  
-  quickPlan: (healthGoal: string, budget: number) => 
+  create: (preferences: Partial<UserPreferences>, use_agent = false, user_message = '') =>
+    api.post<MealPlan>('/meal-plans', { preferences, use_agent, user_message }),
+
+  quickPlan: (healthGoal: string, budget: number) =>
     api.post<MealPlan>(`/meal-plans/quick?health_goal=${healthGoal}&budget=${budget}`),
-  
-  getHistory: (limit = 10) => 
+
+  getHistory: (limit = 10) =>
     api.get<MealPlan[]>('/meal-plans', { params: { limit } }),
-  
-  getById: (id: string) => 
+
+  getById: (id: string) =>
     api.get<MealPlan>(`/meal-plans/${id}`)
 }
 

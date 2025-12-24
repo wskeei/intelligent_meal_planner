@@ -22,19 +22,21 @@ class MealPlanningCrew:
         """
         if llm is None:
             import os
-            from langchain_openai import ChatOpenAI
+            from crewai import LLM
             
             api_key = os.getenv("DEEPSEEK_API_KEY")
             api_base = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com/v1")
             model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
             
             if api_key:
-                llm = ChatOpenAI(
+                print(f"DEBUG: Configuring crewai.LLM with base_url={api_base}, model={model}")
+                
+                llm = LLM(
                     model=model,
                     base_url=api_base,
-                    api_key=api_key,
-                    temperature=0.7
+                    api_key=api_key
                 )
+                print(f"DEBUG: LLM created.")
         
         self.llm = llm
         self.profiler = UserProfilerAgent.create(llm)

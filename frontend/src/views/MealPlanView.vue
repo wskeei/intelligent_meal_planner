@@ -12,11 +12,13 @@
           <template #header>
             <div class="card-title">
               <el-icon><Operation /></el-icon>
-              <span>Preferences</span>
+              <span>Configuration</span>
             </div>
           </template>
 
-          <el-form label-position="top" size="large">
+          <el-tabs v-model="activeTab" class="config-tabs">
+            <el-tab-pane label="Preferences" name="manual">
+            <el-form label-position="top" size="large">
             <el-form-item label="Health Goal">
                <el-select v-model="form.health_goal" @change="applyPreset">
                 <el-option label="Healthy Eating" value="healthy" />
@@ -77,7 +79,37 @@
               <el-icon style="margin-right: 8px"><MagicStick /></el-icon>
               Generate Plan
             </el-button>
-          </el-form>
+            </el-form> <!-- Close form here -->
+            </el-tab-pane>
+
+            <el-tab-pane label="AI Assistant" name="ai">
+              <div class="ai-intro">
+                <p>Chat with our AI Nutritionist Team to get a personalized meal plan.</p>
+                <div class="ai-examples">
+                  <el-tag size="small" @click="useExample('I want a high protein diet for muscle gain, budget 100.')">Muscle Gain</el-tag>
+                  <el-tag size="small" @click="useExample('Vegetarian diet for weight loss, around 1500 cals.')">Vegetarian</el-tag>
+                </div>
+              </div>
+              
+              <el-input
+                v-model="aiMessage"
+                type="textarea"
+                :rows="6"
+                placeholder="Ex: I want to lose weight, I don't like carrots, and my budget is 50."
+                class="ai-input"
+              />
+              
+              <el-button 
+                type="primary" 
+                class="generate-btn ai-btn" 
+                :loading="loading"
+                @click="generatePlan"
+              >
+                <el-icon style="margin-right: 8px"><ChatLineRound /></el-icon>
+                Ask AI Chef
+              </el-button>
+            </el-tab-pane>
+          </el-tabs>
         </el-card>
       </el-col>
 
@@ -211,7 +243,7 @@ import { useUserStore } from '@/stores/user'
 import { useShoppingStore } from '@/stores/shopping'
 import { mealPlanApi, type MealPlan, type MealItem } from '@/api'
 import { ElMessage } from 'element-plus'
-import { Operation, MagicStick, ShoppingCart, More } from '@element-plus/icons-vue'
+import { Operation, MagicStick, ShoppingCart, More, ChatLineRound } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -222,6 +254,8 @@ const loading = ref(false)
 const mealPlan = ref<MealPlan | null>(null)
 const detailsVisible = ref(false)
 const selectedMeal = ref<MealItem | null>(null)
+const activeTab = ref('manual')
+const aiMessage = ref('')
 
 // Form
 const form = reactive({
@@ -267,6 +301,14 @@ function applyPreset() {
 async function generatePlan() {
   loading.value = true
   try {
+    const isAI = activeTab.value === 'ai'
+    
+    if (isAI && !aiMessage.value.trim()) {
+      ElMessage.warning('Please enter your request.')
+      loading.value = false
+      return
+    }
+
     const { data } = await mealPlanApi.create({
       health_goal: form.health_goal,
       target_calories: form.target_calories,
@@ -274,7 +316,8 @@ async function generatePlan() {
       target_carbs: form.target_carbs,
       target_fat: form.target_fat,
       max_budget: form.max_budget
-    })
+    }, isAI, aiMessage.value)
+    
     mealPlan.value = data
     ElMessage.success('Menu generated successfully!')
   } catch (error: any) {
@@ -312,6 +355,11 @@ function addAndClose() {
     detailsVisible.value = false
   }
 }
+
+function useExample(msg: string) {
+  aiMessage.value = msg
+}
+
 </script>
 
 <style scoped>
@@ -538,5 +586,35 @@ function addAndClose() {
 .d-lbl {
   font-size: 0.8rem;
   color: var(--color-text-light);
+}
+
+.ai-intro {
+  margin-bottom: 16px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.ai-examples {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ai-examples .el-tag {
+  cursor: pointer;
+}
+
+.ai-input textarea {
+  font-family: inherit;
+}
+
+.ai-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  border: none;
+}
+
+.ai-btn:hover {
+  opacity: 0.9;
 }
 </style>

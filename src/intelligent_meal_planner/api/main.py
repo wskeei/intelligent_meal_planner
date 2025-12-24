@@ -21,6 +21,10 @@ from sqlalchemy.orm import Session
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
+
 def init_db():
     """Initialize DB and Migrate Data if empty"""
     models.Base.metadata.create_all(bind=database.engine)
