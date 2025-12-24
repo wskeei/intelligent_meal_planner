@@ -60,6 +60,11 @@ class RecipeBase(BaseModel):
     meal_type: List[str]
     cooking_time: int
     description: Optional[str] = None
+    ingredients: Optional[List[str]] = None
+    instructions: Optional[List[str]] = None
+
+    class Config:
+        from_attributes = True
 
 
 class RecipeListResponse(BaseModel):
