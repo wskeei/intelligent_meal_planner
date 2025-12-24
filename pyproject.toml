@@ -16,6 +16,11 @@ dependencies = [
     "torch>=2.5.0",
     "pydantic>=2.10.0",
     "tensorboard>=2.15.0",
+    "sqlalchemy>=2.0.45",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose>=3.5.0",
+    "email-validator>=2.3.0",
+    "bcrypt==4.0.1",
 ]
 
 [build-system]

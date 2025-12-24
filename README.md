@@ -5,7 +5,9 @@
 本项目是一个智能配餐系统，采用以下核心技术：
 - **强化学习算法**：使用 DQN（深度Q网络）进行配餐优化
 - **多Agent协作**：基于 CrewAI 框架实现智能营养师团队
-- **Web服务**：FastAPI 后端 + Streamlit 前端
+- **Web服务**：FastAPI 后端 (SQLite) + Vue3 前端 (Element Plus)
+- **用户系统**：基于 JWT 的身份认证与个人档案管理
+- **增强菜谱**：基于数据库的高级筛选与搜索
 
 ## 环境配置
 
@@ -55,16 +57,20 @@ source .venv/bin/activate
 
 1. **启动后端**
    ```bash
+   # 首次启动会自动创建 SQLite 数据库并迁移菜谱数据
    uv run uvicorn intelligent_meal_planner.api.main:app --reload
    ```
+   后端 API 地址: `http://127.0.0.1:8000`
 
 2. **启动前端**
    ```bash
    cd frontend
-   npm install  # 初次运行需安装依赖
+   npm install
    npm run dev
    ```
    访问: `http://localhost:5173`
+
+   > **注意**: 首次注册时请填写真实身体数据以获得准确推荐。
 
 **方式二：演示原型 (Streamlit)**
 

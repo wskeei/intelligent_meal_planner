@@ -1,8 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/RegisterView.vue'),
+      meta: { public: true }
+    },
     {
       path: '/',
       name: 'home',
@@ -34,6 +47,16 @@ const router = createRouter({
       component: () => import('@/views/HistoryView.vue')
     }
   ]
+})
+
+// Auth Guard
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore()
+  if (!to.meta.public && !auth.isAuthenticated) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

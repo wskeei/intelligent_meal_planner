@@ -2,7 +2,7 @@
   <el-config-provider :locale="zhCn">
     <div class="layout">
       <!-- Top Navigation Bar -->
-      <nav class="navbar">
+      <nav class="navbar" v-if="showNavbar">
         <div class="container navbar-content">
           <div class="brand">
             <div class="logo-icon">
@@ -32,6 +32,10 @@
               <el-icon><User /></el-icon>
               <span>Profile</span>
             </router-link>
+            <a href="#" class="nav-item" @click.prevent="handleLogout">
+              <el-icon><SwitchButton /></el-icon>
+              <span>Exit</span>
+            </a>
           </div>
         </div>
       </nav>
@@ -58,8 +62,22 @@
 </template>
 
 <script setup lang="ts">
-import { Food, Odometer, MagicStick, ShoppingCart, Dish, User } from '@element-plus/icons-vue'
+import { Food, Odometer, MagicStick, ShoppingCart, Dish, User, SwitchButton } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter, useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const auth = useAuthStore()
+const router = useRouter()
+const route = useRoute()
+
+const handleLogout = () => {
+  auth.logout()
+}
+
+// Hide navbar on auth pages
+const showNavbar = computed(() => !['login', 'register'].includes(route.name as string))
 </script>
 
 <style scoped>
