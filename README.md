@@ -49,21 +49,39 @@ source .venv/bin/activate
 
 #### 4. 运行项目
 
+**方式一：现代 Web 版 (Vue + FastAPI)**
+
+这是推荐的完整体验方式。
+
+1. **启动后端**
+   ```bash
+   uv run uvicorn intelligent_meal_planner.api.main:app --reload
+   ```
+
+2. **启动前端**
+   ```bash
+   cd frontend
+   npm install  # 初次运行需安装依赖
+   npm run dev
+   ```
+   访问: `http://localhost:5173`
+
+**方式二：演示原型 (Streamlit)**
+
+适合快速验证算法和查看数据。
+
 ```bash
-# 训练 DQN 模型
-uv run python -m intelligent_meal_planner.train
-
-# 启动 FastAPI 后端
-uv run uvicorn intelligent_meal_planner.api:app --reload
-
-# 启动 Streamlit 前端
-uv run streamlit run intelligent_meal_planner/app.py
+uv run streamlit run src/intelligent_meal_planner/app.py
 ```
+   访问: `http://localhost:8501`
 
 ## 项目结构
 
 ```
 intelligent_meal_planner/
+├── frontend/                 # Vue 3 前端项目
+│   ├── src/
+│   └── package.json
 ├── src/
 │   └── intelligent_meal_planner/
 │       ├── __init__.py
@@ -127,7 +145,8 @@ uv run pytest
 - **Python**: 3.10.16 (由 uv 管理)
 - **强化学习**: Stable-Baselines3, Gymnasium
 - **多Agent框架**: CrewAI
-- **Web框架**: FastAPI, Streamlit
+- **Web框架**: FastAPI (后端)
+- **前端界面**: Vue 3 + Element Plus (主应用), Streamlit (原型演示)
 - **深度学习**: PyTorch
 
 ## 注意事项
