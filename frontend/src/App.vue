@@ -1,101 +1,166 @@
 <template>
   <el-config-provider :locale="zhCn">
-    <el-container class="app-container">
-      <el-header class="app-header">
-        <div class="logo">
-          <el-icon :size="28"><Food /></el-icon>
-          <span>智能配餐系统</span>
+    <div class="layout">
+      <!-- Top Navigation Bar -->
+      <nav class="navbar">
+        <div class="container navbar-content">
+          <div class="brand">
+            <div class="logo-icon">
+              <el-icon :size="24" color="white"><Food /></el-icon>
+            </div>
+            <span class="brand-text">FitPlan AI</span>
+          </div>
+
+          <div class="nav-links">
+            <router-link to="/" class="nav-item" active-class="active">
+              <el-icon><ODOMETER /></el-icon>
+              <span>Dashboard</span>
+            </router-link>
+            <router-link to="/meal-plan" class="nav-item" active-class="active">
+              <el-icon><MagicStick /></el-icon>
+              <span>Planner</span>
+            </router-link>
+            <router-link to="/shopping-list" class="nav-item" active-class="active">
+              <el-icon><ShoppingCart /></el-icon>
+              <span>Shopping</span>
+            </router-link>
+            <router-link to="/recipes" class="nav-item" active-class="active">
+              <el-icon><Dish /></el-icon>
+              <span>Recipes</span>
+            </router-link>
+             <router-link to="/profile" class="nav-item" active-class="active">
+              <el-icon><User /></el-icon>
+              <span>Profile</span>
+            </router-link>
+          </div>
         </div>
-        <el-menu
-          mode="horizontal"
-          :router="true"
-          :default-active="$route.path"
-          class="nav-menu"
-        >
-          <el-menu-item index="/">首页</el-menu-item>
-          <el-menu-item index="/meal-plan">智能配餐</el-menu-item>
-          <el-menu-item index="/recipes">菜品库</el-menu-item>
-          <el-menu-item index="/history">历史记录</el-menu-item>
-        </el-menu>
-      </el-header>
-      
-      <el-main class="app-main">
-        <router-view />
-      </el-main>
-      
-      <el-footer class="app-footer">
-        <span>© 2024 智能配餐系统 - 基于强化学习与多Agent协作</span>
-      </el-footer>
-    </el-container>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <div class="container">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="container">
+          <p>© 2024 Intelligent Meal Planner. Powered by Multi-Agent AI.</p>
+        </div>
+      </footer>
+    </div>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { Food } from '@element-plus/icons-vue'
+import { Food, Odometer, MagicStick, ShoppingCart, Dish, User } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 </script>
 
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body, #app {
-  height: 100%;
-}
-
-.app-container {
-  height: 100%;
-}
-
-.app-header {
+<style scoped>
+.layout {
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-direction: column;
+  background-color: var(--color-background);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 0 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 100%;
 }
 
-.logo {
+/* Navbar Styling */
+.navbar {
+  height: var(--header-height);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.navbar-content {
+  height: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: white;
-  font-size: 20px;
-  font-weight: bold;
-  margin-right: 40px;
+  justify-content: space-between;
 }
 
-.nav-menu {
-  background: transparent;
-  border: none;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(74, 222, 128, 0.3);
+}
+
+.brand-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  letter-spacing: -0.025em;
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background-color: #f1f5f9;
+  color: var(--color-secondary);
+}
+
+.nav-item.active {
+  background-color: #f0fdf4;
+  color: var(--color-primary-dark);
+}
+
+/* Main Content */
+.main-content {
   flex: 1;
+  padding: 32px 0;
 }
 
-.nav-menu .el-menu-item {
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: none;
-}
-
-.nav-menu .el-menu-item:hover,
-.nav-menu .el-menu-item.is-active {
-  color: white;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.app-main {
-  background: #f5f7fa;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.app-footer {
+/* Footer */
+.footer {
+  padding: 24px 0;
+  border-top: 1px solid #e2e8f0;
+  color: var(--color-text-light);
+  font-size: 0.875rem;
   text-align: center;
-  color: #909399;
-  font-size: 14px;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
+  background-color: var(--color-surface);
 }
 </style>

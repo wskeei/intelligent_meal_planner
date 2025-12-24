@@ -1,189 +1,270 @@
 <template>
-  <div class="meal-plan">
-    <el-row :gutter="20">
-      <!-- 左侧：参数设置 -->
-      <el-col :span="8">
-        <el-card class="settings-card">
+  <div class="meal-plan-page">
+    <div class="page-header">
+      <h1>Meal Planner</h1>
+      <p class="subtitle">AI-powered nutrition catering to your goals.</p>
+    </div>
+
+    <el-row :gutter="24">
+      <!-- Left: Configuration -->
+      <el-col :span="24" :lg="8">
+        <el-card class="config-card" shadow="hover">
           <template #header>
-            <div class="card-header">
-              <el-icon><Setting /></el-icon>
-              <span>配餐参数</span>
+            <div class="card-title">
+              <el-icon><Operation /></el-icon>
+              <span>Preferences</span>
             </div>
           </template>
 
-          <el-form :model="form" label-position="top">
-            <el-form-item label="健康目标">
-              <el-select v-model="form.health_goal" style="width: 100%">
-                <el-option label="健康饮食" value="healthy" />
-                <el-option label="减脂瘦身" value="lose_weight" />
-                <el-option label="增肌塑形" value="gain_muscle" />
-                <el-option label="维持体重" value="maintain" />
+          <el-form label-position="top" size="large">
+            <el-form-item label="Health Goal">
+               <el-select v-model="form.health_goal" @change="applyPreset">
+                <el-option label="Healthy Eating" value="healthy" />
+                <el-option label="Weight Loss" value="lose_weight" />
+                <el-option label="Muscle Gain" value="gain_muscle" />
+                <el-option label="Maintenance" value="maintain" />
               </el-select>
             </el-form-item>
 
-            <el-divider>营养目标</el-divider>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Calories</span>
+                <span class="val">{{ form.target_calories }} kcal</span>
+              </div>
+              <el-slider v-model="form.target_calories" :min="1200" :max="4000" :step="50" :show-tooltip="false" />
+            </div>
 
-            <el-form-item label="目标卡路里 (kcal)">
-              <el-slider v-model="form.target_calories" :min="1200" :max="3500" :step="100" show-input />
-            </el-form-item>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Protein</span>
+                <span class="val">{{ form.target_protein }} g</span>
+              </div>
+              <el-slider v-model="form.target_protein" :min="30" :max="250" :step="5" :show-tooltip="false" />
+            </div>
 
-            <el-form-item label="目标蛋白质 (g)">
-              <el-slider v-model="form.target_protein" :min="50" :max="200" :step="10" show-input />
-            </el-form-item>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Carbs</span>
+                <span class="val">{{ form.target_carbs }} g</span>
+              </div>
+              <el-slider v-model="form.target_carbs" :min="20" :max="500" :step="10" :show-tooltip="false" />
+            </div>
 
-            <el-form-item label="目标碳水 (g)">
-              <el-slider v-model="form.target_carbs" :min="100" :max="400" :step="25" show-input />
-            </el-form-item>
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Fat</span>
+                <span class="val">{{ form.target_fat }} g</span>
+              </div>
+              <el-slider v-model="form.target_fat" :min="10" :max="150" :step="5" :show-tooltip="false" />
+            </div>
 
-            <el-form-item label="目标脂肪 (g)">
-              <el-slider v-model="form.target_fat" :min="30" :max="150" :step="10" show-input />
-            </el-form-item>
-
-            <el-divider>预算限制</el-divider>
-
-            <el-form-item label="最大预算 (元)">
-              <el-slider v-model="form.max_budget" :min="20" :max="150" :step="5" show-input />
-            </el-form-item>
+            <el-divider />
+            
+            <div class="slider-group">
+              <div class="slider-label">
+                <span>Budget Limit</span>
+                <span class="val">¥{{ form.max_budget }}</span>
+              </div>
+              <el-slider v-model="form.max_budget" :min="20" :max="200" :step="5" :show-tooltip="false" />
+            </div>
 
             <el-button 
               type="primary" 
-              size="large" 
-              style="width: 100%; margin-top: 20px"
+              class="generate-btn" 
               :loading="loading"
               @click="generatePlan"
             >
-              <el-icon><MagicStick /></el-icon>
-              生成配餐方案
+              <el-icon style="margin-right: 8px"><MagicStick /></el-icon>
+              Generate Plan
             </el-button>
           </el-form>
         </el-card>
       </el-col>
 
-      <!-- 右侧：配餐结果 -->
-      <el-col :span="16">
-        <el-card v-if="!mealPlan" class="result-card empty">
-          <el-empty description="设置参数后点击生成配餐方案">
-            <template #image>
-              <div style="font-size: 80px">🍽️</div>
-            </template>
-          </el-empty>
-        </el-card>
+      <!-- Right: Results -->
+      <el-col :span="24" :lg="16">
+        <transition name="fade" mode="out-in">
+          <!-- Empty State -->
+          <div v-if="!mealPlan" class="empty-state">
+            <div class="illustration">🍽️</div>
+            <h3>Ready to Cook?</h3>
+            <p>Adjust your preferences and click "Generate Plan" to get started.</p>
+          </div>
 
-        <template v-else>
-          <!-- 三餐展示 -->
-          <el-row :gutter="16" class="meals-row">
-            <el-col :span="8" v-for="meal in mealPlan.meals" :key="meal.meal_type">
-              <el-card class="meal-card" :class="meal.meal_type">
-                <template #header>
-                  <div class="meal-header">
-                    <span class="meal-icon">{{ getMealIcon(meal.meal_type) }}</span>
-                    <span>{{ getMealName(meal.meal_type) }}</span>
-                  </div>
-                </template>
-                <h3>{{ meal.recipe_name }}</h3>
-                <div class="meal-info">
-                  <el-tag size="small">{{ meal.calories }} kcal</el-tag>
-                  <el-tag size="small" type="success">蛋白质 {{ meal.protein }}g</el-tag>
-                  <el-tag size="small" type="warning">¥{{ meal.price }}</el-tag>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-
-          <!-- 营养汇总 -->
-          <el-card class="nutrition-card">
-            <template #header>
-              <div class="card-header">
-                <el-icon><DataAnalysis /></el-icon>
-                <span>营养达成分析</span>
-              </div>
-            </template>
-
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="stat-item">
+          <!-- Results -->
+          <div v-else class="results-container">
+            <!-- Nutrition Summary -->
+             <div class="summary-grid">
+               <div class="summary-card">
+                 <div class="lbl">Calories</div>
+                 <div class="val">{{ mealPlan.nutrition.total_calories.toFixed(0) }}</div>
+                 <el-progress 
+                    :percentage="Math.min(mealPlan.nutrition.calories_achievement, 100)" 
+                    :show-text="false" 
+                    :color="getColor(mealPlan.nutrition.calories_achievement)"
+                    :stroke-width="6"
+                 />
+               </div>
+               <div class="summary-card">
+                 <div class="lbl">Protein</div>
+                 <div class="val">{{ mealPlan.nutrition.total_protein.toFixed(0) }}g</div>
+                 <el-progress 
+                    :percentage="Math.min(mealPlan.nutrition.protein_achievement, 100)" 
+                    :show-text="false" 
+                    :color="getColor(mealPlan.nutrition.protein_achievement)"
+                    :stroke-width="6"
+                 />
+               </div>
+               <div class="summary-card">
+                 <div class="lbl">Cost</div>
+                 <div class="val">¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</div>
                   <el-progress 
-                    type="dashboard" 
-                    :percentage="Math.min(mealPlan.nutrition.calories_achievement, 100)"
-                    :color="getProgressColor(mealPlan.nutrition.calories_achievement)"
-                  />
-                  <div class="stat-label">卡路里</div>
-                  <div class="stat-value">{{ mealPlan.nutrition.total_calories.toFixed(0) }} / {{ form.target_calories }} kcal</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="stat-item">
-                  <el-progress 
-                    type="dashboard" 
-                    :percentage="Math.min(mealPlan.nutrition.protein_achievement, 100)"
-                    :color="getProgressColor(mealPlan.nutrition.protein_achievement)"
-                  />
-                  <div class="stat-label">蛋白质</div>
-                  <div class="stat-value">{{ mealPlan.nutrition.total_protein.toFixed(1) }} / {{ form.target_protein }} g</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="stat-item">
-                  <el-progress 
-                    type="dashboard" 
-                    :percentage="Math.min(mealPlan.nutrition.budget_usage, 100)"
+                    :percentage="Math.min(mealPlan.nutrition.budget_usage, 100)" 
+                    :show-text="false" 
                     :color="getBudgetColor(mealPlan.nutrition.budget_usage)"
-                  />
-                  <div class="stat-label">预算使用</div>
-                  <div class="stat-value">¥{{ mealPlan.nutrition.total_price.toFixed(1) }} / ¥{{ form.max_budget }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="stat-item score">
-                  <div class="score-value">{{ mealPlan.score.toFixed(1) }}</div>
-                  <div class="stat-label">AI 评分</div>
-                  <el-rate :model-value="mealPlan.score / 10" disabled />
-                </div>
-              </el-col>
-            </el-row>
-          </el-card>
-        </template>
+                    :stroke-width="6"
+                 />
+               </div>
+               <div class="summary-card highlight">
+                 <div class="lbl">AI Score</div>
+                 <div class="val">{{ mealPlan.score.toFixed(1) }}</div>
+               </div>
+             </div>
+
+             <!-- Meal Cards -->
+             <div class="meals-list">
+               <div 
+                  v-for="meal in mealPlan.meals" 
+                  :key="meal.meal_type" 
+                  class="meal-card"
+               >
+                 <div class="meal-icon-side" :class="meal.meal_type">
+                   {{ getMealIcon(meal.meal_type) }}
+                 </div>
+                 
+                 <div class="meal-details">
+                   <div class="meal-type">{{ getMealName(meal.meal_type) }}</div>
+                   <h3 class="meal-name">{{ meal.recipe_name }}</h3>
+                   <div class="meal-tags">
+                     <span class="tag">{{ meal.calories.toFixed(0) }} kcal</span>
+                     <span class="tag">Prot: {{ meal.protein.toFixed(0) }}g</span>
+                     <span class="tag">¥{{ meal.price }}</span>
+                   </div>
+                 </div>
+
+                 <div class="meal-actions">
+                   <el-button circle plain @click="addToShopping(meal)">
+                     <el-icon><ShoppingCart /></el-icon>
+                   </el-button>
+                   <el-button circle plain @click="showDetails(meal)">
+                     <el-icon><More /></el-icon>
+                   </el-button>
+                 </div>
+               </div>
+             </div>
+          </div>
+        </transition>
       </el-col>
     </el-row>
+
+    <!-- Details Dialog -->
+    <el-dialog v-model="detailsVisible" title="Meal Details" width="400px" center>
+      <div v-if="selectedMeal" class="dialog-content">
+        <div class="dialog-icon">{{ getMealIcon(selectedMeal.meal_type) }}</div>
+        <h2>{{ selectedMeal.recipe_name }}</h2>
+        <div class="dialog-stats">
+          <div class="d-stat">
+            <span class="d-val">{{ selectedMeal.calories }}</span>
+            <span class="d-lbl">kcal</span>
+          </div>
+          <div class="d-stat">
+             <span class="d-val">{{ selectedMeal.protein }}g</span>
+             <span class="d-lbl">Protein</span>
+          </div>
+           <div class="d-stat">
+             <span class="d-val">{{ selectedMeal.fat }}g</span>
+             <span class="d-lbl">Fat</span>
+          </div>
+           <div class="d-stat">
+             <span class="d-val">{{ selectedMeal.carbs }}g</span>
+             <span class="d-lbl">Carbs</span>
+          </div>
+        </div>
+        <p class="dialog-desc">Estimated cost: ¥{{ selectedMeal.price }}</p>
+      </div>
+       <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="detailsVisible = false">Close</el-button>
+          <el-button type="primary" @click="addAndClose">
+            Add to List
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { useShoppingStore } from '@/stores/shopping'
+import { mealPlanApi, type MealPlan, type MealItem } from '@/api'
 import { ElMessage } from 'element-plus'
-import { Setting, MagicStick, DataAnalysis } from '@element-plus/icons-vue'
-import { mealPlanApi, type MealPlan } from '@/api'
+import { Operation, MagicStick, ShoppingCart, More } from '@element-plus/icons-vue'
 
 const route = useRoute()
+const userStore = useUserStore()
+const shoppingStore = useShoppingStore()
+
+// State
 const loading = ref(false)
 const mealPlan = ref<MealPlan | null>(null)
+const detailsVisible = ref(false)
+const selectedMeal = ref<MealItem | null>(null)
 
+// Form
 const form = reactive({
-  health_goal: 'healthy',
-  target_calories: 2000,
+  health_goal: userStore.profile.goal || 'healthy',
+  target_calories: 2000, // Will sync with store on mount
   target_protein: 100,
   target_carbs: 250,
   target_fat: 60,
   max_budget: 50
 })
 
-// 根据健康目标设置预设值
-const presets: Record<string, typeof form> = {
-  lose_weight: { health_goal: 'lose_weight', target_calories: 1500, target_protein: 120, target_carbs: 150, target_fat: 45, max_budget: 50 },
-  gain_muscle: { health_goal: 'gain_muscle', target_calories: 2500, target_protein: 150, target_carbs: 300, target_fat: 80, max_budget: 60 },
-  maintain: { health_goal: 'maintain', target_calories: 2000, target_protein: 100, target_carbs: 250, target_fat: 65, max_budget: 50 },
-  healthy: { health_goal: 'healthy', target_calories: 1800, target_protein: 90, target_carbs: 220, target_fat: 55, max_budget: 45 }
-}
-
+// Logic
 onMounted(() => {
-  const goal = route.query.goal as string
-  if (goal && presets[goal]) {
-    Object.assign(form, presets[goal])
-  }
+  // Sync with user store if available, or query params
+  const goalQuery = route.query.goal as string
+  if (goalQuery) form.health_goal = goalQuery as any
+  
+  // Apply logic to set initial values
+  applyPreset()
 })
 
-const generatePlan = async () => {
+const presets = {
+  lose_weight: { target_calories: 1500, target_protein: 140, target_carbs: 100, target_fat: 50 },
+  gain_muscle: { target_calories: 2800, target_protein: 180, target_carbs: 350, target_fat: 80 },
+  maintain: { target_calories: 2200, target_protein: 130, target_carbs: 250, target_fat: 70 },
+  healthy: { target_calories: 2000, target_protein: 100, target_carbs: 220, target_fat: 60 }
+}
+
+function applyPreset() {
+  const p = presets[form.health_goal] || presets['healthy']
+  // If user store has specific calories, maybe prefer that? 
+  // For now let's stick to presets or what the user sees in Profile
+  if (userStore.targetCalories > 0) {
+     form.target_calories = userStore.targetCalories
+     form.target_protein = userStore.targetMacros.protein
+     form.target_carbs = userStore.targetMacros.carbs
+     form.target_fat = userStore.targetMacros.fat
+  } else {
+     Object.assign(form, p)
+  }
+}
+
+async function generatePlan() {
   loading.value = true
   try {
     const { data } = await mealPlanApi.create({
@@ -195,128 +276,267 @@ const generatePlan = async () => {
       max_budget: form.max_budget
     })
     mealPlan.value = data
-    ElMessage.success('配餐方案生成成功！')
+    ElMessage.success('Menu generated successfully!')
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || '生成失败，请重试')
+    ElMessage.error('Failed to generate plan. Please try again.')
   } finally {
     loading.value = false
   }
 }
 
-const getMealIcon = (type: string) => {
-  const icons: Record<string, string> = { breakfast: '🌅', lunch: '☀️', dinner: '🌙' }
-  return icons[type] || '🍽️'
+// Helpers
+const getMealIcon = (type: string) => ({ breakfast: '🥯', lunch: '🍱', dinner: '🍲' }[type] || '🍽️')
+const getMealName = (type: string) => type.charAt(0).toUpperCase() + type.slice(1)
+
+const getColor = (pct: number) => {
+  if (pct >= 90 && pct <= 110) return '#4ade80' // success
+  if (pct >= 70 && pct <= 130) return '#facc15' // warning
+  return '#ef4444' // danger
+}
+const getBudgetColor = (pct: number) => pct <= 100 ? '#4ade80' : '#ef4444'
+
+// Actions
+function addToShopping(meal: MealItem) {
+  shoppingStore.addItem(meal.recipe_name, '1 serving', meal.meal_type)
+  ElMessage.success(`Added ${meal.recipe_name} to List`)
 }
 
-const getMealName = (type: string) => {
-  const names: Record<string, string> = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐' }
-  return names[type] || type
+function showDetails(meal: MealItem) {
+  selectedMeal.value = meal
+  detailsVisible.value = true
 }
 
-const getProgressColor = (pct: number) => {
-  if (pct >= 90 && pct <= 110) return '#67C23A'
-  if (pct >= 70 && pct <= 130) return '#E6A23C'
-  return '#F56C6C'
-}
-
-const getBudgetColor = (pct: number) => {
-  if (pct <= 80) return '#67C23A'
-  if (pct <= 100) return '#E6A23C'
-  return '#F56C6C'
+function addAndClose() {
+  if (selectedMeal.value) {
+    addToShopping(selectedMeal.value)
+    detailsVisible.value = false
+  }
 }
 </script>
 
 <style scoped>
-.meal-plan {
-  max-width: 1400px;
-  margin: 0 auto;
+.page-header {
+  margin-bottom: 24px;
 }
 
-.card-header {
+.page-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.subtitle {
+  color: var(--color-text-secondary);
+}
+
+.config-card {
+  border: none;
+  background: white;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+}
+
+.card-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: bold;
+  font-weight: 600;
+  color: var(--color-secondary);
 }
 
-.settings-card {
-  position: sticky;
-  top: 20px;
-}
-
-.result-card.empty {
-  min-height: 500px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.meals-row {
+.slider-group {
   margin-bottom: 20px;
 }
 
-.meal-card {
-  text-align: center;
-}
-
-.meal-card.breakfast { border-top: 3px solid #E6A23C; }
-.meal-card.lunch { border-top: 3px solid #409EFF; }
-.meal-card.dinner { border-top: 3px solid #764ba2; }
-
-.meal-header {
+.slider-label {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-weight: bold;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
+  margin-bottom: 4px;
 }
 
-.meal-icon {
-  font-size: 24px;
+.slider-label .val {
+  font-weight: 600;
+  color: var(--color-primary-dark);
 }
 
-.meal-card h3 {
-  margin: 12px 0;
-  color: #303133;
+.generate-btn {
+  width: 100%;
+  margin-top: 16px;
+  font-weight: 600;
+  padding: 20px;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
 }
 
-.meal-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.nutrition-card {
-  margin-top: 20px;
-}
-
-.stat-item {
+/* Results Area */
+.empty-state {
   text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
 }
 
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-top: 8px;
+.illustration {
+  font-size: 64px;
+  margin-bottom: 16px;
 }
 
-.stat-value {
-  font-size: 12px;
-  color: #606266;
-}
-
-.stat-item.score {
+.results-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+  gap: 24px;
 }
 
-.score-value {
-  font-size: 48px;
-  font-weight: bold;
-  color: #409EFF;
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.summary-card {
+  background: white;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.summary-card .lbl {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  margin-bottom: 4px;
+}
+
+.summary-card .val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+}
+
+.summary-card.highlight {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: var(--color-primary-dark);
+}
+
+.summary-card.highlight .val {
+  color: var(--color-primary-dark);
+}
+
+/* Meal List */
+.meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meal-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s;
+}
+
+.meal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.meal-icon-side {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.meal-icon-side.breakfast { background: #fff7ed; }
+.meal-icon-side.lunch { background: #f0f9ff; }
+.meal-icon-side.dinner { background: #fdf2f8; }
+
+.meal-details {
+  flex: 1;
+}
+
+.meal-type {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.meal-name {
+  font-size: 1.1rem;
+  color: var(--color-text-main);
+  margin: 4px 0 8px;
+}
+
+.meal-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.tag {
+  background: #f1f5f9;
+  color: var(--color-text-secondary);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.meal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Dialog */
+.dialog-content {
+  text-align: center;
+}
+
+.dialog-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.dialog-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.d-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.d-val {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-secondary);
+}
+
+.d-lbl {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
 }
 </style>

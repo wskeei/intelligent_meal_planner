@@ -1,160 +1,263 @@
 <template>
-  <div class="home">
-    <!-- Hero Section -->
-    <div class="hero">
-      <h1>🍽️ 智能配餐系统</h1>
-      <p class="subtitle">基于强化学习与多Agent协作的个性化配餐推荐</p>
-      <el-button type="primary" size="large" @click="$router.push('/meal-plan')">
-        <el-icon><MagicStick /></el-icon>
-        开始配餐
-      </el-button>
+  <div class="dashboard">
+    <!-- Welcome Section -->
+    <div class="header-section">
+      <div class="greeting">
+        <h1>Hello, {{ profile.name }}! 👋</h1>
+        <p class="subtitle">Ready to plan your nutrition today?</p>
+      </div>
+      <router-link to="/profile">
+        <el-button plain round>
+          <el-icon style="margin-right: 6px"><Setting /></el-icon>
+          Edit Profile
+        </el-button>
+      </router-link>
     </div>
 
-    <!-- Features -->
-    <el-row :gutter="20" class="features">
+    <!-- Stats Overview -->
+    <el-row :gutter="20" class="stats-row">
+      <!-- Calorie Target -->
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon :size="32" color="#409EFF"><Cpu /></el-icon>
-              <span>强化学习算法</span>
+        <el-card shadow="hover" class="stat-card primary">
+          <div class="stat-content">
+            <div class="icon-wrap"><el-icon><Odometer /></el-icon></div>
+            <div>
+              <div class="label">Daily Target</div>
+              <div class="value">{{ targetCalories }} <span class="unit">kcal</span></div>
             </div>
-          </template>
-          <p>采用深度Q网络(DQN)算法，通过数万次模拟学习最优配餐策略，智能平衡营养、预算和口味。</p>
+          </div>
         </el-card>
       </el-col>
+      
+      <!-- Current Goal -->
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon :size="32" color="#67C23A"><UserFilled /></el-icon>
-              <span>多Agent协作</span>
+        <el-card shadow="hover" class="stat-card">
+           <div class="stat-content">
+            <div class="icon-wrap blue"><el-icon><Aim /></el-icon></div>
+            <div>
+              <div class="label">Current Goal</div>
+              <div class="value text-cap">{{ profile.goal.replace('_', ' ') }}</div>
             </div>
-          </template>
-          <p>用户分析师Agent理解您的需求，配餐师Agent调用AI模型，两者协作为您定制专属方案。</p>
+          </div>
         </el-card>
       </el-col>
+
+      <!-- Streak (Mock) -->
       <el-col :span="8">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon :size="32" color="#E6A23C"><TrendCharts /></el-icon>
-              <span>营养可视化</span>
+        <el-card shadow="hover" class="stat-card">
+           <div class="stat-content">
+            <div class="icon-wrap orange"><el-icon><Trophy /></el-icon></div>
+            <div>
+              <div class="label">Planning Streak</div>
+              <div class="value">3 <span class="unit">Days</span></div>
             </div>
-          </template>
-          <p>直观展示营养达成情况，卡路里、蛋白质、碳水、脂肪一目了然，助您科学饮食。</p>
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- Quick Start -->
-    <div class="quick-start">
-      <h2>快速开始</h2>
-      <el-row :gutter="20">
-        <el-col :span="6" v-for="goal in healthGoals" :key="goal.value">
-          <el-card 
-            shadow="hover" 
-            class="goal-card"
-            @click="quickPlan(goal.value)"
-          >
-            <div class="goal-icon">{{ goal.icon }}</div>
-            <div class="goal-name">{{ goal.label }}</div>
-            <div class="goal-desc">{{ goal.desc }}</div>
-          </el-card>
-        </el-col>
-      </el-row>
+    <!-- Main Actions -->
+    <div class="action-grid">
+      <el-card class="action-card main-action" shadow="hover" @click="$router.push('/meal-plan')">
+        <div class="action-content">
+          <img src="https://cdn-icons-png.flaticon.com/512/706/706195.png" alt="Meal" class="action-img" />
+          <div class="action-text">
+            <h2>Generate Meal Plan</h2>
+            <p>Let AI create your perfect menu for today based on your preferences.</p>
+            <el-button type="primary" round>Start Planning</el-button>
+          </div>
+        </div>
+      </el-card>
+
+      <div class="sub-actions">
+        <el-card class="action-card sub" shadow="hover" @click="$router.push('/recipes')">
+          <div class="sub-content">
+             <el-icon :size="32" color="#10b981"><Dish /></el-icon>
+             <h3>Browse Recipes</h3>
+          </div>
+        </el-card>
+        
+        <el-card class="action-card sub" shadow="hover" @click="$router.push('/shopping-list')">
+           <div class="sub-content">
+             <el-icon :size="32" color="#3b82f6"><ShoppingCart /></el-icon>
+             <h3>Shopping List</h3>
+          </div>
+        </el-card>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { MagicStick, Cpu, UserFilled, TrendCharts } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { storeToRefs } from 'pinia'
+import { Setting, Odometer, Aim, Trophy, Dish, ShoppingCart } from '@element-plus/icons-vue'
 
-const router = useRouter()
-
-const healthGoals = [
-  { value: 'lose_weight', label: '减脂瘦身', icon: '🏃', desc: '低卡高蛋白' },
-  { value: 'gain_muscle', label: '增肌塑形', icon: '💪', desc: '高蛋白高热量' },
-  { value: 'maintain', label: '维持体重', icon: '⚖️', desc: '均衡营养' },
-  { value: 'healthy', label: '健康饮食', icon: '🥗', desc: '标准健康餐' }
-]
-
-const quickPlan = (goal: string) => {
-  router.push({ path: '/meal-plan', query: { goal } })
-}
+const userStore = useUserStore()
+const { profile, targetCalories } = storeToRefs(userStore)
 </script>
 
 <style scoped>
-.home {
-  max-width: 1200px;
+.dashboard {
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.hero {
-  text-align: center;
-  padding: 60px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  color: white;
-  margin-bottom: 40px;
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
 }
 
-.hero h1 {
-  font-size: 42px;
-  margin-bottom: 16px;
+.greeting h1 {
+  font-size: 2.5rem;
+  color: var(--color-secondary);
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
 .subtitle {
-  font-size: 18px;
-  opacity: 0.9;
-  margin-bottom: 30px;
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
 }
 
-.features {
+/* Stats Row */
+.stats-row {
   margin-bottom: 40px;
 }
 
-.card-header {
+.stat-card {
+  height: 100%;
+  border: none;
+  background: white;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-content {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: bold;
+  gap: 16px;
 }
 
-.quick-start {
-  text-align: center;
+.icon-wrap {
+  width: 48px;
+  height: 48px;
+  background: #ecfdf5;
+  color: var(--color-primary-dark);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
 }
 
-.quick-start h2 {
-  margin-bottom: 24px;
-  color: #303133;
+.icon-wrap.blue { background: #eff6ff; color: #3b82f6; }
+.icon-wrap.orange { background: #fff7ed; color: #f97316; }
+
+.label {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.goal-card {
+.value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-secondary);
+}
+
+.text-cap {
+  text-transform: capitalize;
+}
+
+.unit {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Action Grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.action-card {
   cursor: pointer;
-  transition: transform 0.3s;
-  text-align: center;
+  transition: all 0.3s ease;
+  border: none;
 }
 
-.goal-card:hover {
-  transform: translateY(-5px);
+.action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-.goal-icon {
-  font-size: 48px;
-  margin-bottom: 12px;
+.main-action {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border: 2px solid transparent;
 }
 
-.goal-name {
-  font-size: 18px;
-  font-weight: bold;
+.main-action:hover {
+  border-color: var(--color-primary);
+}
+
+.action-content {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 16px;
+}
+
+.action-img {
+  width: 120px;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+}
+
+.action-text h2 {
+  font-size: 1.5rem;
+  color: var(--color-secondary);
   margin-bottom: 8px;
 }
 
-.goal-desc {
-  color: #909399;
-  font-size: 14px;
+.action-text p {
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.sub-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sub-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  gap: 12px;
+}
+
+.sub-content h3 {
+  color: var(--color-text-main);
+  font-weight: 600;
 }
 </style>
