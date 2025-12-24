@@ -18,8 +18,24 @@ class MealPlanningCrew:
         初始化配餐团队
         
         Args:
-            llm: 语言模型实例（可选，默认使用 CrewAI 配置的模型）
+            llm: 语言模型实例（可选，默认使用 DeepSeek 或 CrewAI 配置的模型）
         """
+        if llm is None:
+            import os
+            from langchain_openai import ChatOpenAI
+            
+            api_key = os.getenv("DEEPSEEK_API_KEY")
+            api_base = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com/v1")
+            model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+            
+            if api_key:
+                llm = ChatOpenAI(
+                    model=model,
+                    base_url=api_base,
+                    api_key=api_key,
+                    temperature=0.7
+                )
+        
         self.llm = llm
         self.profiler = UserProfilerAgent.create(llm)
         self.chef = RLChefAgent.create(llm)
