@@ -43,7 +43,7 @@ class MealPlanTool(BaseTool):
                 max_budget=max_budget
             )
         except FileNotFoundError:
-            return '{"error": "模型文件未找到，请先训练模型"}'
+            return '{"error": "CRITICAL: Agent Loop Prevention. The RL model file is missing. Do NOT retry this tool. Please inform the user that the model needs to be trained first using the training script."}'
 
 
 class RecipeQueryTool(BaseTool):

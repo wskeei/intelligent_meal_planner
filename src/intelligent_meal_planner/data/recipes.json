@@ -3,13 +3,19 @@
     {
       "id": 1,
       "name": "小米粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 360,
       "protein": 9.0,
       "carbs": 76.0,
       "fat": 1.0,
       "price": 3.0,
-      "tags": ["清淡", "养胃", "谷物"],
+      "tags": [
+        "清淡",
+        "养胃",
+        "谷物"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "简单"
@@ -17,13 +23,20 @@
     {
       "id": 2,
       "name": "煎鸡蛋",
-      "meal_type": ["breakfast", "lunch", "dinner"],
+      "meal_type": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ],
       "calories": 155,
       "protein": 13.0,
       "carbs": 1.1,
       "fat": 11.0,
       "price": 2.5,
-      "tags": ["高蛋白", "快手"],
+      "tags": [
+        "高蛋白",
+        "快手"
+      ],
       "category": "蛋类",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -31,13 +44,19 @@
     {
       "id": 3,
       "name": "豆浆",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 85,
       "protein": 7.0,
       "carbs": 9.0,
       "fat": 3.5,
       "price": 3.0,
-      "tags": ["高蛋白", "豆制品", "养生"],
+      "tags": [
+        "高蛋白",
+        "豆制品",
+        "养生"
+      ],
       "category": "饮品",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -45,13 +64,18 @@
     {
       "id": 4,
       "name": "全麦面包",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 246,
       "protein": 8.0,
       "carbs": 46.0,
       "fat": 3.0,
       "price": 5.0,
-      "tags": ["粗粮", "饱腹"],
+      "tags": [
+        "粗粮",
+        "饱腹"
+      ],
       "category": "主食",
       "cooking_time": 2,
       "difficulty": "简单"
@@ -59,13 +83,19 @@
     {
       "id": 5,
       "name": "燕麦粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 389,
       "protein": 16.9,
       "carbs": 66.0,
       "fat": 7.0,
       "price": 4.0,
-      "tags": ["高纤维", "减脂", "谷物"],
+      "tags": [
+        "高纤维",
+        "减脂",
+        "谷物"
+      ],
       "category": "主食",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -73,13 +103,18 @@
     {
       "id": 6,
       "name": "煮玉米",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 196,
       "protein": 4.0,
       "carbs": 41.0,
       "fat": 2.0,
       "price": 3.5,
-      "tags": ["粗粮", "饱腹"],
+      "tags": [
+        "粗粮",
+        "饱腹"
+      ],
       "category": "主食",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -87,13 +122,19 @@
     {
       "id": 7,
       "name": "香煎培根",
-      "meal_type": ["breakfast", "lunch"],
+      "meal_type": [
+        "breakfast",
+        "lunch"
+      ],
       "calories": 541,
       "protein": 37.0,
       "carbs": 1.4,
       "fat": 42.0,
       "price": 12.0,
-      "tags": ["高蛋白", "高脂肪"],
+      "tags": [
+        "高蛋白",
+        "高脂肪"
+      ],
       "category": "肉类",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -101,13 +142,21 @@
     {
       "id": 8,
       "name": "水煮青菜",
-      "meal_type": ["breakfast", "lunch", "dinner"],
+      "meal_type": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ],
       "calories": 45,
       "protein": 3.0,
       "carbs": 8.0,
       "fat": 0.5,
       "price": 3.0,
-      "tags": ["低脂", "高纤维", "清淡"],
+      "tags": [
+        "低脂",
+        "高纤维",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -115,13 +164,19 @@
     {
       "id": 9,
       "name": "煎饺",
-      "meal_type": ["breakfast", "lunch"],
+      "meal_type": [
+        "breakfast",
+        "lunch"
+      ],
       "calories": 320,
       "protein": 12.0,
       "carbs": 38.0,
       "fat": 14.0,
       "price": 8.0,
-      "tags": ["主食", "快手"],
+      "tags": [
+        "主食",
+        "快手"
+      ],
       "category": "主食",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -129,13 +184,18 @@
     {
       "id": 10,
       "name": "牛奶",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 150,
       "protein": 8.0,
       "carbs": 12.0,
       "fat": 8.0,
       "price": 4.0,
-      "tags": ["高蛋白", "补钙"],
+      "tags": [
+        "高蛋白",
+        "补钙"
+      ],
       "category": "饮品",
       "cooking_time": 2,
       "difficulty": "简单"
@@ -143,13 +203,18 @@
     {
       "id": 11,
       "name": "油条",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 388,
       "protein": 7.0,
       "carbs": 51.0,
       "fat": 17.0,
       "price": 3.0,
-      "tags": ["油炸", "高脂肪"],
+      "tags": [
+        "油炸",
+        "高脂肪"
+      ],
       "category": "主食",
       "cooking_time": 20,
       "difficulty": "困难"
@@ -157,13 +222,19 @@
     {
       "id": 12,
       "name": "包子",
-      "meal_type": ["breakfast", "lunch"],
+      "meal_type": [
+        "breakfast",
+        "lunch"
+      ],
       "calories": 285,
       "protein": 10.0,
       "carbs": 42.0,
       "fat": 9.0,
       "price": 5.0,
-      "tags": ["主食", "饱腹"],
+      "tags": [
+        "主食",
+        "饱腹"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "中等"
@@ -171,13 +242,18 @@
     {
       "id": 13,
       "name": "皮蛋瘦肉粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 180,
       "protein": 12.0,
       "carbs": 28.0,
       "fat": 3.0,
       "price": 8.0,
-      "tags": ["清淡", "养胃"],
+      "tags": [
+        "清淡",
+        "养胃"
+      ],
       "category": "主食",
       "cooking_time": 40,
       "difficulty": "中等"
@@ -185,13 +261,18 @@
     {
       "id": 14,
       "name": "煎蛋三明治",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 310,
       "protein": 15.0,
       "carbs": 35.0,
       "fat": 12.0,
       "price": 10.0,
-      "tags": ["快手", "西式"],
+      "tags": [
+        "快手",
+        "西式"
+      ],
       "category": "主食",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -199,13 +280,18 @@
     {
       "id": 15,
       "name": "豆腐脑",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 95,
       "protein": 8.0,
       "carbs": 6.0,
       "fat": 4.0,
       "price": 4.0,
-      "tags": ["豆制品", "清淡"],
+      "tags": [
+        "豆制品",
+        "清淡"
+      ],
       "category": "饮品",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -213,13 +299,19 @@
     {
       "id": 16,
       "name": "米饭",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 116,
       "protein": 2.6,
       "carbs": 25.6,
       "fat": 0.3,
       "price": 1.5,
-      "tags": ["主食", "谷物"],
+      "tags": [
+        "主食",
+        "谷物"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "简单"
@@ -227,13 +319,20 @@
     {
       "id": 17,
       "name": "红烧肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 489,
       "protein": 15.0,
       "carbs": 12.0,
       "fat": 43.0,
       "price": 25.0,
-      "tags": ["高脂肪", "重口味", "肉类"],
+      "tags": [
+        "高脂肪",
+        "重口味",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 60,
       "difficulty": "中等"
@@ -241,13 +340,20 @@
     {
       "id": 18,
       "name": "清蒸鱼",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 206,
       "protein": 22.0,
       "carbs": 0.0,
       "fat": 13.0,
       "price": 30.0,
-      "tags": ["高蛋白", "低碳水", "清淡"],
+      "tags": [
+        "高蛋白",
+        "低碳水",
+        "清淡"
+      ],
       "category": "海鲜",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -255,13 +361,19 @@
     {
       "id": 19,
       "name": "番茄炒蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 140,
       "protein": 7.0,
       "carbs": 6.0,
       "fat": 10.0,
       "price": 6.0,
-      "tags": ["家常菜", "营养均衡"],
+      "tags": [
+        "家常菜",
+        "营养均衡"
+      ],
       "category": "蛋类",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -269,13 +381,19 @@
     {
       "id": 20,
       "name": "宫保鸡丁",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 280,
       "protein": 19.0,
       "carbs": 14.0,
       "fat": 16.0,
       "price": 18.0,
-      "tags": ["高蛋白", "川菜"],
+      "tags": [
+        "高蛋白",
+        "川菜"
+      ],
       "category": "肉类",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -283,13 +401,20 @@
     {
       "id": 21,
       "name": "麻婆豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 157,
       "protein": 11.0,
       "carbs": 7.0,
       "fat": 10.0,
       "price": 8.0,
-      "tags": ["高蛋白", "豆制品", "川菜"],
+      "tags": [
+        "高蛋白",
+        "豆制品",
+        "川菜"
+      ],
       "category": "豆制品",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -297,13 +422,19 @@
     {
       "id": 22,
       "name": "炒青菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 58,
       "protein": 2.0,
       "carbs": 5.0,
       "fat": 4.0,
       "price": 4.0,
-      "tags": ["低脂", "高纤维"],
+      "tags": [
+        "低脂",
+        "高纤维"
+      ],
       "category": "蔬菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -311,13 +442,19 @@
     {
       "id": 23,
       "name": "土豆丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 88,
       "protein": 2.0,
       "carbs": 17.0,
       "fat": 2.0,
       "price": 3.0,
-      "tags": ["家常菜", "经济实惠"],
+      "tags": [
+        "家常菜",
+        "经济实惠"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -325,13 +462,20 @@
     {
       "id": 24,
       "name": "水煮鸡胸肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 165,
       "protein": 31.0,
       "carbs": 0.0,
       "fat": 3.6,
       "price": 15.0,
-      "tags": ["高蛋白", "低脂", "健身"],
+      "tags": [
+        "高蛋白",
+        "低脂",
+        "健身"
+      ],
       "category": "肉类",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -339,13 +483,20 @@
     {
       "id": 25,
       "name": "西兰花炒虾仁",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 120,
       "protein": 18.0,
       "carbs": 8.0,
       "fat": 2.5,
       "price": 22.0,
-      "tags": ["高蛋白", "低脂", "海鲜"],
+      "tags": [
+        "高蛋白",
+        "低脂",
+        "海鲜"
+      ],
       "category": "海鲜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -353,13 +504,19 @@
     {
       "id": 26,
       "name": "酸辣汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 72,
       "protein": 3.0,
       "carbs": 8.0,
       "fat": 3.0,
       "price": 6.0,
-      "tags": ["开胃", "汤品"],
+      "tags": [
+        "开胃",
+        "汤品"
+      ],
       "category": "汤品",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -367,13 +524,20 @@
     {
       "id": 27,
       "name": "凉拌黄瓜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 45,
       "protein": 1.0,
       "carbs": 4.0,
       "fat": 3.0,
       "price": 4.0,
-      "tags": ["低脂", "清淡", "凉菜"],
+      "tags": [
+        "低脂",
+        "清淡",
+        "凉菜"
+      ],
       "category": "凉菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -381,13 +545,19 @@
     {
       "id": 28,
       "name": "鱼香肉丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 198,
       "protein": 12.0,
       "carbs": 15.0,
       "fat": 10.0,
       "price": 16.0,
-      "tags": ["川菜", "下饭"],
+      "tags": [
+        "川菜",
+        "下饭"
+      ],
       "category": "肉类",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -395,13 +565,19 @@
     {
       "id": 29,
       "name": "红烧茄子",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 132,
       "protein": 2.0,
       "carbs": 18.0,
       "fat": 6.0,
       "price": 5.0,
-      "tags": ["素菜", "下饭"],
+      "tags": [
+        "素菜",
+        "下饭"
+      ],
       "category": "蔬菜",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -409,13 +585,19 @@
     {
       "id": 30,
       "name": "糖醋里脊",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 254,
       "protein": 16.0,
       "carbs": 22.0,
       "fat": 12.0,
       "price": 20.0,
-      "tags": ["酸甜", "肉类"],
+      "tags": [
+        "酸甜",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -423,13 +605,20 @@
     {
       "id": 31,
       "name": "蒜蓉西兰花",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 55,
       "protein": 4.0,
       "carbs": 7.0,
       "fat": 1.5,
       "price": 5.0,
-      "tags": ["低脂", "高纤维", "健身"],
+      "tags": [
+        "低脂",
+        "高纤维",
+        "健身"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -437,13 +626,20 @@
     {
       "id": 32,
       "name": "回锅肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 352,
       "protein": 14.0,
       "carbs": 8.0,
       "fat": 31.0,
       "price": 22.0,
-      "tags": ["川菜", "高脂肪", "重口味"],
+      "tags": [
+        "川菜",
+        "高脂肪",
+        "重口味"
+      ],
       "category": "肉类",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -451,13 +647,19 @@
     {
       "id": 33,
       "name": "清炒芦笋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 62,
       "protein": 3.0,
       "carbs": 6.0,
       "fat": 3.0,
       "price": 8.0,
-      "tags": ["清淡", "高纤维"],
+      "tags": [
+        "清淡",
+        "高纤维"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -465,13 +667,19 @@
     {
       "id": 34,
       "name": "牛肉面",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 450,
       "protein": 25.0,
       "carbs": 60.0,
       "fat": 12.0,
       "price": 18.0,
-      "tags": ["一碗饭", "高蛋白"],
+      "tags": [
+        "一碗饭",
+        "高蛋白"
+      ],
       "category": "面食",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -479,13 +687,19 @@
     {
       "id": 35,
       "name": "青椒土豆丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 95,
       "protein": 2.5,
       "carbs": 18.0,
       "fat": 2.0,
       "price": 4.0,
-      "tags": ["家常菜", "经济实惠"],
+      "tags": [
+        "家常菜",
+        "经济实惠"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -493,13 +707,20 @@
     {
       "id": 36,
       "name": "酸菜鱼",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 230,
       "protein": 28.0,
       "carbs": 5.0,
       "fat": 11.0,
       "price": 35.0,
-      "tags": ["川菜", "高蛋白", "酸辣"],
+      "tags": [
+        "川菜",
+        "高蛋白",
+        "酸辣"
+      ],
       "category": "海鲜",
       "cooking_time": 30,
       "difficulty": "困难"
@@ -507,13 +728,19 @@
     {
       "id": 37,
       "name": "炒豆芽",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 38,
       "protein": 3.0,
       "carbs": 5.0,
       "fat": 1.0,
       "price": 2.0,
-      "tags": ["低脂", "清淡"],
+      "tags": [
+        "低脂",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -521,13 +748,20 @@
     {
       "id": 38,
       "name": "水煮牛肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 280,
       "protein": 26.0,
       "carbs": 8.0,
       "fat": 16.0,
       "price": 30.0,
-      "tags": ["川菜", "高蛋白", "麻辣"],
+      "tags": [
+        "川菜",
+        "高蛋白",
+        "麻辣"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -535,13 +769,19 @@
     {
       "id": 39,
       "name": "皮蛋豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 135,
       "protein": 9.0,
       "carbs": 4.0,
       "fat": 9.0,
       "price": 8.0,
-      "tags": ["凉菜", "豆制品"],
+      "tags": [
+        "凉菜",
+        "豆制品"
+      ],
       "category": "凉菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -549,13 +789,19 @@
     {
       "id": 40,
       "name": "炒年糕",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 245,
       "protein": 4.0,
       "carbs": 50.0,
       "fat": 3.0,
       "price": 10.0,
-      "tags": ["主食", "饱腹"],
+      "tags": [
+        "主食",
+        "饱腹"
+      ],
       "category": "主食",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -563,13 +809,19 @@
     {
       "id": 41,
       "name": "紫菜蛋花汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 58,
       "protein": 4.0,
       "carbs": 3.0,
       "fat": 3.5,
       "price": 4.0,
-      "tags": ["汤品", "清淡"],
+      "tags": [
+        "汤品",
+        "清淡"
+      ],
       "category": "汤品",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -577,13 +829,19 @@
     {
       "id": 42,
       "name": "黄焖鸡",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 320,
       "protein": 24.0,
       "carbs": 18.0,
       "fat": 18.0,
       "price": 20.0,
-      "tags": ["高蛋白", "下饭"],
+      "tags": [
+        "高蛋白",
+        "下饭"
+      ],
       "category": "肉类",
       "cooking_time": 30,
       "difficulty": "中等"
@@ -591,13 +849,19 @@
     {
       "id": 43,
       "name": "凉拌木耳",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 48,
       "protein": 2.0,
       "carbs": 6.0,
       "fat": 2.0,
       "price": 6.0,
-      "tags": ["凉菜", "低脂"],
+      "tags": [
+        "凉菜",
+        "低脂"
+      ],
       "category": "凉菜",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -605,13 +869,20 @@
     {
       "id": 44,
       "name": "香辣虾",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 185,
       "protein": 24.0,
       "carbs": 4.0,
       "fat": 8.0,
       "price": 45.0,
-      "tags": ["高蛋白", "海鲜", "麻辣"],
+      "tags": [
+        "高蛋白",
+        "海鲜",
+        "麻辣"
+      ],
       "category": "海鲜",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -619,27 +890,59 @@
     {
       "id": 45,
       "name": "蒜泥白肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 295,
       "protein": 18.0,
       "carbs": 3.0,
       "fat": 23.0,
       "price": 18.0,
-      "tags": ["川菜", "凉菜"],
+      "tags": [
+        "川菜",
+        "凉菜"
+      ],
       "category": "凉菜",
       "cooking_time": 25,
       "difficulty": "中等"
     },
     {
+      "id": 97,
+      "name": "蒜蓉粉丝蒸扇贝",
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
+      "calories": 180,
+      "protein": 15.0,
+      "carbs": 20.0,
+      "fat": 8.0,
+      "price": 28.0,
+      "tags": [
+        "海鲜",
+        "清淡"
+      ],
+      "category": "海鲜",
+      "cooking_time": 20,
+      "difficulty": "中等"
+    },
+    {
       "id": 46,
       "name": "三鲜豆腐汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 98,
       "protein": 7.0,
       "carbs": 6.0,
       "fat": 5.0,
       "price": 12.0,
-      "tags": ["汤品", "清淡"],
+      "tags": [
+        "汤品",
+        "清淡"
+      ],
       "category": "汤品",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -647,13 +950,19 @@
     {
       "id": 47,
       "name": "煎牛排",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 271,
       "protein": 26.0,
       "carbs": 0.0,
       "fat": 19.0,
       "price": 50.0,
-      "tags": ["高蛋白", "低碳水"],
+      "tags": [
+        "高蛋白",
+        "低碳水"
+      ],
       "category": "肉类",
       "cooking_time": 10,
       "difficulty": "中等"
@@ -661,13 +970,19 @@
     {
       "id": 48,
       "name": "炒饭",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 228,
       "protein": 6.0,
       "carbs": 38.0,
       "fat": 6.0,
       "price": 8.0,
-      "tags": ["快手", "主食"],
+      "tags": [
+        "快手",
+        "主食"
+      ],
       "category": "主食",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -675,13 +990,19 @@
     {
       "id": 49,
       "name": "烤红薯",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 86,
       "protein": 1.6,
       "carbs": 20.0,
       "fat": 0.1,
       "price": 3.0,
-      "tags": ["粗粮", "低脂"],
+      "tags": [
+        "粗粮",
+        "低脂"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "简单"
@@ -689,13 +1010,19 @@
     {
       "id": 50,
       "name": "蒸南瓜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 26,
       "protein": 1.0,
       "carbs": 6.0,
       "fat": 0.1,
       "price": 2.0,
-      "tags": ["低脂", "清淡"],
+      "tags": [
+        "低脂",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -703,13 +1030,19 @@
     {
       "id": 51,
       "name": "炒花菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 52,
       "protein": 3.0,
       "carbs": 7.0,
       "fat": 1.5,
       "price": 4.0,
-      "tags": ["低脂", "清淡"],
+      "tags": [
+        "低脂",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -717,13 +1050,19 @@
     {
       "id": 52,
       "name": "红烧豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 148,
       "protein": 10.0,
       "carbs": 8.0,
       "fat": 9.0,
       "price": 6.0,
-      "tags": ["豆制品", "家常菜"],
+      "tags": [
+        "豆制品",
+        "家常菜"
+      ],
       "category": "豆制品",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -731,13 +1070,19 @@
     {
       "id": 53,
       "name": "凉拌豆腐皮",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 165,
       "protein": 18.0,
       "carbs": 4.0,
       "fat": 8.0,
       "price": 5.0,
-      "tags": ["高蛋白", "凉菜"],
+      "tags": [
+        "高蛋白",
+        "凉菜"
+      ],
       "category": "凉菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -745,13 +1090,19 @@
     {
       "id": 54,
       "name": "酸汤肥牛",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 305,
       "protein": 22.0,
       "carbs": 8.0,
       "fat": 20.0,
       "price": 35.0,
-      "tags": ["高蛋白", "酸辣"],
+      "tags": [
+        "高蛋白",
+        "酸辣"
+      ],
       "category": "肉类",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -759,13 +1110,19 @@
     {
       "id": 55,
       "name": "炖鸡汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 145,
       "protein": 18.0,
       "carbs": 2.0,
       "fat": 7.0,
       "price": 25.0,
-      "tags": ["汤品", "滋补"],
+      "tags": [
+        "汤品",
+        "滋补"
+      ],
       "category": "汤品",
       "cooking_time": 90,
       "difficulty": "简单"
@@ -773,13 +1130,20 @@
     {
       "id": 56,
       "name": "蒸蛋",
-      "meal_type": ["breakfast", "lunch", "dinner"],
+      "meal_type": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ],
       "calories": 143,
       "protein": 12.6,
       "carbs": 1.1,
       "fat": 9.5,
       "price": 3.0,
-      "tags": ["高蛋白", "清淡"],
+      "tags": [
+        "高蛋白",
+        "清淡"
+      ],
       "category": "蛋类",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -787,13 +1151,19 @@
     {
       "id": 57,
       "name": "拌面",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 312,
       "protein": 10.0,
       "carbs": 58.0,
       "fat": 4.0,
       "price": 8.0,
-      "tags": ["主食", "快手"],
+      "tags": [
+        "主食",
+        "快手"
+      ],
       "category": "面食",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -801,13 +1171,19 @@
     {
       "id": 58,
       "name": "蛋炒西红柿",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 150,
       "protein": 8.0,
       "carbs": 7.0,
       "fat": 10.0,
       "price": 6.0,
-      "tags": ["家常菜", "快手"],
+      "tags": [
+        "家常菜",
+        "快手"
+      ],
       "category": "蛋类",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -815,13 +1191,20 @@
     {
       "id": 59,
       "name": "东坡肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 550,
       "protein": 18.0,
       "carbs": 15.0,
       "fat": 48.0,
       "price": 35.0,
-      "tags": ["高脂肪", "重口味", "名菜"],
+      "tags": [
+        "高脂肪",
+        "重口味",
+        "名菜"
+      ],
       "category": "肉类",
       "cooking_time": 90,
       "difficulty": "困难"
@@ -829,13 +1212,19 @@
     {
       "id": 60,
       "name": "菜粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 120,
       "protein": 4.0,
       "carbs": 22.0,
       "fat": 1.5,
       "price": 3.5,
-      "tags": ["清淡", "养胃", "蔬菜"],
+      "tags": [
+        "清淡",
+        "养胃",
+        "蔬菜"
+      ],
       "category": "主食",
       "cooking_time": 25,
       "difficulty": "简单"
@@ -843,13 +1232,21 @@
     {
       "id": 61,
       "name": "蒸鸡蛋羹",
-      "meal_type": ["breakfast", "lunch", "dinner"],
+      "meal_type": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ],
       "calories": 130,
       "protein": 11.0,
       "carbs": 1.0,
       "fat": 8.0,
       "price": 3.0,
-      "tags": ["高蛋白", "清淡", "快手"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "快手"
+      ],
       "category": "蛋类",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -857,13 +1254,19 @@
     {
       "id": 62,
       "name": "黑米粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 140,
       "protein": 4.5,
       "carbs": 28.0,
       "fat": 1.0,
       "price": 4.0,
-      "tags": ["粗粮", "养生", "谷物"],
+      "tags": [
+        "粗粮",
+        "养生",
+        "谷物"
+      ],
       "category": "主食",
       "cooking_time": 35,
       "difficulty": "简单"
@@ -871,13 +1274,19 @@
     {
       "id": 63,
       "name": "酸奶",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 95,
       "protein": 5.0,
       "carbs": 12.0,
       "fat": 3.0,
       "price": 5.0,
-      "tags": ["高蛋白", "益生菌", "饮品"],
+      "tags": [
+        "高蛋白",
+        "益生菌",
+        "饮品"
+      ],
       "category": "饮品",
       "cooking_time": 0,
       "difficulty": "简单"
@@ -885,13 +1294,18 @@
     {
       "id": 64,
       "name": "鸡蛋饼",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 180,
       "protein": 9.0,
       "carbs": 15.0,
       "fat": 8.0,
       "price": 4.0,
-      "tags": ["快手", "高蛋白"],
+      "tags": [
+        "快手",
+        "高蛋白"
+      ],
       "category": "主食",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -899,13 +1313,19 @@
     {
       "id": 65,
       "name": "南瓜粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 110,
       "protein": 3.0,
       "carbs": 24.0,
       "fat": 0.8,
       "price": 3.5,
-      "tags": ["清淡", "养胃", "甜味"],
+      "tags": [
+        "清淡",
+        "养胃",
+        "甜味"
+      ],
       "category": "主食",
       "cooking_time": 25,
       "difficulty": "简单"
@@ -913,13 +1333,20 @@
     {
       "id": 66,
       "name": "肉末豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 165,
       "protein": 14.0,
       "carbs": 6.0,
       "fat": 9.0,
       "price": 10.0,
-      "tags": ["高蛋白", "下饭", "豆制品"],
+      "tags": [
+        "高蛋白",
+        "下饭",
+        "豆制品"
+      ],
       "category": "豆制品",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -927,13 +1354,20 @@
     {
       "id": 67,
       "name": "蚝油生菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 60,
       "protein": 2.0,
       "carbs": 4.0,
       "fat": 4.0,
       "price": 5.0,
-      "tags": ["清淡", "快手", "蔬菜"],
+      "tags": [
+        "清淡",
+        "快手",
+        "蔬菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 6,
       "difficulty": "简单"
@@ -941,13 +1375,19 @@
     {
       "id": 68,
       "name": "青椒炒肉丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 185,
       "protein": 16.0,
       "carbs": 6.0,
       "fat": 10.0,
       "price": 14.0,
-      "tags": ["高蛋白", "家常菜"],
+      "tags": [
+        "高蛋白",
+        "家常菜"
+      ],
       "category": "肉类",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -955,13 +1395,20 @@
     {
       "id": 69,
       "name": "白灼虾",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 105,
       "protein": 20.0,
       "carbs": 0.5,
       "fat": 1.8,
       "price": 30.0,
-      "tags": ["高蛋白", "低脂", "海鲜"],
+      "tags": [
+        "高蛋白",
+        "低脂",
+        "海鲜"
+      ],
       "category": "海鲜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -969,13 +1416,19 @@
     {
       "id": 70,
       "name": "番茄牛肉汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 190,
       "protein": 16.0,
       "carbs": 10.0,
       "fat": 8.0,
       "price": 20.0,
-      "tags": ["汤品", "高蛋白"],
+      "tags": [
+        "汤品",
+        "高蛋白"
+      ],
       "category": "汤品",
       "cooking_time": 40,
       "difficulty": "中等"
@@ -983,13 +1436,19 @@
     {
       "id": 71,
       "name": "香菇青菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 70,
       "protein": 3.0,
       "carbs": 8.0,
       "fat": 3.0,
       "price": 6.0,
-      "tags": ["清淡", "高纤维"],
+      "tags": [
+        "清淡",
+        "高纤维"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -997,13 +1456,20 @@
     {
       "id": 72,
       "name": "红烧鸡翅",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 270,
       "protein": 20.0,
       "carbs": 10.0,
       "fat": 14.0,
       "price": 18.0,
-      "tags": ["高蛋白", "下饭", "肉类"],
+      "tags": [
+        "高蛋白",
+        "下饭",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -1011,13 +1477,20 @@
     {
       "id": 73,
       "name": "凉拌海带丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 50,
       "protein": 2.5,
       "carbs": 7.0,
       "fat": 1.5,
       "price": 5.0,
-      "tags": ["低脂", "凉菜", "高纤维"],
+      "tags": [
+        "低脂",
+        "凉菜",
+        "高纤维"
+      ],
       "category": "凉菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1025,13 +1498,19 @@
     {
       "id": 74,
       "name": "蛋花紫菜汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 55,
       "protein": 5.0,
       "carbs": 2.5,
       "fat": 3.0,
       "price": 3.5,
-      "tags": ["汤品", "清淡"],
+      "tags": [
+        "汤品",
+        "清淡"
+      ],
       "category": "汤品",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1039,13 +1518,20 @@
     {
       "id": 75,
       "name": "芹菜炒香干",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 130,
       "protein": 10.0,
       "carbs": 8.0,
       "fat": 7.0,
       "price": 8.0,
-      "tags": ["高蛋白", "豆制品", "家常菜"],
+      "tags": [
+        "高蛋白",
+        "豆制品",
+        "家常菜"
+      ],
       "category": "豆制品",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1053,13 +1539,19 @@
     {
       "id": 76,
       "name": "韭菜炒鸡蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 160,
       "protein": 11.0,
       "carbs": 5.0,
       "fat": 11.0,
       "price": 6.0,
-      "tags": ["高蛋白", "家常菜"],
+      "tags": [
+        "高蛋白",
+        "家常菜"
+      ],
       "category": "蛋类",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1067,13 +1559,20 @@
     {
       "id": 77,
       "name": "小葱拌豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 100,
       "protein": 8.0,
       "carbs": 3.0,
       "fat": 6.0,
       "price": 5.0,
-      "tags": ["凉菜", "豆制品", "清淡"],
+      "tags": [
+        "凉菜",
+        "豆制品",
+        "清淡"
+      ],
       "category": "凉菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -1081,13 +1580,19 @@
     {
       "id": 78,
       "name": "干煸四季豆",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 150,
       "protein": 5.0,
       "carbs": 15.0,
       "fat": 8.0,
       "price": 8.0,
-      "tags": ["素菜", "下饭"],
+      "tags": [
+        "素菜",
+        "下饭"
+      ],
       "category": "蔬菜",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -1095,13 +1600,20 @@
     {
       "id": 79,
       "name": "可乐鸡翅",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 290,
       "protein": 19.0,
       "carbs": 18.0,
       "fat": 12.0,
       "price": 20.0,
-      "tags": ["甜口", "肉类", "快手"],
+      "tags": [
+        "甜口",
+        "肉类",
+        "快手"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "简单"
@@ -1109,13 +1621,20 @@
     {
       "id": 80,
       "name": "冬瓜排骨汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 180,
       "protein": 12.0,
       "carbs": 4.0,
       "fat": 12.0,
       "price": 22.0,
-      "tags": ["汤品", "清淡", "滋补"],
+      "tags": [
+        "汤品",
+        "清淡",
+        "滋补"
+      ],
       "category": "汤品",
       "cooking_time": 60,
       "difficulty": "中等"
@@ -1123,13 +1642,19 @@
     {
       "id": 81,
       "name": "胡萝卜炒鸡蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 150,
       "protein": 9.0,
       "carbs": 7.0,
       "fat": 9.0,
       "price": 6.0,
-      "tags": ["家常菜", "高蛋白"],
+      "tags": [
+        "家常菜",
+        "高蛋白"
+      ],
       "category": "蛋类",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1137,13 +1662,20 @@
     {
       "id": 82,
       "name": "蒜香排骨",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 285,
       "protein": 22.0,
       "carbs": 5.0,
       "fat": 18.0,
       "price": 25.0,
-      "tags": ["高蛋白", "肉类", "蒜香"],
+      "tags": [
+        "高蛋白",
+        "肉类",
+        "蒜香"
+      ],
       "category": "肉类",
       "cooking_time": 30,
       "difficulty": "中等"
@@ -1151,13 +1683,20 @@
     {
       "id": 83,
       "name": "榨菜肉丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 170,
       "protein": 13.0,
       "carbs": 8.0,
       "fat": 9.0,
       "price": 12.0,
-      "tags": ["下饭", "快手", "肉类"],
+      "tags": [
+        "下饭",
+        "快手",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -1165,13 +1704,20 @@
     {
       "id": 84,
       "name": "凉拌金针菇",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 45,
       "protein": 3.0,
       "carbs": 6.0,
       "fat": 1.0,
       "price": 6.0,
-      "tags": ["低脂", "凉菜", "高纤维"],
+      "tags": [
+        "低脂",
+        "凉菜",
+        "高纤维"
+      ],
       "category": "凉菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1179,13 +1725,20 @@
     {
       "id": 85,
       "name": "香菇滑鸡",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 195,
       "protein": 23.0,
       "carbs": 5.0,
       "fat": 9.0,
       "price": 18.0,
-      "tags": ["高蛋白", "清淡", "肉类"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -1193,13 +1746,19 @@
     {
       "id": 86,
       "name": "豆角炒肉末",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 175,
       "protein": 12.0,
       "carbs": 12.0,
       "fat": 8.0,
       "price": 10.0,
-      "tags": ["下饭", "家常菜"],
+      "tags": [
+        "下饭",
+        "家常菜"
+      ],
       "category": "肉类",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1207,13 +1766,20 @@
     {
       "id": 87,
       "name": "清炒豆苗",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 40,
       "protein": 3.0,
       "carbs": 5.0,
       "fat": 1.0,
       "price": 6.0,
-      "tags": ["低脂", "高纤维", "清淡"],
+      "tags": [
+        "低脂",
+        "高纤维",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -1221,13 +1787,20 @@
     {
       "id": 88,
       "name": "咖喱鸡块",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 260,
       "protein": 18.0,
       "carbs": 15.0,
       "fat": 13.0,
       "price": 20.0,
-      "tags": ["高蛋白", "下饭", "异国风味"],
+      "tags": [
+        "高蛋白",
+        "下饭",
+        "异国风味"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -1235,13 +1808,20 @@
     {
       "id": 89,
       "name": "番茄鱼片汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 130,
       "protein": 18.0,
       "carbs": 6.0,
       "fat": 5.0,
       "price": 25.0,
-      "tags": ["汤品", "高蛋白", "清淡"],
+      "tags": [
+        "汤品",
+        "高蛋白",
+        "清淡"
+      ],
       "category": "汤品",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -1249,13 +1829,20 @@
     {
       "id": 90,
       "name": "蒸茄子",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 60,
       "protein": 2.0,
       "carbs": 12.0,
       "fat": 0.8,
       "price": 4.0,
-      "tags": ["低脂", "清淡", "蔬菜"],
+      "tags": [
+        "低脂",
+        "清淡",
+        "蔬菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1263,13 +1850,20 @@
     {
       "id": 91,
       "name": "酱爆鸡丁",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 210,
       "protein": 20.0,
       "carbs": 10.0,
       "fat": 9.0,
       "price": 16.0,
-      "tags": ["高蛋白", "下饭", "快手"],
+      "tags": [
+        "高蛋白",
+        "下饭",
+        "快手"
+      ],
       "category": "肉类",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -1277,13 +1871,20 @@
     {
       "id": 92,
       "name": "雪菜豆腐汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 85,
       "protein": 7.0,
       "carbs": 5.0,
       "fat": 4.0,
       "price": 7.0,
-      "tags": ["汤品", "豆制品", "开胃"],
+      "tags": [
+        "汤品",
+        "豆制品",
+        "开胃"
+      ],
       "category": "汤品",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1291,13 +1892,20 @@
     {
       "id": 93,
       "name": "素炒三丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 80,
       "protein": 2.0,
       "carbs": 12.0,
       "fat": 3.0,
       "price": 5.0,
-      "tags": ["素菜", "低脂", "高纤维"],
+      "tags": [
+        "素菜",
+        "低脂",
+        "高纤维"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1305,13 +1913,20 @@
     {
       "id": 94,
       "name": "卤鸡腿",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 240,
       "protein": 25.0,
       "carbs": 2.0,
       "fat": 12.0,
       "price": 15.0,
-      "tags": ["高蛋白", "肉类", "便当"],
+      "tags": [
+        "高蛋白",
+        "肉类",
+        "便当"
+      ],
       "category": "肉类",
       "cooking_time": 40,
       "difficulty": "中等"
@@ -1319,13 +1934,20 @@
     {
       "id": 95,
       "name": "鸡蛋西红柿面",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 320,
       "protein": 12.0,
       "carbs": 52.0,
       "fat": 6.0,
       "price": 9.0,
-      "tags": ["面食", "快手", "家常"],
+      "tags": [
+        "面食",
+        "快手",
+        "家常"
+      ],
       "category": "面食",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -1333,41 +1955,41 @@
     {
       "id": 96,
       "name": "苦瓜炒蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 140,
       "protein": 10.0,
       "carbs": 5.0,
       "fat": 9.0,
       "price": 7.0,
-      "tags": ["清热", "高蛋白", "家常菜"],
+      "tags": [
+        "清热",
+        "高蛋白",
+        "家常菜"
+      ],
       "category": "蛋类",
       "cooking_time": 10,
       "difficulty": "简单"
     },
     {
-      "id": 97,
-      "name": "蒜蓉粉丝蒸扇贝",
-      "meal_type": ["dinner"],
-      "cal calories": 150,
-      "protein": 16.0,
-      "carbs": 10.0,
-      "fat": 4.0,
-      "price": 40.0,
-      "tags": ["高蛋白", "海鲜", "宴客"],
-      "category": "海鲜",
-      "cooking_time": 15,
-      "difficulty": "中等"
-    },
-    {
       "id": 98,
       "name": "腊肠炒饭",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 420,
       "protein": 12.0,
       "carbs": 55.0,
       "fat": 16.0,
       "price": 12.0,
-      "tags": ["主食", "快手", "风味"],
+      "tags": [
+        "主食",
+        "快手",
+        "风味"
+      ],
       "category": "主食",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -1375,13 +1997,20 @@
     {
       "id": 99,
       "name": "凉拌萝卜丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 35,
       "protein": 1.0,
       "carbs": 6.0,
       "fat": 1.0,
       "price": 3.0,
-      "tags": ["低脂", "开胃", "凉菜"],
+      "tags": [
+        "低脂",
+        "开胃",
+        "凉菜"
+      ],
       "category": "凉菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1389,13 +2018,20 @@
     {
       "id": 100,
       "name": "蒸鲈鱼",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 170,
       "protein": 28.0,
       "carbs": 0.0,
       "fat": 6.0,
       "price": 35.0,
-      "tags": ["高蛋白", "清淡", "海鲜"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "海鲜"
+      ],
       "category": "海鲜",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -1403,13 +2039,20 @@
     {
       "id": 101,
       "name": "素鸡烧",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 160,
       "protein": 14.0,
       "carbs": 8.0,
       "fat": 8.0,
       "price": 8.0,
-      "tags": ["豆制品", "素菜", "下饭"],
+      "tags": [
+        "豆制品",
+        "素菜",
+        "下饭"
+      ],
       "category": "豆制品",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -1417,13 +2060,20 @@
     {
       "id": 102,
       "name": "青椒炒豆腐干",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 140,
       "protein": 12.0,
       "carbs": 8.0,
       "fat": 7.0,
       "price": 7.0,
-      "tags": ["高蛋白", "素菜", "家常"],
+      "tags": [
+        "高蛋白",
+        "素菜",
+        "家常"
+      ],
       "category": "豆制品",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1431,13 +2081,20 @@
     {
       "id": 103,
       "name": "丝瓜炒蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 135,
       "protein": 9.0,
       "carbs": 6.0,
       "fat": 8.0,
       "price": 6.0,
-      "tags": ["清淡", "快手", "家常"],
+      "tags": [
+        "清淡",
+        "快手",
+        "家常"
+      ],
       "category": "蛋类",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1445,13 +2102,20 @@
     {
       "id": 104,
       "name": "红烧排骨",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 310,
       "protein": 22.0,
       "carbs": 8.0,
       "fat": 20.0,
       "price": 28.0,
-      "tags": ["高蛋白", "肉类", "下饭"],
+      "tags": [
+        "高蛋白",
+        "肉类",
+        "下饭"
+      ],
       "category": "肉类",
       "cooking_time": 45,
       "difficulty": "中等"
@@ -1459,13 +2123,20 @@
     {
       "id": 105,
       "name": "凉拌菠菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 55,
       "protein": 4.0,
       "carbs": 5.0,
       "fat": 3.0,
       "price": 5.0,
-      "tags": ["高纤维", "凉菜", "补铁"],
+      "tags": [
+        "高纤维",
+        "凉菜",
+        "补铁"
+      ],
       "category": "凉菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1473,13 +2144,20 @@
     {
       "id": 106,
       "name": "鱼头豆腐汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 160,
       "protein": 15.0,
       "carbs": 4.0,
       "fat": 9.0,
       "price": 30.0,
-      "tags": ["汤品", "滋补", "高蛋白"],
+      "tags": [
+        "汤品",
+        "滋补",
+        "高蛋白"
+      ],
       "category": "汤品",
       "cooking_time": 40,
       "difficulty": "中等"
@@ -1487,13 +2165,20 @@
     {
       "id": 107,
       "name": "素炒西葫芦",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 45,
       "protein": 2.0,
       "carbs": 6.0,
       "fat": 2.0,
       "price": 4.0,
-      "tags": ["低脂", "清淡", "蔬菜"],
+      "tags": [
+        "低脂",
+        "清淡",
+        "蔬菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 6,
       "difficulty": "简单"
@@ -1501,13 +2186,19 @@
     {
       "id": 108,
       "name": "椒盐虾",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 190,
       "protein": 22.0,
       "carbs": 5.0,
       "fat": 9.0,
       "price": 42.0,
-      "tags": ["高蛋白", "海鲜", "宴客"],
+      "tags": [
+        "高蛋白",
+        "海鲜",
+        "宴客"
+      ],
       "category": "海鲜",
       "cooking_time": 12,
       "difficulty": "中等"
@@ -1515,13 +2206,20 @@
     {
       "id": 109,
       "name": "肉末茄子",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 190,
       "protein": 8.0,
       "carbs": 15.0,
       "fat": 11.0,
       "price": 12.0,
-      "tags": ["下饭", "肉类", "素菜"],
+      "tags": [
+        "下饭",
+        "肉类",
+        "素菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 18,
       "difficulty": "中等"
@@ -1529,13 +2227,20 @@
     {
       "id": 110,
       "name": "南瓜饼",
-      "meal_type": ["breakfast", "snack"],
+      "meal_type": [
+        "breakfast",
+        "snack"
+      ],
       "calories": 180,
       "protein": 3.0,
       "carbs": 30.0,
       "fat": 5.0,
       "price": 5.0,
-      "tags": ["甜点", "粗粮", "主食"],
+      "tags": [
+        "甜点",
+        "粗粮",
+        "主食"
+      ],
       "category": "主食",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -1543,13 +2248,20 @@
     {
       "id": 111,
       "name": "酸辣土豆丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 90,
       "protein": 2.0,
       "carbs": 17.0,
       "fat": 2.5,
       "price": 4.0,
-      "tags": ["开胃", "快手", "家常菜"],
+      "tags": [
+        "开胃",
+        "快手",
+        "家常菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1557,13 +2269,20 @@
     {
       "id": 112,
       "name": "白切鸡",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 190,
       "protein": 25.0,
       "carbs": 0.0,
       "fat": 9.0,
       "price": 20.0,
-      "tags": ["高蛋白", "清淡", "粤菜"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "粤菜"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -1571,13 +2290,20 @@
     {
       "id": 113,
       "name": "凉拌莴笋丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 40,
       "protein": 1.5,
       "carbs": 5.0,
       "fat": 1.5,
       "price": 4.0,
-      "tags": ["低脂", "凉菜", "清爽"],
+      "tags": [
+        "低脂",
+        "凉菜",
+        "清爽"
+      ],
       "category": "凉菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1585,13 +2311,20 @@
     {
       "id": 114,
       "name": "虾仁蒸蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 170,
       "protein": 18.0,
       "carbs": 2.0,
       "fat": 9.0,
       "price": 18.0,
-      "tags": ["高蛋白", "清淡", "蛋类"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "蛋类"
+      ],
       "category": "蛋类",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1599,13 +2332,20 @@
     {
       "id": 115,
       "name": "白菜炖豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 110,
       "protein": 9.0,
       "carbs": 8.0,
       "fat": 5.0,
       "price": 7.0,
-      "tags": ["清淡", "豆制品", "家常"],
+      "tags": [
+        "清淡",
+        "豆制品",
+        "家常"
+      ],
       "category": "豆制品",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -1613,13 +2353,20 @@
     {
       "id": 116,
       "name": "葱油拌面",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 380,
       "protein": 8.0,
       "carbs": 65.0,
       "fat": 10.0,
       "price": 8.0,
-      "tags": ["面食", "快手", "主食"],
+      "tags": [
+        "面食",
+        "快手",
+        "主食"
+      ],
       "category": "面食",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1627,13 +2374,19 @@
     {
       "id": 117,
       "name": "干锅花菜",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 160,
       "protein": 5.0,
       "carbs": 18.0,
       "fat": 8.0,
       "price": 10.0,
-      "tags": ["下饭", "素菜", "重口味"],
+      "tags": [
+        "下饭",
+        "素菜",
+        "重口味"
+      ],
       "category": "蔬菜",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -1641,13 +2394,20 @@
     {
       "id": 118,
       "name": "糖醋排骨",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 320,
       "protein": 18.0,
       "carbs": 20.0,
       "fat": 16.0,
       "price": 25.0,
-      "tags": ["酸甜", "肉类", "经典"],
+      "tags": [
+        "酸甜",
+        "肉类",
+        "经典"
+      ],
       "category": "肉类",
       "cooking_time": 35,
       "difficulty": "中等"
@@ -1655,13 +2415,20 @@
     {
       "id": 119,
       "name": "玉米排骨汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 175,
       "protein": 12.0,
       "carbs": 8.0,
       "fat": 11.0,
       "price": 22.0,
-      "tags": ["汤品", "清甜", "滋补"],
+      "tags": [
+        "汤品",
+        "清甜",
+        "滋补"
+      ],
       "category": "汤品",
       "cooking_time": 50,
       "difficulty": "中等"
@@ -1669,13 +2436,21 @@
     {
       "id": 120,
       "name": "素馅饺子",
-      "meal_type": ["breakfast", "lunch", "dinner"],
+      "meal_type": [
+        "breakfast",
+        "lunch",
+        "dinner"
+      ],
       "calories": 220,
       "protein": 7.0,
       "carbs": 38.0,
       "fat": 5.0,
       "price": 10.0,
-      "tags": ["主食", "素食", "手工"],
+      "tags": [
+        "主食",
+        "素食",
+        "手工"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "中等"
@@ -1683,13 +2458,20 @@
     {
       "id": 121,
       "name": "椒盐蘑菇",
-      "meal_type": ["snack", "dinner"],
+      "meal_type": [
+        "snack",
+        "dinner"
+      ],
       "calories": 110,
       "protein": 5.0,
       "carbs": 10.0,
       "fat": 6.0,
       "price": 12.0,
-      "tags": ["素菜", "下酒", "香脆"],
+      "tags": [
+        "素菜",
+        "下酒",
+        "香脆"
+      ],
       "category": "蔬菜",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1697,13 +2479,20 @@
     {
       "id": 122,
       "name": "酱香茄子",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 140,
       "protein": 2.5,
       "carbs": 16.0,
       "fat": 7.0,
       "price": 6.0,
-      "tags": ["下饭", "素菜", "酱香"],
+      "tags": [
+        "下饭",
+        "素菜",
+        "酱香"
+      ],
       "category": "蔬菜",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1711,13 +2500,20 @@
     {
       "id": 123,
       "name": "清蒸排骨",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 220,
       "protein": 20.0,
       "carbs": 3.0,
       "fat": 12.0,
       "price": 22.0,
-      "tags": ["清淡", "高蛋白", "肉类"],
+      "tags": [
+        "清淡",
+        "高蛋白",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 30,
       "difficulty": "简单"
@@ -1725,13 +2521,20 @@
     {
       "id": 124,
       "name": "韭菜盒子",
-      "meal_type": ["breakfast", "lunch"],
+      "meal_type": [
+        "breakfast",
+        "lunch"
+      ],
       "calories": 280,
       "protein": 9.0,
       "carbs": 35.0,
       "fat": 10.0,
       "price": 7.0,
-      "tags": ["主食", "快手", "煎制"],
+      "tags": [
+        "主食",
+        "快手",
+        "煎制"
+      ],
       "category": "主食",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -1739,13 +2542,20 @@
     {
       "id": 125,
       "name": "酸汤肉片",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 185,
       "protein": 18.0,
       "carbs": 6.0,
       "fat": 9.0,
       "price": 18.0,
-      "tags": ["酸辣", "高蛋白", "汤品"],
+      "tags": [
+        "酸辣",
+        "高蛋白",
+        "汤品"
+      ],
       "category": "汤品",
       "cooking_time": 18,
       "difficulty": "中等"
@@ -1753,13 +2563,20 @@
     {
       "id": 126,
       "name": "木耳炒鸡蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 145,
       "protein": 10.0,
       "carbs": 6.0,
       "fat": 8.0,
       "price": 7.0,
-      "tags": ["高蛋白", "家常", "快手"],
+      "tags": [
+        "高蛋白",
+        "家常",
+        "快手"
+      ],
       "category": "蛋类",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1767,13 +2584,20 @@
     {
       "id": 127,
       "name": "红糖糍粑",
-      "meal_type": ["snack", "breakfast"],
+      "meal_type": [
+        "snack",
+        "breakfast"
+      ],
       "calories": 210,
       "protein": 2.0,
       "carbs": 45.0,
       "fat": 2.0,
       "price": 6.0,
-      "tags": ["甜点", "传统", "主食"],
+      "tags": [
+        "甜点",
+        "传统",
+        "主食"
+      ],
       "category": "主食",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1781,13 +2605,19 @@
     {
       "id": 128,
       "name": "蒜香鸡翅",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 260,
       "protein": 20.0,
       "carbs": 5.0,
       "fat": 15.0,
       "price": 18.0,
-      "tags": ["肉类", "蒜香", "烤制"],
+      "tags": [
+        "肉类",
+        "蒜香",
+        "烤制"
+      ],
       "category": "肉类",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -1795,13 +2625,20 @@
     {
       "id": 129,
       "name": "凉拌豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 100,
       "protein": 8.0,
       "carbs": 3.0,
       "fat": 6.0,
       "price": 5.0,
-      "tags": ["豆制品", "凉菜", "清淡"],
+      "tags": [
+        "豆制品",
+        "凉菜",
+        "清淡"
+      ],
       "category": "凉菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -1809,13 +2646,20 @@
     {
       "id": 130,
       "name": "青菜肉丸汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 130,
       "protein": 10.0,
       "carbs": 6.0,
       "fat": 7.0,
       "price": 12.0,
-      "tags": ["汤品", "清淡", "家常"],
+      "tags": [
+        "汤品",
+        "清淡",
+        "家常"
+      ],
       "category": "汤品",
       "cooking_time": 20,
       "difficulty": "简单"
@@ -1823,13 +2667,19 @@
     {
       "id": 131,
       "name": "酱爆鱿鱼",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 150,
       "protein": 20.0,
       "carbs": 8.0,
       "fat": 5.0,
       "price": 32.0,
-      "tags": ["海鲜", "快手", "高蛋白"],
+      "tags": [
+        "海鲜",
+        "快手",
+        "高蛋白"
+      ],
       "category": "海鲜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1837,13 +2687,20 @@
     {
       "id": 132,
       "name": "素炒藕片",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 85,
       "protein": 2.0,
       "carbs": 18.0,
       "fat": 1.0,
       "price": 6.0,
-      "tags": ["低脂", "清脆", "蔬菜"],
+      "tags": [
+        "低脂",
+        "清脆",
+        "蔬菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -1851,13 +2708,20 @@
     {
       "id": 133,
       "name": "葱爆牛肉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 250,
       "protein": 24.0,
       "carbs": 5.0,
       "fat": 14.0,
       "price": 28.0,
-      "tags": ["高蛋白", "快手", "肉类"],
+      "tags": [
+        "高蛋白",
+        "快手",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1865,13 +2729,20 @@
     {
       "id": 134,
       "name": "榨菜蛋花汤",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 60,
       "protein": 5.0,
       "carbs": 4.0,
       "fat": 3.0,
       "price": 4.0,
-      "tags": ["汤品", "开胃", "快手"],
+      "tags": [
+        "汤品",
+        "开胃",
+        "快手"
+      ],
       "category": "汤品",
       "cooking_time": 6,
       "difficulty": "简单"
@@ -1879,13 +2750,20 @@
     {
       "id": 135,
       "name": "香煎豆腐",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 180,
       "protein": 14.0,
       "carbs": 6.0,
       "fat": 10.0,
       "price": 7.0,
-      "tags": ["高蛋白", "豆制品", "香脆"],
+      "tags": [
+        "高蛋白",
+        "豆制品",
+        "香脆"
+      ],
       "category": "豆制品",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -1893,13 +2771,20 @@
     {
       "id": 136,
       "name": "腊八蒜拌黄瓜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 40,
       "protein": 1.0,
       "carbs": 5.0,
       "fat": 2.0,
       "price": 4.0,
-      "tags": ["凉菜", "开胃", "低脂"],
+      "tags": [
+        "凉菜",
+        "开胃",
+        "低脂"
+      ],
       "category": "凉菜",
       "cooking_time": 5,
       "difficulty": "简单"
@@ -1907,13 +2792,20 @@
     {
       "id": 137,
       "name": "五彩炒饭",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 380,
       "protein": 10.0,
       "carbs": 55.0,
       "fat": 12.0,
       "price": 10.0,
-      "tags": ["主食", "快手", "色彩丰富"],
+      "tags": [
+        "主食",
+        "快手",
+        "色彩丰富"
+      ],
       "category": "主食",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1921,13 +2813,19 @@
     {
       "id": 138,
       "name": "清蒸鲳鱼",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 180,
       "protein": 25.0,
       "carbs": 0.0,
       "fat": 7.0,
       "price": 38.0,
-      "tags": ["高蛋白", "清淡", "海鲜"],
+      "tags": [
+        "高蛋白",
+        "清淡",
+        "海鲜"
+      ],
       "category": "海鲜",
       "cooking_time": 15,
       "difficulty": "中等"
@@ -1935,13 +2833,20 @@
     {
       "id": 139,
       "name": "肉末蒸蛋",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 180,
       "protein": 16.0,
       "carbs": 3.0,
       "fat": 10.0,
       "price": 12.0,
-      "tags": ["高蛋白", "家常", "蛋类"],
+      "tags": [
+        "高蛋白",
+        "家常",
+        "蛋类"
+      ],
       "category": "蛋类",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -1949,13 +2854,19 @@
     {
       "id": 140,
       "name": "干锅土豆片",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 200,
       "protein": 4.0,
       "carbs": 30.0,
       "fat": 8.0,
       "price": 12.0,
-      "tags": ["下饭", "重口味", "素菜"],
+      "tags": [
+        "下饭",
+        "重口味",
+        "素菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -1963,13 +2874,20 @@
     {
       "id": 141,
       "name": "番茄炖牛腩",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 270,
       "protein": 22.0,
       "carbs": 12.0,
       "fat": 13.0,
       "price": 32.0,
-      "tags": ["高蛋白", "汤品", "下饭"],
+      "tags": [
+        "高蛋白",
+        "汤品",
+        "下饭"
+      ],
       "category": "肉类",
       "cooking_time": 60,
       "difficulty": "中等"
@@ -1977,13 +2895,20 @@
     {
       "id": 142,
       "name": "凉拌秋葵",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 50,
       "protein": 3.0,
       "carbs": 6.0,
       "fat": 2.0,
       "price": 8.0,
-      "tags": ["低脂", "凉菜", "营养"],
+      "tags": [
+        "低脂",
+        "凉菜",
+        "营养"
+      ],
       "category": "凉菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -1991,13 +2916,19 @@
     {
       "id": 143,
       "name": "鸡蛋灌饼",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 320,
       "protein": 10.0,
       "carbs": 40.0,
       "fat": 12.0,
       "price": 6.0,
-      "tags": ["主食", "快手", "街头小吃"],
+      "tags": [
+        "主食",
+        "快手",
+        "街头小吃"
+      ],
       "category": "主食",
       "cooking_time": 10,
       "difficulty": "中等"
@@ -2005,13 +2936,20 @@
     {
       "id": 144,
       "name": "清炒山药",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 70,
       "protein": 2.0,
       "carbs": 15.0,
       "fat": 0.5,
       "price": 6.0,
-      "tags": ["养胃", "清淡", "蔬菜"],
+      "tags": [
+        "养胃",
+        "清淡",
+        "蔬菜"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -2019,13 +2957,19 @@
     {
       "id": 145,
       "name": "辣子鸡丁",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 310,
       "protein": 24.0,
       "carbs": 8.0,
       "fat": 20.0,
       "price": 24.0,
-      "tags": ["川菜", "高蛋白", "麻辣"],
+      "tags": [
+        "川菜",
+        "高蛋白",
+        "麻辣"
+      ],
       "category": "肉类",
       "cooking_time": 20,
       "difficulty": "中等"
@@ -2033,13 +2977,20 @@
     {
       "id": 146,
       "name": "三色蔬菜沙拉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 90,
       "protein": 3.0,
       "carbs": 10.0,
       "fat": 4.0,
       "price": 8.0,
-      "tags": ["低脂", "高纤维", "西式"],
+      "tags": [
+        "低脂",
+        "高纤维",
+        "西式"
+      ],
       "category": "蔬菜",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -2047,13 +2998,20 @@
     {
       "id": 147,
       "name": "银耳莲子羹",
-      "meal_type": ["breakfast", "dessert"],
+      "meal_type": [
+        "breakfast",
+        "dessert"
+      ],
       "calories": 120,
       "protein": 2.0,
       "carbs": 28.0,
       "fat": 0.5,
       "price": 8.0,
-      "tags": ["甜品", "养生", "汤品"],
+      "tags": [
+        "甜品",
+        "养生",
+        "汤品"
+      ],
       "category": "汤品",
       "cooking_time": 40,
       "difficulty": "中等"
@@ -2061,13 +3019,20 @@
     {
       "id": 148,
       "name": "香辣牛肉面",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 480,
       "protein": 22.0,
       "carbs": 65.0,
       "fat": 14.0,
       "price": 20.0,
-      "tags": ["面食", "高蛋白", "麻辣"],
+      "tags": [
+        "面食",
+        "高蛋白",
+        "麻辣"
+      ],
       "category": "面食",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -2075,13 +3040,20 @@
     {
       "id": 149,
       "name": "素炒三丁",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 130,
       "protein": 6.0,
       "carbs": 20.0,
       "fat": 4.0,
       "price": 7.0,
-      "tags": ["素菜", "快手", "色彩丰富"],
+      "tags": [
+        "素菜",
+        "快手",
+        "色彩丰富"
+      ],
       "category": "蔬菜",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -2089,13 +3061,20 @@
     {
       "id": 150,
       "name": "酒酿圆子",
-      "meal_type": ["breakfast", "dessert"],
+      "meal_type": [
+        "breakfast",
+        "dessert"
+      ],
       "calories": 150,
       "protein": 2.0,
       "carbs": 30.0,
       "fat": 1.0,
       "price": 6.0,
-      "tags": ["甜品", "传统", "热饮"],
+      "tags": [
+        "甜品",
+        "传统",
+        "热饮"
+      ],
       "category": "饮品",
       "cooking_time": 10,
       "difficulty": "简单"
@@ -2103,13 +3082,19 @@
     {
       "id": 151,
       "name": "蒜蓉粉丝蒸虾",
-      "meal_type": ["dinner"],
+      "meal_type": [
+        "dinner"
+      ],
       "calories": 160,
       "protein": 20.0,
       "carbs": 8.0,
       "fat": 5.0,
       "price": 45.0,
-      "tags": ["高蛋白", "海鲜", "宴客"],
+      "tags": [
+        "高蛋白",
+        "海鲜",
+        "宴客"
+      ],
       "category": "海鲜",
       "cooking_time": 12,
       "difficulty": "中等"
@@ -2117,13 +3102,20 @@
     {
       "id": 152,
       "name": "清炒荷兰豆",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 55,
       "protein": 3.5,
       "carbs": 8.0,
       "fat": 1.5,
       "price": 8.0,
-      "tags": ["低脂", "高纤维", "清淡"],
+      "tags": [
+        "低脂",
+        "高纤维",
+        "清淡"
+      ],
       "category": "蔬菜",
       "cooking_time": 6,
       "difficulty": "简单"
@@ -2131,13 +3123,20 @@
     {
       "id": 153,
       "name": "红烧鲫鱼",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 210,
       "protein": 26.0,
       "carbs": 4.0,
       "fat": 10.0,
       "price": 25.0,
-      "tags": ["高蛋白", "鱼类", "家常"],
+      "tags": [
+        "高蛋白",
+        "鱼类",
+        "家常"
+      ],
       "category": "海鲜",
       "cooking_time": 25,
       "difficulty": "中等"
@@ -2145,13 +3144,20 @@
     {
       "id": 154,
       "name": "凉拌豆腐丝",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 120,
       "protein": 12.0,
       "carbs": 5.0,
       "fat": 5.0,
       "price": 5.0,
-      "tags": ["高蛋白", "凉菜", "豆制品"],
+      "tags": [
+        "高蛋白",
+        "凉菜",
+        "豆制品"
+      ],
       "category": "凉菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -2159,13 +3165,20 @@
     {
       "id": 155,
       "name": "青椒炒鸡丁",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 190,
       "protein": 20.0,
       "carbs": 5.0,
       "fat": 9.0,
       "price": 16.0,
-      "tags": ["高蛋白", "快手", "肉类"],
+      "tags": [
+        "高蛋白",
+        "快手",
+        "肉类"
+      ],
       "category": "肉类",
       "cooking_time": 12,
       "difficulty": "简单"
@@ -2173,13 +3186,19 @@
     {
       "id": 156,
       "name": "南瓜小米粥",
-      "meal_type": ["breakfast"],
+      "meal_type": [
+        "breakfast"
+      ],
       "calories": 125,
       "protein": 4.0,
       "carbs": 24.0,
       "fat": 1.5,
       "price": 4.0,
-      "tags": ["养胃", "谷物", "甜味"],
+      "tags": [
+        "养胃",
+        "谷物",
+        "甜味"
+      ],
       "category": "主食",
       "cooking_time": 30,
       "difficulty": "简单"
@@ -2187,13 +3206,20 @@
     {
       "id": 157,
       "name": "香菇油菜",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 75,
       "protein": 3.0,
       "carbs": 8.0,
       "fat": 3.5,
       "price": 7.0,
-      "tags": ["清淡", "蔬菜", "高纤维"],
+      "tags": [
+        "清淡",
+        "蔬菜",
+        "高纤维"
+      ],
       "category": "蔬菜",
       "cooking_time": 8,
       "difficulty": "简单"
@@ -2201,13 +3227,20 @@
     {
       "id": 158,
       "name": "牛肉炒米粉",
-      "meal_type": ["lunch", "dinner"],
+      "meal_type": [
+        "lunch",
+        "dinner"
+      ],
       "calories": 420,
       "protein": 18.0,
       "carbs": 60.0,
       "fat": 12.0,
       "price": 18.0,
-      "tags": ["主食", "高蛋白", "快手"],
+      "tags": [
+        "主食",
+        "高蛋白",
+        "快手"
+      ],
       "category": "主食",
       "cooking_time": 15,
       "difficulty": "简单"
@@ -2215,13 +3248,19 @@
     {
       "id": 159,
       "name": "桂花糯米藕",
-      "meal_type": ["dessert"],
+      "meal_type": [
+        "dessert"
+      ],
       "calories": 220,
       "protein": 3.0,
       "carbs": 48.0,
       "fat": 1.0,
       "price": 12.0,
-      "tags": ["甜点", "传统", "粗粮"],
+      "tags": [
+        "甜点",
+        "传统",
+        "粗粮"
+      ],
       "category": "主食",
       "cooking_time": 45,
       "difficulty": "困难"

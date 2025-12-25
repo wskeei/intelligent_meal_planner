@@ -129,13 +129,19 @@ def train_dqn(
         total_timesteps=total_timesteps,
         callback=[checkpoint_callback, eval_callback],
         log_interval=100,
-        progress_bar=True,
+        progress_bar=False,  # Disable progress bar to avoid rich/threading issues
     )
     
     # 保存最终模型
     final_model_path = model_save_path / "dqn_meal_planner_final.zip"
     model.save(str(final_model_path))
     print(f"\n模型已保存到: {final_model_path}")
+
+    # Also save a copy as the expected 10000 steps file if it doesn't exist (manual fallback)
+    expected_path = model_save_path / "checkpoints" / "dqn_meal_planner_10000_steps.zip"
+    if total_timesteps == 10000 and not expected_path.exists():
+         model.save(str(expected_path))
+         print(f"Fallback: Saved model to expected path: {expected_path}")
     
     # 清理
     env.close()
