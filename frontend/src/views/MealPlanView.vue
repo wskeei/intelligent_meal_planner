@@ -17,11 +17,18 @@
           </template>
 
           <transition name="fade">
+
             <div v-if="loading" class="loading-overlay">
-              <div class="loading-content">
-                <div class="chef-animation">👨‍🍳</div>
-                <div class="loading-text">{{ loadingText }}</div>
-                <p class="loading-sub">AI Chef is working...</p>
+              <div class="breathing-container">
+                <div class="breath-core">
+                  <div class="ripple"></div>
+                  <div class="ripple"></div>
+                  <div class="core-circle"></div>
+                </div>
+                <div class="status-text">
+                  {{ loadingText }}
+                </div>
+                <!-- <p class="status-sub">Designing your perfect healthy menu...</p> -->
               </div>
             </div>
           </transition>
@@ -308,33 +315,30 @@ function applyPreset() {
   }
 }
 
-const loadingText = ref('Analyzing your needs...')
-const loadingInterval = ref<any>(null)
+const loadingText = ref('Connecting to your personal chef...')
+let loadingInterval: any = null
 
-const loadingMessages = [
-  'Analyzing nutritional goals...',
-  'Scanning recipe database...',
-  'Calculating macro ratios...',
-  'Optimizing for budget...',
-  'Finalizing your meal plan...'
+const breathingMessages = [
+  'Analyzing your unique profile...',
+  'Checking nutritional database...',
+  'Balancing calories and macros...',
+  'Selecting fresh ingredients...',
+  'Crafting your perfect meal plan...'
 ]
 
 function startLoading() {
   loading.value = true
   let i = 0
-  loadingText.value = loadingMessages[0]
-  loadingInterval.value = setInterval(() => {
-    i = (i + 1) % loadingMessages.length
-    loadingText.value = loadingMessages[i]
-  }, 2000)
+  loadingText.value = breathingMessages[0]
+  loadingInterval = setInterval(() => {
+    i = (i + 1) % breathingMessages.length
+    loadingText.value = breathingMessages[i]
+  }, 2500)
 }
 
 function stopLoading() {
   loading.value = false
-  if (loadingInterval.value) {
-    clearInterval(loadingInterval.value)
-    loadingInterval.value = null
-  }
+  if (loadingInterval) clearInterval(loadingInterval)
 }
 
 async function generatePlan() {
@@ -357,11 +361,32 @@ async function generatePlan() {
       max_budget: form.max_budget
     }, isAI, aiMessage.value)
     
-    mealPlan.value = data
-    ElMessage.success('Menu generated successfully!')
+    // Artificial delay to show off the animation if response is too fast
+    if (!isAI) {
+        setTimeout(() => {
+            mealPlan.value = data
+            stopLoading()
+            ElMessage.success('Menu generated successfully!')
+        }, 1500)
+    } else {
+        mealPlan.value = data
+        stopLoading()
+        ElMessage.success('Menu generated successfully!')
+    }
+
   } catch (error: any) {
-    ElMessage.error('Failed to generate plan. Please try again.')
-  } finally {
+    console.error('Meal Plan Generation Error:', error)
+    if (error.response) {
+      console.error('Response Data:', error.response.data)
+      console.error('Response Status:', error.response.status)
+      ElMessage.error(`Error: ${error.response.data?.detail || error.message}`)
+    } else if (error.request) {
+      console.error('No response received:', error.request)
+      ElMessage.error('Network Error: No response from server. Please check your connection.')
+    } else {
+      console.error('Error Message:', error.message)
+      ElMessage.error(`Client Error: ${error.message}`)
+    }
     stopLoading()
   }
 }
@@ -403,52 +428,134 @@ function useExample(msg: string) {
 
 
 
+
 <style scoped>
-/* Loading Overlay */
+/* Loading Overlay - Health Breathing Style */
 .loading-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(5px);
-  z-index: 100;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.92); /* White clean background */
+  backdrop-filter: blur(20px);
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-.loading-content {
+.breathing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+/* Breathing Core Animation */
+.breath-core {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.core-circle {
+  width: 60px;
+  height: 60px;
+  background: #4ade80; /* Health Green */
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  animation: breathe 4s ease-in-out infinite;
+  z-index: 10;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(74, 222, 128, 0.2);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ripple 4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+.ripple:nth-child(2) { animation-delay: 1s; }
+.ripple:nth-child(3) { animation-delay: 2s; }
+
+/* Status Text */
+.status-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #374151; /* Soft Gray */
+  letter-spacing: 0.5px;
   text-align: center;
+  animation: fadeText 2s ease-in-out infinite alternate;
 }
 
-.chef-animation {
-  font-size: 64px;
-  margin-bottom: 24px;
-  animation: bounce 2s infinite;
-}
-
-.loading-text {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-secondary);
-  margin-bottom: 8px;
-  min-height: 1.5em; /* Prevent layout shift */
-}
-
-.loading-sub {
-  color: var(--color-text-secondary);
+.status-sub {
   font-size: 0.9rem;
+  color: #9ca3af;
+  margin-top: 8px;
 }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+/* Animations */
+@keyframes breathe {
+  0%, 100% { transform: scale(0.95); opacity: 0.9; }
+  50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 40px rgba(74, 222, 128, 0.6); }
 }
 
+@keyframes ripple {
+  0% { width: 60px; height: 60px; opacity: 0.8; }
+  100% { width: 200px; height: 200px; opacity: 0; }
+}
+
+@keyframes fadeText {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.term-title { margin-left: 10px; color: #666; font-size: 0.8rem; }
+
+.terminal-content {
+  height: 120px; /* Fixed height to prevent jump */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Show latest logs */
+}
+
+.log-line {
+  color: #00ff9d; /* Matrix green */
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+.typing {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+</style>
+
+<style scoped>
+/* Original Styles */
 .page-header {
   margin-bottom: 24px;
 }
