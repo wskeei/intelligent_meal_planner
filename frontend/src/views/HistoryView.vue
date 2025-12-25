@@ -3,15 +3,15 @@
     <el-card>
       <template #header>
         <div class="header">
-          <span>配餐历史记录</span>
+          <span>{{ $t('history.title') }}</span>
           <el-button type="danger" :disabled="!history.length" @click="clearHistory">
-            清空历史
+            {{ $t('history.clear') }}
           </el-button>
         </div>
       </template>
 
-      <el-empty v-if="!history.length" description="暂无历史记录">
-        <el-button type="primary" @click="$router.push('/meal-plan')">去生成配餐</el-button>
+      <el-empty v-if="!history.length" :description="$t('history.empty')">
+        <el-button type="primary" @click="$router.push('/meal-plan')">{{ $t('history.go_generate') }}</el-button>
       </el-empty>
 
       <el-timeline v-else>
@@ -24,13 +24,13 @@
           <el-card shadow="hover">
             <div class="history-header">
               <el-tag>{{ item.health_goal }}</el-tag>
-              <span class="budget">预算: ¥{{ item.budget }}</span>
+              <span class="budget">{{ $t('history.budget') }}: ¥{{ item.budget }}</span>
             </div>
             
             <el-row :gutter="16" class="meals">
               <el-col :span="8" v-for="(meal, mealType) in item.meals" :key="mealType">
                 <div class="meal-item">
-                  <div class="meal-type">{{ mealLabels[mealType as string] }}</div>
+                  <div class="meal-type">{{ $t('recipes.' + (mealType as string)) }}</div>
                   <div class="meal-name">{{ meal.name }}</div>
                   <div class="meal-info">
                     {{ meal.calories }} kcal | ¥{{ meal.price }}
@@ -42,13 +42,13 @@
             <el-divider />
             
             <div class="summary">
-              <span>总热量: <strong>{{ item.total_calories }}</strong> kcal</span>
-              <span>总价格: <strong>¥{{ item.total_price }}</strong></span>
+              <span>{{ $t('history.total_calories') }}: <strong>{{ item.total_calories }}</strong> kcal</span>
+              <span>{{ $t('history.total_price') }}: <strong>¥{{ item.total_price }}</strong></span>
             </div>
 
             <div class="actions">
-              <el-button size="small" @click="reuse(item)">再次使用此配置</el-button>
-              <el-button size="small" type="danger" @click="removeItem(index)">删除</el-button>
+              <el-button size="small" @click="reuse(item)">{{ $t('history.reuse') }}</el-button>
+              <el-button size="small" type="danger" @click="removeItem(index)">{{ $t('common.delete') }}</el-button>
             </div>
           </el-card>
         </el-timeline-item>
@@ -61,6 +61,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface HistoryItem {
   timestamp: string
@@ -73,12 +76,6 @@ interface HistoryItem {
 
 const router = useRouter()
 const history = ref<HistoryItem[]>([])
-
-const mealLabels: Record<string, string> = {
-  breakfast: '早餐',
-  lunch: '午餐',
-  dinner: '晚餐'
-}
 
 onMounted(() => {
   loadHistory()
@@ -97,21 +94,21 @@ const saveHistory = () => {
 
 const clearHistory = async () => {
   try {
-    await ElMessageBox.confirm('确定要清空所有历史记录吗？', '提示', {
+    await ElMessageBox.confirm(t('history.confirm_clear'), t('history.prompt'), {
       type: 'warning'
     })
     history.value = []
     saveHistory()
-    ElMessage.success('已清空')
+    ElMessage.success(t('history.cleared'))
   } catch {
-    // 取消
+    // Cancelled
   }
 }
 
 const removeItem = (index: number) => {
   history.value.splice(index, 1)
   saveHistory()
-  ElMessage.success('已删除')
+  ElMessage.success(t('history.deleted'))
 }
 
 const reuse = (item: HistoryItem) => {

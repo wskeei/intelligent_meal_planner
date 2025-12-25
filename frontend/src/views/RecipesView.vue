@@ -1,8 +1,8 @@
 <template>
   <div class="recipes-page">
     <div class="page-header">
-      <h1>Recipe Catalog</h1>
-      <p class="subtitle">Discover healthy and delicious meals.</p>
+      <h1>{{ $t('recipes.title') }}</h1>
+      <p class="subtitle">{{ $t('recipes.subtitle') }}</p>
     </div>
 
     <div class="recipes-layout">
@@ -12,29 +12,29 @@
           <template #header>
              <div class="filter-header">
                <el-icon><Filter /></el-icon>
-               <span>Filters</span>
-               <el-button link type="primary" size="small" @click="resetFilters">Reset</el-button>
+               <span>{{ $t('recipes.filters') }}</span>
+               <el-button link type="primary" size="small" @click="resetFilters">{{ $t('recipes.reset') }}</el-button>
              </div>
           </template>
 
           <el-form label-position="top">
-            <el-form-item label="Meal Type">
+            <el-form-item :label="$t('recipes.meal_type')">
               <el-checkbox-group v-model="filters.meal_type">
-                <el-checkbox label="breakfast">Breakfast</el-checkbox>
-                <el-checkbox label="lunch">Lunch</el-checkbox>
-                <el-checkbox label="dinner">Dinner</el-checkbox>
+                <el-checkbox label="breakfast">{{ $t('recipes.breakfast') }}</el-checkbox>
+                <el-checkbox label="lunch">{{ $t('recipes.lunch') }}</el-checkbox>
+                <el-checkbox label="dinner">{{ $t('recipes.dinner') }}</el-checkbox>
               </el-checkbox-group>
             </el-form-item>
 
             <el-divider />
 
-            <el-form-item label="Calories (kcal)">
+            <el-form-item :label="$t('meal_plan.calories') + ' (kcal)'">
                <el-slider v-model="filters.calories" range :min="0" :max="1500" :step="50" />
             </el-form-item>
 
             <el-divider />
             
-            <el-form-item label="Price (¥)">
+            <el-form-item :label="$t('meal_plan.cost') + ' (¥)'">
                <el-slider v-model="filters.price" range :min="0" :max="100" />
             </el-form-item>
           </el-form>
@@ -47,7 +47,7 @@
         <div class="search-bar">
           <el-input 
             v-model="filters.search" 
-            placeholder="Search recipes (e.g., Chicken Salad)" 
+            :placeholder="$t('recipes.search_placeholder')" 
             size="large"
             clearable
             @input="debounceSearch"
@@ -80,15 +80,15 @@
                  <div class="macros">
                    <div class="macro">
                      <span class="val">{{ recipe.calories }}</span>
-                     <span class="lbl">kcal</span>
+                     <span class="lbl">{{ $t('meal_plan.calories') }}</span>
                    </div>
                    <div class="macro">
                      <span class="val">{{ recipe.protein }}g</span>
-                     <span class="lbl">Pro</span>
+                     <span class="lbl">{{ $t('meal_plan.protein') }}</span>
                    </div>
                    <div class="macro">
                      <span class="val">{{ recipe.carbs }}g</span>
-                     <span class="lbl">Carb</span>
+                     <span class="lbl">{{ $t('meal_plan.carbs') }}</span>
                    </div>
                  </div>
                  
@@ -106,7 +106,7 @@
             </el-card>
           </div>
           
-          <el-empty v-else description="No recipes found." />
+          <el-empty v-else :description="$t('recipes.no_recipes')" />
         </div>
       </main>
     </div>
@@ -125,31 +125,31 @@
          <div class="nutrition-panel">
             <div class="n-item">
               <span class="n-val">{{ selected.calories }}</span>
-              <span class="n-lbl">Calories</span>
+              <span class="n-lbl">{{ $t('meal_plan.calories') }}</span>
             </div>
              <div class="n-item">
               <span class="n-val">{{ selected.protein }}g</span>
-              <span class="n-lbl">Protein</span>
+              <span class="n-lbl">{{ $t('meal_plan.protein') }}</span>
             </div>
              <div class="n-item">
               <span class="n-val">{{ selected.fat }}g</span>
-              <span class="n-lbl">Fat</span>
+              <span class="n-lbl">{{ $t('meal_plan.fat') }}</span>
             </div>
              <div class="n-item">
               <span class="n-val">{{ selected.carbs }}g</span>
-              <span class="n-lbl">Carbs</span>
+              <span class="n-lbl">{{ $t('meal_plan.carbs') }}</span>
             </div>
          </div>
          
          <div class="modal-section">
-           <h3>Ingredients</h3>
+           <h3>{{ $t('recipes.ingredients') }}</h3>
            <ul>
              <li v-for="(ing, idx) in selected.ingredients" :key="idx">{{ ing }}</li>
            </ul>
          </div>
          
          <div class="modal-section">
-           <h3>Instructions</h3>
+           <h3>{{ $t('recipes.instructions') }}</h3>
            <ol>
              <li v-for="(step, idx) in selected.instructions" :key="idx">{{ step }}</li>
            </ol>

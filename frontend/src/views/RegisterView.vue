@@ -1,69 +1,69 @@
 <template>
   <div class="auth-page">
     <el-card class="auth-card register">
-      <h2 style="text-align: center; margin-bottom: 8px">Create Account</h2>
-      <p style="text-align: center; margin-bottom: 24px; color: #64748b">Start your personalized health journey</p>
+      <h2 style="text-align: center; margin-bottom: 8px">{{ $t('auth.create_account') }}</h2>
+      <p style="text-align: center; margin-bottom: 24px; color: #64748b">{{ $t('auth.start_journey') }}</p>
       
       <el-form label-position="top" size="large">
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="Username">
+            <el-form-item :label="$t('auth.username')">
               <el-input v-model="form.username" />
             </el-form-item>
           </el-col>
            <el-col :span="12">
-            <el-form-item label="Email">
+            <el-form-item :label="$t('auth.email')">
               <el-input v-model="form.email" />
             </el-form-item>
           </el-col>
         </el-row>
         
-        <el-form-item label="Password">
+        <el-form-item :label="$t('auth.password')">
           <el-input v-model="form.password" type="password" show-password />
         </el-form-item>
         
-        <el-divider>Physical Profile</el-divider>
+        <el-divider>{{ $t('auth.physical_profile') }}</el-divider>
         
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="Age">
+            <el-form-item :label="$t('auth.age')">
               <el-input-number v-model="form.age" :min="10" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="Height (cm)">
+            <el-form-item :label="$t('auth.height')">
               <el-input-number v-model="form.height" :min="100" :max="250" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
-             <el-form-item label="Weight (kg)">
+             <el-form-item :label="$t('auth.weight')">
               <el-input-number v-model="form.weight" :min="30" />
             </el-form-item>
           </el-col>
         </el-row>
         
-        <el-form-item label="Gender">
+        <el-form-item :label="$t('auth.gender')">
           <el-radio-group v-model="form.gender">
-            <el-radio label="male">Male</el-radio>
-            <el-radio label="female">Female</el-radio>
+            <el-radio label="male">{{ $t('auth.male') }}</el-radio>
+            <el-radio label="female">{{ $t('auth.female') }}</el-radio>
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item label="Activity Level">
+        <el-form-item :label="$t('auth.activity_level')">
            <el-select v-model="form.activity_level" style="width: 100%">
-             <el-option label="Sedentary" value="sedentary" />
-             <el-option label="Lightly Active" value="light" />
-             <el-option label="Moderate" value="moderate" />
-             <el-option label="Very Active" value="active" />
+             <el-option :label="$t('auth.activity.sedentary')" value="sedentary" />
+             <el-option :label="$t('auth.activity.light')" value="light" />
+             <el-option :label="$t('auth.activity.moderate')" value="moderate" />
+             <el-option :label="$t('auth.activity.active')" value="active" />
            </el-select>
         </el-form-item>
 
-         <el-form-item label="Goal">
+         <el-form-item :label="$t('auth.goal')">
            <el-select v-model="form.health_goal" style="width: 100%">
-             <el-option label="Healthy Eating" value="healthy" />
-             <el-option label="Lose Weight" value="lose_weight" />
-             <el-option label="Gain Muscle" value="gain_muscle" />
-             <el-option label="Maintain" value="maintain" />
+             <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
+             <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
+             <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
+             <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
            </el-select>
         </el-form-item>
         
@@ -74,11 +74,11 @@
           :loading="loading"
           @click="handleRegister"
         >
-          Create Account
+          {{ $t('auth.create_btn') }}
         </el-button>
         
         <div class="auth-links">
-          Already have an account? <router-link to="/login">Login</router-link>
+          {{ $t('auth.has_account') }} <router-link to="/login">{{ $t('auth.login_link') }}</router-link>
         </div>
       </el-form>
     </el-card>

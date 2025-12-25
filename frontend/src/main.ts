@@ -16,8 +16,11 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
+import i18n from './i18n'
+
 app.use(createPinia())
 app.use(router)
+app.use(i18n)
 app.use(ElementPlus, { locale: zhCn })
 
 app.mount('#app')

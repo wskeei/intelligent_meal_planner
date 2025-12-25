@@ -1,8 +1,8 @@
 <template>
   <div class="shopping-page">
     <div class="page-header">
-      <h1>Smart Shopping List</h1>
-      <p class="subtitle">Ingredients gathered from your meal plans.</p>
+      <h1>{{ $t('shopping.title') }}</h1>
+      <p class="subtitle">{{ $t('shopping.subtitle') }}</p>
     </div>
 
     <div class="shopping-container">
@@ -11,7 +11,7 @@
         <div class="input-group">
           <el-input 
             v-model="newItemName" 
-            placeholder="Add new item (e.g., 1L Milk)" 
+            :placeholder="$t('shopping.add_placeholder')" 
             size="large"
             @keyup.enter="handleAddItem"
           >
@@ -20,7 +20,7 @@
             </template>
           </el-input>
           <el-button type="primary" size="large" @click="handleAddItem" :disabled="!newItemName.trim()">
-            Add Item
+            {{ $t('shopping.add_btn') }}
           </el-button>
         </div>
       </el-card>
@@ -28,13 +28,13 @@
       <!-- List -->
       <div v-if="items.length > 0" class="list-area">
         <div class="options-bar">
-          <span>{{ items.length }} Items ({{ checkedCount }} bought)</span>
+          <span>{{ $t('shopping.items_count', { total: items.length, checked: checkedCount }) }}</span>
           <div class="actions">
             <el-button link type="danger" @click="shoppingStore.clearChecked" v-if="checkedCount > 0">
-              Clear Bought
+              {{ $t('shopping.clear_bought') }}
             </el-button>
             <el-button link type="danger" @click="shoppingStore.clearAll">
-              Clear All
+              {{ $t('shopping.clear_all') }}
             </el-button>
           </div>
         </div>
@@ -67,8 +67,8 @@
       <!-- Empty State -->
       <div v-else class="empty-state">
         <el-icon :size="64" color="#e2e8f0"><ShoppingCart /></el-icon>
-        <h3>Your list is empty</h3>
-        <p>Add items manually or generate from a meal plan.</p>
+        <h3>{{ $t('shopping.empty_title') }}</h3>
+        <p>{{ $t('shopping.empty_desc') }}</p>
       </div>
     </div>
   </div>

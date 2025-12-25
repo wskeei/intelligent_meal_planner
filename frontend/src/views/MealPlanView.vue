@@ -1,8 +1,8 @@
 <template>
   <div class="meal-plan-page">
     <div class="page-header">
-      <h1>Meal Planner</h1>
-      <p class="subtitle">AI-powered nutrition catering to your goals.</p>
+      <h1>{{ $t('meal_plan.title') }}</h1>
+      <p class="subtitle">{{ $t('meal_plan.subtitle') }}</p>
     </div>
 
     <el-row :gutter="24">
@@ -12,7 +12,7 @@
           <template #header>
             <div class="card-title">
               <el-icon><Operation /></el-icon>
-              <span>Configuration</span>
+              <span>{{ $t('meal_plan.config') }}</span>
             </div>
           </template>
 
@@ -34,20 +34,20 @@
           </transition>
 
           <el-tabs v-model="activeTab" class="config-tabs">
-            <el-tab-pane label="Preferences" name="manual">
+            <el-tab-pane :label="$t('meal_plan.preferences')" name="manual">
             <el-form label-position="top" size="large">
-            <el-form-item label="Health Goal">
+            <el-form-item :label="$t('meal_plan.health_goal')">
                <el-select v-model="form.health_goal" @change="applyPreset">
-                <el-option label="Healthy Eating" value="healthy" />
-                <el-option label="Weight Loss" value="lose_weight" />
-                <el-option label="Muscle Gain" value="gain_muscle" />
-                <el-option label="Maintenance" value="maintain" />
+                <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
+                <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
+                <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
+                <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
               </el-select>
             </el-form-item>
 
             <div class="slider-group">
               <div class="slider-label">
-                <span>Calories</span>
+                <span>{{ $t('meal_plan.calories') }}</span>
                 <span class="val">{{ form.target_calories }} kcal</span>
               </div>
               <el-slider v-model="form.target_calories" :min="1200" :max="4000" :step="50" :show-tooltip="false" />
@@ -55,7 +55,7 @@
 
             <div class="slider-group">
               <div class="slider-label">
-                <span>Protein</span>
+                <span>{{ $t('meal_plan.protein') }}</span>
                 <span class="val">{{ form.target_protein }} g</span>
               </div>
               <el-slider v-model="form.target_protein" :min="30" :max="250" :step="5" :show-tooltip="false" />
@@ -63,7 +63,7 @@
 
             <div class="slider-group">
               <div class="slider-label">
-                <span>Carbs</span>
+                <span>{{ $t('meal_plan.carbs') }}</span>
                 <span class="val">{{ form.target_carbs }} g</span>
               </div>
               <el-slider v-model="form.target_carbs" :min="20" :max="500" :step="10" :show-tooltip="false" />
@@ -71,7 +71,7 @@
 
             <div class="slider-group">
               <div class="slider-label">
-                <span>Fat</span>
+                <span>{{ $t('meal_plan.fat') }}</span>
                 <span class="val">{{ form.target_fat }} g</span>
               </div>
               <el-slider v-model="form.target_fat" :min="10" :max="150" :step="5" :show-tooltip="false" />
@@ -81,7 +81,7 @@
             
             <div class="slider-group">
               <div class="slider-label">
-                <span>Budget Limit</span>
+                <span>{{ $t('meal_plan.budget') }}</span>
                 <span class="val">¥{{ form.max_budget }}</span>
               </div>
               <el-slider v-model="form.max_budget" :min="20" :max="200" :step="5" :show-tooltip="false" />
@@ -94,14 +94,14 @@
               @click="generatePlan"
             >
               <el-icon style="margin-right: 8px"><MagicStick /></el-icon>
-              Generate Plan
+              {{ $t('meal_plan.generate_btn') }}
             </el-button>
             </el-form> <!-- Close form here -->
             </el-tab-pane>
 
-            <el-tab-pane label="AI Assistant" name="ai">
+            <el-tab-pane :label="$t('meal_plan.ai_assistant')" name="ai">
               <div class="ai-intro">
-                <p>Chat with our AI Nutritionist Team to get a personalized meal plan.</p>
+                <p>{{ $t('meal_plan.ai_intro') }}</p>
                 <div class="ai-examples">
                   <el-tag size="small" @click="useExample('I want a high protein diet for muscle gain, budget 100.')">Muscle Gain</el-tag>
                   <el-tag size="small" @click="useExample('Vegetarian diet for weight loss, around 1500 cals.')">Vegetarian</el-tag>
@@ -123,7 +123,7 @@
                 @click="generatePlan"
               >
                 <el-icon style="margin-right: 8px"><ChatLineRound /></el-icon>
-                Ask AI Chef
+                {{ $t('meal_plan.ask_ai') }}
               </el-button>
             </el-tab-pane>
           </el-tabs>
@@ -136,8 +136,8 @@
           <!-- Empty State -->
           <div v-if="!mealPlan" class="empty-state">
             <div class="illustration">🍽️</div>
-            <h3>Ready to Cook?</h3>
-            <p>Adjust your preferences and click "Generate Plan" to get started.</p>
+            <h3>{{ $t('meal_plan.ready_cook') }}</h3>
+            <p>{{ $t('meal_plan.ready_desc') }}</p>
           </div>
 
           <!-- Results -->
@@ -145,7 +145,7 @@
             <!-- Nutrition Summary -->
              <div class="summary-grid">
                <div class="summary-card">
-                 <div class="lbl">Calories</div>
+                 <div class="lbl">{{ $t('meal_plan.calories') }}</div>
                  <div class="val">{{ mealPlan.nutrition.total_calories.toFixed(0) }}</div>
                  <el-progress 
                     :percentage="Math.min(mealPlan.nutrition.calories_achievement, 100)" 
@@ -155,7 +155,7 @@
                  />
                </div>
                <div class="summary-card">
-                 <div class="lbl">Protein</div>
+                 <div class="lbl">{{ $t('meal_plan.protein') }}</div>
                  <div class="val">{{ mealPlan.nutrition.total_protein.toFixed(0) }}g</div>
                  <el-progress 
                     :percentage="Math.min(mealPlan.nutrition.protein_achievement, 100)" 
@@ -165,7 +165,7 @@
                  />
                </div>
                <div class="summary-card">
-                 <div class="lbl">Cost</div>
+                 <div class="lbl">{{ $t('meal_plan.cost') }}</div>
                  <div class="val">¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</div>
                   <el-progress 
                     :percentage="Math.min(mealPlan.nutrition.budget_usage, 100)" 
@@ -175,7 +175,7 @@
                  />
                </div>
                <div class="summary-card highlight">
-                 <div class="lbl">AI Score</div>
+                 <div class="lbl">{{ $t('meal_plan.ai_score') }}</div>
                  <div class="val">{{ mealPlan.score.toFixed(1) }}</div>
                </div>
              </div>
@@ -217,7 +217,7 @@
     </el-row>
 
     <!-- Details Dialog -->
-    <el-dialog v-model="detailsVisible" title="Meal Details" width="400px" center>
+    <el-dialog v-model="detailsVisible" :title="$t('meal_plan.meal_details')" width="400px" center>
       <div v-if="selectedMeal" class="dialog-content">
         <div class="dialog-icon">{{ getMealIcon(selectedMeal.meal_type) }}</div>
         <h2>{{ selectedMeal.recipe_name }}</h2>
@@ -228,24 +228,24 @@
           </div>
           <div class="d-stat">
              <span class="d-val">{{ selectedMeal.protein }}g</span>
-             <span class="d-lbl">Protein</span>
+             <span class="d-lbl">{{ $t('meal_plan.protein') }}</span>
           </div>
            <div class="d-stat">
              <span class="d-val">{{ selectedMeal.fat }}g</span>
-             <span class="d-lbl">Fat</span>
+             <span class="d-lbl">{{ $t('meal_plan.fat') }}</span>
           </div>
            <div class="d-stat">
              <span class="d-val">{{ selectedMeal.carbs }}g</span>
-             <span class="d-lbl">Carbs</span>
+             <span class="d-lbl">{{ $t('meal_plan.carbs') }}</span>
           </div>
         </div>
-        <p class="dialog-desc">Estimated cost: ¥{{ selectedMeal.price }}</p>
+        <p class="dialog-desc">{{ $t('meal_plan.estimated_cost') }}: ¥{{ selectedMeal.price }}</p>
       </div>
        <template #footer>
         <span class="dialog-footer">
-          <el-button @click="detailsVisible = false">Close</el-button>
+          <el-button @click="detailsVisible = false">{{ $t('common.close') }}</el-button>
           <el-button type="primary" @click="addAndClose">
-            Add to List
+            {{ $t('meal_plan.add_to_list') }}
           </el-button>
         </span>
       </template>

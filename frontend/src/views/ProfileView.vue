@@ -1,8 +1,8 @@
 <template>
   <div class="profile-page">
     <div class="page-header">
-      <h1>User Profile</h1>
-      <p class="subtitle">Manage your physical stats and nutritional goals.</p>
+      <h1>{{ $t('profile.title') }}</h1>
+      <p class="subtitle">{{ $t('profile.subtitle') }}</p>
     </div>
 
     <div class="profile-content">
@@ -11,22 +11,22 @@
         <template #header>
           <div class="card-header">
             <el-icon><Edit /></el-icon>
-            <span>Personal Details</span>
+            <span>{{ $t('profile.details') }}</span>
           </div>
         </template>
         
         <el-form label-position="top" size="large">
           <el-row :gutter="20">
             <el-col :span="12">
-               <el-form-item label="Name">
-                <el-input v-model="profile.name" placeholder="Your Name" />
+               <el-form-item :label="$t('profile.name')">
+                <el-input v-model="profile.name" :placeholder="$t('profile.name_placeholder')" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="Gender">
+              <el-form-item :label="$t('auth.gender')">
                 <el-radio-group v-model="profile.gender">
-                  <el-radio label="male">Male</el-radio>
-                  <el-radio label="female">Female</el-radio>
+                  <el-radio label="male">{{ $t('auth.male') }}</el-radio>
+                  <el-radio label="female">{{ $t('auth.female') }}</el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>
@@ -34,38 +34,38 @@
 
           <el-row :gutter="20">
             <el-col :span="8">
-              <el-form-item label="Age (years)">
+              <el-form-item :label="$t('auth.age')">
                 <el-input-number v-model="profile.age" :min="10" :max="100" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="Height (cm)">
+              <el-form-item :label="$t('auth.height')">
                 <el-input-number v-model="profile.height" :min="100" :max="250" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="Weight (kg)">
+              <el-form-item :label="$t('auth.weight')">
                 <el-input-number v-model="profile.weight" :min="30" :max="200" :step="0.5" />
               </el-form-item>
             </el-col>
           </el-row>
 
-          <el-form-item label="Activity Level">
+          <el-form-item :label="$t('auth.activity_level')">
             <el-select v-model="profile.activityLevel" class="full-width">
-              <el-option label="Sedentary (Office job)" value="sedentary" />
-              <el-option label="Lightly Active (1-3 days/week)" value="light" />
-              <el-option label="Moderately Active (3-5 days/week)" value="moderate" />
-              <el-option label="Very Active (6-7 days/week)" value="active" />
-              <el-option label="Extra Active (Physical job/training)" value="very_active" />
+              <el-option :label="$t('auth.activity.sedentary')" value="sedentary" />
+              <el-option :label="$t('auth.activity.light')" value="light" />
+              <el-option :label="$t('auth.activity.moderate')" value="moderate" />
+              <el-option :label="$t('auth.activity.active')" value="active" />
+              <el-option :label="$t('auth.activity.very_active')" value="very_active" />
             </el-select>
           </el-form-item>
 
-           <el-form-item label="Primary Goal">
+           <el-form-item :label="$t('auth.goal')">
             <el-select v-model="profile.goal" class="full-width">
-              <el-option label="Lose Weight (-500 cal)" value="lose_weight" />
-              <el-option label="Maintain Weight" value="maintain" />
-              <el-option label="Gain Muscle (+300 cal)" value="gain_muscle" />
-              <el-option label="General Health" value="healthy" />
+              <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
+              <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
+              <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
+              <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
             </el-select>
           </el-form-item>
         </el-form>
@@ -89,13 +89,13 @@
           <template #header>
             <div class="card-header">
               <el-icon><TrendCharts /></el-icon>
-              <span>Daily Calorie Targets</span>
+              <span>{{ $t('profile.daily_targets') }}</span>
             </div>
           </template>
           
           <div class="metric-big">
             <div class="value">{{ targetCalories }}</div>
-            <div class="label">kcal / day</div>
+            <div class="label">kcal / {{ $t('dashboard.days').toLowerCase() }}</div>
           </div>
 
           <el-divider />
@@ -103,26 +103,26 @@
           <div class="macros-grid">
             <div class="macro-item">
               <span class="macro-val">{{ targetMacros.protein }}g</span>
-              <span class="macro-lbl">Protein</span>
+              <span class="macro-lbl">{{ $t('meal_plan.protein') }}</span>
               <div class="bar protein"></div>
             </div>
             <div class="macro-item">
               <span class="macro-val">{{ targetMacros.carbs }}g</span>
-              <span class="macro-lbl">Carbs</span>
+              <span class="macro-lbl">{{ $t('meal_plan.carbs') }}</span>
               <div class="bar carbs"></div>
             </div>
              <div class="macro-item">
               <span class="macro-val">{{ targetMacros.fat }}g</span>
-              <span class="macro-lbl">Fat</span>
+              <span class="macro-lbl">{{ $t('meal_plan.fat') }}</span>
               <div class="bar fat"></div>
             </div>
           </div>
         </el-card>
         
         <el-alert
-          title="Auto-Save Enabled"
+          :title="$t('profile.auto_save')"
           type="success"
-          description="Your changes are automatically saved to your browser."
+          :description="$t('profile.auto_save_desc')"
           show-icon
           :closable="false"
           class="save-alert"

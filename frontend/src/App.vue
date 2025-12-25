@@ -1,5 +1,5 @@
 <template>
-  <el-config-provider :locale="zhCn">
+  <el-config-provider :locale="locale === 'zh' ? zhCn : en" >
     <div class="layout">
       <!-- Top Navigation Bar -->
       <nav class="navbar" v-if="showNavbar">
@@ -14,28 +14,40 @@
           <div class="nav-links">
             <router-link to="/" class="nav-item" active-class="active">
               <el-icon><ODOMETER /></el-icon>
-              <span>Dashboard</span>
+              <span>{{ $t('nav.dashboard') }}</span>
             </router-link>
             <router-link to="/meal-plan" class="nav-item" active-class="active">
               <el-icon><MagicStick /></el-icon>
-              <span>Planner</span>
+              <span>{{ $t('nav.planner') }}</span>
             </router-link>
             <router-link to="/shopping-list" class="nav-item" active-class="active">
               <el-icon><ShoppingCart /></el-icon>
-              <span>Shopping</span>
+              <span>{{ $t('nav.shopping') }}</span>
             </router-link>
             <router-link to="/recipes" class="nav-item" active-class="active">
               <el-icon><Dish /></el-icon>
-              <span>Recipes</span>
+              <span>{{ $t('nav.recipes') }}</span>
             </router-link>
              <router-link to="/profile" class="nav-item" active-class="active">
               <el-icon><User /></el-icon>
-              <span>Profile</span>
+              <span>{{ $t('nav.profile') }}</span>
             </router-link>
             <a href="#" class="nav-item" @click.prevent="handleLogout">
               <el-icon><SwitchButton /></el-icon>
-              <span>Exit</span>
+              <span>{{ $t('nav.exit') }}</span>
             </a>
+            <el-dropdown @command="handleCommand">
+              <span class="el-dropdown-link nav-item">
+                {{ locale === 'zh' ? '中文' : 'English' }}
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="zh">中文</el-dropdown-item>
+                  <el-dropdown-item command="en">English</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </nav>
@@ -62,18 +74,25 @@
 </template>
 
 <script setup lang="ts">
-import { Food, Odometer, MagicStick, ShoppingCart, Dish, User, SwitchButton } from '@element-plus/icons-vue'
+import { Food, Odometer, MagicStick, ShoppingCart, Dish, User, SwitchButton, ArrowDown } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import en from 'element-plus/dist/locale/en.mjs'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+const { locale } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
 const handleLogout = () => {
   auth.logout()
+}
+
+const handleCommand = (command: string) => {
+  locale.value = command
 }
 
 // Hide navbar on auth pages

@@ -1,18 +1,18 @@
 <template>
   <div class="auth-page">
     <el-card class="auth-card">
-      <h2 style="text-align: center; margin-bottom: 24px">Welcome Back</h2>
+      <h2 style="text-align: center; margin-bottom: 24px">{{ $t('auth.welcome_back') }}</h2>
       
       <el-form label-position="top" @submit.prevent>
-        <el-form-item label="Username">
-          <el-input v-model="username" placeholder="Username" size="large" />
+        <el-form-item :label="$t('auth.username')">
+          <el-input v-model="username" :placeholder="$t('auth.username')" size="large" />
         </el-form-item>
         
-        <el-form-item label="Password">
+        <el-form-item :label="$t('auth.password')">
           <el-input 
             v-model="password" 
             type="password" 
-            placeholder="Password" 
+            :placeholder="$t('auth.password')" 
             size="large" 
             show-password
             @keyup.enter="handleLogin"
@@ -26,11 +26,11 @@
           :loading="loading"
           @click="handleLogin"
         >
-          Login
+          {{ $t('auth.login_btn') }}
         </el-button>
         
         <div class="auth-links">
-          Don't have an account? <router-link to="/register">Register</router-link>
+          {{ $t('auth.no_account') }} <router-link to="/register">{{ $t('auth.register_link') }}</router-link>
         </div>
       </el-form>
     </el-card>
