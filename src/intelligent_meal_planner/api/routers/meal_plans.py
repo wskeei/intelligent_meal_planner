@@ -30,8 +30,28 @@ async def create_meal_plan(request: MealPlanRequest):
         try:
             from ...agents.crew import MealPlanningCrew
             crew = MealPlanningCrew()
-            result = crew.plan_meal(request.user_message)
-            # 解析 Agent 返回结果...
+            crew_output = crew.plan_meal(request.user_message)
+            
+            # 使用 Agent 分析出的偏好覆盖默认偏好
+            agent_prefs = crew_output.get("preferences", {})
+            if agent_prefs:
+                # 更新 preferences 对象
+                # 注意：这里我们信任 Agent 提取的数值
+                if "target_calories" in agent_prefs: preferences.target_calories = agent_prefs["target_calories"]
+                if "target_protein" in agent_prefs: preferences.target_protein = agent_prefs["target_protein"]
+                if "target_carbs" in agent_prefs: preferences.target_carbs = agent_prefs["target_carbs"]
+                if "target_fat" in agent_prefs: preferences.target_fat = agent_prefs["target_fat"]
+                if "max_budget" in agent_prefs: preferences.max_budget = agent_prefs["max_budget"]
+                if "health_goal" in agent_prefs: preferences.health_goal = agent_prefs["health_goal"]
+                if "disliked_foods" in agent_prefs: preferences.disliked_foods = agent_prefs["disliked_foods"]
+                
+                # 记录一下 Agent 的分析结果，方便调试
+                print(f"DEBUG: Agent extracted preferences: {agent_prefs}")
+
+            # 解析 Agent 返回结果... (这里其实我们主要用了 Agent 的分析结果来生成结构化数据)
+            # 如果需要保留 Agent 的文本回复作为某种 message 返回给前端，目前 schema 不支持，
+            # 但主要需求是生成正确的配餐，所以我们用更新后的 preferences 调用 generate_plan
+            
             return meal_plan_service.generate_plan(preferences)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Agent 模式失败: {str(e)}")

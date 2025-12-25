@@ -115,7 +115,28 @@ class MealPlanningCrew:
         )
         
         result = crew.kickoff()
-        return str(result)
+        
+        # 尝试从第一个任务（需求分析）获取结构化输出
+        extracted_preferences = {}
+        if result.tasks_output and len(result.tasks_output) > 0:
+            try:
+                import json
+                # print(f"DEBUG: Task 0 output: {result.tasks_output[0].raw}")
+                json_str = result.tasks_output[0].raw
+                # 清理可能的 markdown 代码块标记
+                if "```json" in json_str:
+                    json_str = json_str.split("```json")[1].split("```")[0]
+                elif "```" in json_str:
+                    json_str = json_str.split("```")[1]
+                
+                extracted_preferences = json.loads(json_str.strip())
+            except Exception as e:
+                print(f"Error parsing preferences: {e}")
+
+        return {
+            "result": str(result),
+            "preferences": extracted_preferences
+        }
     
     def quick_plan(self, 
                    target_calories: int = 2000,

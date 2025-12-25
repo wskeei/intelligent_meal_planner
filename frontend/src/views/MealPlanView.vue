@@ -16,6 +16,16 @@
             </div>
           </template>
 
+          <transition name="fade">
+            <div v-if="loading" class="loading-overlay">
+              <div class="loading-content">
+                <div class="chef-animation">👨‍🍳</div>
+                <div class="loading-text">{{ loadingText }}</div>
+                <p class="loading-sub">AI Chef is working...</p>
+              </div>
+            </div>
+          </transition>
+
           <el-tabs v-model="activeTab" class="config-tabs">
             <el-tab-pane label="Preferences" name="manual">
             <el-form label-position="top" size="large">
@@ -298,14 +308,43 @@ function applyPreset() {
   }
 }
 
-async function generatePlan() {
+const loadingText = ref('Analyzing your needs...')
+const loadingInterval = ref<any>(null)
+
+const loadingMessages = [
+  'Analyzing nutritional goals...',
+  'Scanning recipe database...',
+  'Calculating macro ratios...',
+  'Optimizing for budget...',
+  'Finalizing your meal plan...'
+]
+
+function startLoading() {
   loading.value = true
+  let i = 0
+  loadingText.value = loadingMessages[0]
+  loadingInterval.value = setInterval(() => {
+    i = (i + 1) % loadingMessages.length
+    loadingText.value = loadingMessages[i]
+  }, 2000)
+}
+
+function stopLoading() {
+  loading.value = false
+  if (loadingInterval.value) {
+    clearInterval(loadingInterval.value)
+    loadingInterval.value = null
+  }
+}
+
+async function generatePlan() {
+  startLoading()
   try {
     const isAI = activeTab.value === 'ai'
     
     if (isAI && !aiMessage.value.trim()) {
       ElMessage.warning('Please enter your request.')
-      loading.value = false
+      stopLoading()
       return
     }
 
@@ -323,7 +362,7 @@ async function generatePlan() {
   } catch (error: any) {
     ElMessage.error('Failed to generate plan. Please try again.')
   } finally {
-    loading.value = false
+    stopLoading()
   }
 }
 
@@ -362,7 +401,54 @@ function useExample(msg: string) {
 
 </script>
 
+
+
 <style scoped>
+/* Loading Overlay */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+}
+
+.loading-content {
+  text-align: center;
+}
+
+.chef-animation {
+  font-size: 64px;
+  margin-bottom: 24px;
+  animation: bounce 2s infinite;
+}
+
+.loading-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+  min-height: 1.5em; /* Prevent layout shift */
+}
+
+.loading-sub {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
 .page-header {
   margin-bottom: 24px;
 }
@@ -382,6 +468,8 @@ function useExample(msg: string) {
   background: white;
   border-radius: var(--radius-lg);
   margin-bottom: 24px;
+  position: relative; /* For loading overlay */
+  overflow: hidden;
 }
 
 .card-title {
