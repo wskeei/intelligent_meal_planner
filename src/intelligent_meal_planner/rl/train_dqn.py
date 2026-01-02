@@ -128,7 +128,7 @@ def train_model(
         total_timesteps=total_timesteps,
         callback=[checkpoint_callback, eval_callback],
         log_interval=10, # PPO updates less frequently than DQN, so log every update (approx)
-        progress_bar=False,
+        progress_bar=True,
     )
     
     # 保存最终模型
