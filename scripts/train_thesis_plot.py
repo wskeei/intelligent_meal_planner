@@ -98,12 +98,13 @@ class LogCapturingCallback(BaseCallback):
 # keeping in mind it might not be updated every step.
 
 CONFIG_PARAMS = {
-    "total_timesteps": 20000,
-    "learning_rate": 0.001,
+    "total_timesteps": 30000,
+    "learning_rate": 0.0003,
     "batch_size": 64,
     "gamma": 0.99,
     "buffer_size": 50000,
-    "target_update_interval": 1000
+    "target_update_interval": 1000,
+    "exploration_fraction": 0.5
 }
 
 def train_and_save():
@@ -130,6 +131,8 @@ def train_and_save():
         batch_size=CONFIG_PARAMS["batch_size"],
         gamma=CONFIG_PARAMS["gamma"],
         target_update_interval=CONFIG_PARAMS["target_update_interval"],
+        exploration_fraction=CONFIG_PARAMS["exploration_fraction"],
+        exploration_final_eps=0.02,
         verbose=0  # Silent to reduce noise, we'll extract manually
     )
 
@@ -153,7 +156,7 @@ def train_and_save():
 
     loss_callback = LossCallback()
 
-    print("Starting training for thesis plot (20k steps)...")
+    print("Starting training for thesis plot (30k steps)...")
     model.learn(total_timesteps=CONFIG_PARAMS["total_timesteps"], callback=loss_callback)
     print("Training finished.")
 

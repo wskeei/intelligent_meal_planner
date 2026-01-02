@@ -76,13 +76,15 @@ class MealPlanningEnv(gym.Env):
         
         # 餐次定义
         self.meal_types = ['breakfast', 'lunch', 'dinner']
-        self.num_meals = len(self.meal_types)
+        self.num_meals_per_day = len(self.meal_types)
+        self.items_per_meal = 3 # Main, Side, Drink/Extra
+        self.max_steps = self.num_meals_per_day * self.items_per_meal
         
         # 定义观察空间 (状态空间)
-        # [当前餐次(0-2), 累计卡路里, 累计蛋白质, 累计碳水, 累计脂肪, 累计花费]
+        # [当前步骤(0-8), 累计卡路里, 累计蛋白质, 累计碳水, 累计脂肪, 累计花费]
         self.observation_space = spaces.Box(
             low=np.array([0, 0, 0, 0, 0, 0], dtype=np.float32),
-            high=np.array([2, 5000, 300, 600, 200, 200], dtype=np.float32),
+            high=np.array([10, 5000, 300, 600, 200, 200], dtype=np.float32),
             dtype=np.float32
         )
         
@@ -90,7 +92,7 @@ class MealPlanningEnv(gym.Env):
         self.action_space = spaces.Discrete(len(self.recipes))
         
         # 初始化状态
-        self.current_meal_idx = 0
+        self.current_step_idx = 0
         self.total_calories = 0.0
         self.total_protein = 0.0
         self.total_carbs = 0.0
@@ -110,7 +112,7 @@ class MealPlanningEnv(gym.Env):
         super().reset(seed=seed)
         
         # 重置所有状态变量
-        self.current_meal_idx = 0
+        self.current_step_idx = 0
         self.total_calories = 0.0
         self.total_protein = 0.0
         self.total_carbs = 0.0
@@ -124,6 +126,12 @@ class MealPlanningEnv(gym.Env):
         
         return observation, info
     
+    def _get_current_meal_type(self):
+        meal_idx = self.current_step_idx // self.items_per_meal
+        if meal_idx >= len(self.meal_types):
+            return "completed"
+        return self.meal_types[meal_idx]
+
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
         执行一个动作
@@ -142,20 +150,17 @@ class MealPlanningEnv(gym.Env):
         recipe = self.recipes[action]
         
         # 检查菜品是否适合当前餐次
-        current_meal_type = self.meal_types[self.current_meal_idx]
+        current_meal_type = self._get_current_meal_type()
         
         # 如果菜品不适合当前餐次，给予惩罚
         if current_meal_type not in recipe['meal_type']:
-            reward = -10.0
-            terminated = False
-            truncated = False
-            observation = self._get_observation()
-            info = {
-                'error': f"菜品 {recipe['name']} 不适合 {current_meal_type}",
-                'valid_action': False
-            }
-            return observation, reward, terminated, truncated, info
-        
+            reward = -20.0  # 给予一次性惩罚
+            # terminated = False # 不结束，允许重试，但RL通常是一步一动。为简化训练，我们仍继续。
+            # Better strategy: Allow move but give huge penalty so it learns not to do it.
+            # But if we terminate, it might be stuck. Let's just Penalty + Continue.
+        else:
+            reward = 0.0 # Base reward
+
         # 更新累计营养和花费
         self.total_calories += recipe['calories']
         self.total_protein += recipe['protein']
@@ -168,18 +173,18 @@ class MealPlanningEnv(gym.Env):
         self.selected_categories.append(recipe['category'])
         
         # 移动到下一餐
-        self.current_meal_idx += 1
+        self.current_step_idx += 1
         
         # 检查是否完成一天的配餐
-        terminated = self.current_meal_idx >= self.num_meals
+        terminated = self.current_step_idx >= self.max_steps
         truncated = False
         
         # 计算奖励
         if terminated:
-            reward = self._calculate_reward()
+            reward += self._calculate_reward()
         else:
             # 中间步骤给予小的进度奖励
-            reward = 0.1
+            reward += 0.1
         
         observation = self._get_observation()
         info = {
@@ -199,7 +204,7 @@ class MealPlanningEnv(gym.Env):
             当前状态的 numpy 数组
         """
         return np.array([
-            self.current_meal_idx,
+            self.current_step_idx,
             self.total_calories,
             self.total_protein,
             self.total_carbs,
@@ -247,15 +252,16 @@ class MealPlanningEnv(gym.Env):
         else:
             # 超出预算给予惩罚
             over_budget = self.total_cost - self.budget_limit
-            budget_reward = -over_budget * 2.0  # 超出预算惩罚
+            # 修改点：使用上限保护，防止惩罚过大导致模型“学废了”
+            budget_reward = max(-20.0, -over_budget * 1.5) 
         
         # 3. 多样性奖励
         variety_reward = 0.0
         unique_categories = len(set(self.selected_categories))
-        if unique_categories == 3:
-            variety_reward = 5.0  # 三餐类别都不同
-        elif unique_categories == 2:
-            variety_reward = 2.0  # 有两种不同类别
+        if unique_categories >= 5: # Expect more variety with 9 items
+            variety_reward = 10.0
+        elif unique_categories >= 3:
+            variety_reward = 5.0
         
         # 4. 忌口惩罚
         dislike_penalty = 0.0
@@ -280,14 +286,13 @@ class MealPlanningEnv(gym.Env):
         渲染环境状态（用于调试）
         """
         print(f"\n{'='*60}")
-        print(f"当前餐次: {self.meal_types[self.current_meal_idx] if self.current_meal_idx < self.num_meals else '已完成'}")
+        print(f"当前进度: {self.current_step_idx}/{self.max_steps}")
         print(f"累计营养: 卡路里={self.total_calories:.1f}, 蛋白质={self.total_protein:.1f}g, "
               f"碳水={self.total_carbs:.1f}g, 脂肪={self.total_fat:.1f}g")
         print(f"累计花费: {self.total_cost:.1f}元")
         print(f"\n已选菜品:")
         for i, recipe in enumerate(self.selected_recipes):
-            meal = self.meal_types[i]
-            print(f"  {meal}: {recipe['name']} - {recipe['calories']}卡 - {recipe['price']}元")
+            print(f"  {i+1}. {recipe['name']} ({recipe['category']}) - {recipe['calories']}卡 - {recipe['price']}元")
         print(f"{'='*60}\n")
     
     def get_valid_actions(self) -> List[int]:
@@ -297,10 +302,10 @@ class MealPlanningEnv(gym.Env):
         Returns:
             有效动作的索引列表
         """
-        if self.current_meal_idx >= self.num_meals:
+        if self.current_step_idx >= self.max_steps:
             return []
         
-        current_meal_type = self.meal_types[self.current_meal_idx]
+        current_meal_type = self._get_current_meal_type()
         valid_actions = []
         
         for i, recipe in enumerate(self.recipes):
