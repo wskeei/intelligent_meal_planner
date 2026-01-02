@@ -80,11 +80,13 @@ class MealPlanningEnv(gym.Env):
         self.items_per_meal = 3 # Main, Side, Drink/Extra
         self.max_steps = self.num_meals_per_day * self.items_per_meal
         
-        # 定义观察空间 (状态空间)
-        # [当前步骤(0-8), 累计卡路里, 累计蛋白质, 累计碳水, 累计脂肪, 累计花费]
+        # 定义观察空间 (状态空间) - 归一化后
+        # [当前步骤/max, 累卡/目标, 累蛋/目标, 累碳/目标, 累脂/目标, 累花/预算]
+        # 范围设为 0 ~ 2.0 (允许超出一倍)
         self.observation_space = spaces.Box(
-            low=np.array([0, 0, 0, 0, 0, 0], dtype=np.float32),
-            high=np.array([10, 5000, 300, 600, 200, 200], dtype=np.float32),
+            low=0.0,
+            high=2.0,
+            shape=(6,),
             dtype=np.float32
         )
         
@@ -198,19 +200,19 @@ class MealPlanningEnv(gym.Env):
     
     def _get_observation(self) -> np.ndarray:
         """
-        获取当前观察值
-        
-        Returns:
-            当前状态的 numpy 数组
+        获取当前观察值 (归一化)
         """
-        return np.array([
-            self.current_step_idx,
-            self.total_calories,
-            self.total_protein,
-            self.total_carbs,
-            self.total_fat,
-            self.total_cost
+        obs = np.array([
+            self.current_step_idx / self.max_steps,
+            self.total_calories / self.target_calories,
+            self.total_protein / self.target_protein,
+            self.total_carbs / self.target_carbs,
+            self.total_fat / self.target_fat,
+            self.total_cost / self.budget_limit
         ], dtype=np.float32)
+        
+        # 截断到 [0, 2.0] 范围内，防止极值影响
+        return np.clip(obs, 0.0, 2.0)
     
     def _calculate_reward(self) -> float:
         """
@@ -298,9 +300,7 @@ class MealPlanningEnv(gym.Env):
     def get_valid_actions(self) -> List[int]:
         """
         获取当前状态下的有效动作（适合当前餐次的菜品）
-        
-        Returns:
-            有效动作的索引列表
+        保留此方法用于兼容性
         """
         if self.current_step_idx >= self.max_steps:
             return []
@@ -313,3 +313,21 @@ class MealPlanningEnv(gym.Env):
                 valid_actions.append(i)
         
         return valid_actions
+
+    def action_masks(self) -> np.ndarray:
+        """
+        获取动作屏蔽掩码 (True表示有效，False表示无效)
+        用于 sb3-contrib 的 MaskableDQN
+        """
+        mask = np.zeros(self.action_space.n, dtype=bool)
+        
+        if self.current_step_idx >= self.max_steps:
+            return mask # All false if done? Or all true to avoid error? Usually handled by done flag.
+            
+        current_meal_type = self._get_current_meal_type()
+        
+        for i, recipe in enumerate(self.recipes):
+            if current_meal_type in recipe['meal_type']:
+                mask[i] = True
+                
+        return mask
