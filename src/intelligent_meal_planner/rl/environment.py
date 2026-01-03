@@ -1,8 +1,3 @@
-"""
-强化学习配餐环境
-实现符合 Gymnasium 标准的配餐环境，用于训练 DQN 模型
-"""
-
 import json
 import numpy as np
 import gymnasium as gym
@@ -90,12 +85,12 @@ class MealPlanningEnv(gym.Env):
         self.max_steps = self.num_meals_per_day * self.items_per_meal
         
         # 定义观察空间 (状态空间) - 归一化后
-        # [当前步骤/max, 累卡/目标, 累蛋/目标, 累碳/目标, 累脂/目标, 累花/预算]
-        # 范围设为 0 ~ 2.0 (允许超出一倍)
+        # [当前步骤/max, 累卡/目标, 累蛋/目标, 累碳/目标, 累脂/目标, 累花/预算, 剩余卡/目标, 剩余预算/预算]
+        # 范围设为 -2.0 ~ 2.0 (允许超出一倍，且剩余量可能是负数)
         self.observation_space = spaces.Box(
-            low=0.0,
+            low=-2.0,
             high=2.0,
-            shape=(6,),
+            shape=(8,),
             dtype=np.float32
         )
         
@@ -129,13 +124,13 @@ class MealPlanningEnv(gym.Env):
             self.target_calories = np.random.uniform(1200.0, 3000.0)
             
             # 2. 修改：预算应基于卡路里生成，并给予一定的浮动
-            # 数据分析显示：Min Price/100kcal: 1.71, Median: 5.82
-            # 我们设定一个合理的范围，比如 3.0 ~ 8.0 元/100kcal，保证大部分时候有解，偶尔紧巴巴
-            base_cost_per_100kcal = np.random.uniform(3.0, 8.0) 
+            # 数据分析显示：Min Price/100kcal: 3.95, Median: 11.76, Mean: 13.96
+            # 我们设定一个合理的范围，比如 12.0 ~ 20.0 元/100kcal，保证大部分时候有解
+            base_cost_per_100kcal = np.random.uniform(12.0, 20.0) 
             estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
             
-            # 设置预算，确保至少有 40 元保底，最高不超过 300
-            self.budget_limit = np.clip(estimated_cost, 40.0, 300.0)
+            # 设置预算，确保至少有 100 元保底，最高不超过 600
+            self.budget_limit = np.clip(estimated_cost, 100.0, 600.0)
             
             # 3. 随机化营养比例 (Macros Distributions)
             # 为了让模型适应不同的饮食风格 (如低碳、高蛋白、均衡等)，我们随机生成宏量营养素比例
@@ -259,7 +254,9 @@ class MealPlanningEnv(gym.Env):
             reward += self._calculate_reward()
         else:
             # 中间步骤给予平滑的进度奖励 (增强引导)
-            reward += 1.0
+            # 3. 增加中间步骤的“前瞻性”奖励 (Dense Reward)
+            # 引导模型时刻关注剩余资源. 只要没有严重偏离（比如第一顿就吃超了），就给一点生存分
+            reward += 0.1
         
         observation = self._get_observation()
         info = {
@@ -281,62 +278,62 @@ class MealPlanningEnv(gym.Env):
             self.total_protein / self.target_protein,
             self.total_carbs / self.target_carbs,
             self.total_fat / self.target_fat,
-            self.total_cost / self.budget_limit
+            self.total_cost / self.budget_limit,
+            # [新增] 剩余资源比例 (可以是负数)
+            (self.target_calories - self.total_calories) / self.target_calories,  
+            (self.budget_limit - self.total_cost) / self.budget_limit,
         ], dtype=np.float32)
         
-        # 截断到 [0, 2.0] 范围内，防止极值影响
-        return np.clip(obs, 0.0, 2.0)
+        # 截断到 [-2.0, 2.0] 范围内，防止极值影响
+        return np.clip(obs, -2.0, 2.0)
     
+    def _nutrient_score(self, actual, target, max_bonus=10.0):
+        """
+        优化后的营养评分：使用高斯函数提供平滑的梯度奖励
+        即使偏差较大，只要在接近，也能获得部分奖励，引导模型收敛
+        """
+        if target <= 0: return 0.0
+        ratio = actual / target
+        
+        # 使用高斯型奖励函数: exp(-0.5 * ((x - mu) / sigma)^2)
+        # mu = 1.0 (target), sigma = 0.15 (允许 ±15% 偏差保持高分)
+        # 在 ±15% 处，得分为 max_bonus * 0.6
+        # 在 ±30% 处，得分为 max_bonus * 0.13
+        # 相比之前的硬截断，这能提供全程的梯度指引
+        
+        sigma = 0.15 
+        score = max_bonus * np.exp(-0.5 * ((ratio - 1.0) / sigma) ** 2)
+        
+        return score
+
     def _calculate_reward(self) -> float:
         """
         计算最终奖励
-        
-        综合考虑：
-        1. 营养达标程度 (优化版：放宽标准差，提供更平滑的梯度)
-        2. 预算控制 (优化版：降低基础奖励，避免不想努力)
-        3. 菜品多样性
-        4. 忌口惩罚
-        
-        Returns:
-            总奖励值
         """
-        # 1. 营养达标奖励（使用高斯函数）
-        nutrition_reward = 0.0
+        # 1. 营养达标奖励
+        calorie_reward = self._nutrient_score(self.total_calories, self.target_calories, max_bonus=15.0)
+        protein_reward = self._nutrient_score(self.total_protein, self.target_protein, max_bonus=12.0)
+        carbs_reward   = self._nutrient_score(self.total_carbs, self.target_carbs, max_bonus=10.0)
+        fat_reward     = self._nutrient_score(self.total_fat, self.target_fat, max_bonus=10.0)
         
-        # 卡路里偏差 (标准差 500 -> 800，老师建议)
-        calorie_diff = abs(self.total_calories - self.target_calories)
-        calorie_reward = np.exp(-calorie_diff / 800.0) * 10 
-        
-        # 蛋白质偏差 (标准差 50 -> 80，老师建议)
-        protein_diff = abs(self.total_protein - self.target_protein)
-        protein_reward = np.exp(-protein_diff / 80.0) * 10
-        
-        # 碳水偏差 (标准差 100 -> 150)
-        carbs_diff = abs(self.total_carbs - self.target_carbs)
-        carbs_reward = np.exp(-carbs_diff / 150.0) * 10
-        
-        # 脂肪偏差 (标准差 30 -> 50)
-        fat_diff = abs(self.total_fat - self.target_fat)
-        fat_reward = np.exp(-fat_diff / 50.0) * 10
-        
-        nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0
-        
-        # 2. 预算奖励
-        if self.total_cost <= self.budget_limit:
-            budget_reward = 2.0  # 10.0 -> 2.0 (不再喧宾夺主，只要合格就行)
+        nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0 
+
+        # 2. 预算奖励 (优化版)
+        over_ratio = max(0.0, (self.total_cost - self.budget_limit) / (self.budget_limit + 1e-8))
+        if over_ratio <= 0.05:
+            budget_reward = 3.0  # 合规奖励
         else:
-            # 超出预算给予惩罚
-            over_budget = self.total_cost - self.budget_limit
-            # 保持惩罚力度，或者稍微加大
-            budget_reward = max(-20.0, -over_budget * 2.0) 
+            # 软惩罚：每超 10% 扣 2 分
+            budget_reward = 3.0 - (over_ratio * 20.0)
+            budget_reward = max(-5.0, budget_reward) # 封底太狠会掩盖营养奖励
         
         # 3. 多样性奖励
         variety_reward = 0.0
         unique_categories = len(set(self.selected_categories))
         if unique_categories >= 3:
             variety_reward = 5.0
-        if unique_categories >= 2: # 稍微给点鼓励
-            variety_reward += 2.0
+        elif unique_categories >= 2: 
+            variety_reward = 2.0
         
         # 4. 忌口惩罚
         dislike_penalty = 0.0
@@ -345,7 +342,7 @@ class MealPlanningEnv(gym.Env):
             if self.disliked_tags:
                 disliked = recipe_tags.intersection(set(self.disliked_tags))
                 if disliked:
-                    dislike_penalty -= 50.0  # 严重惩罚
+                    dislike_penalty -= 10.0 
         
         # 综合奖励
         total_reward = (
@@ -356,8 +353,7 @@ class MealPlanningEnv(gym.Env):
         )
         
         # Debug Print (Visible in console during training)
-        # This helps us see WHY the score is low (e.g. is it Nutrition or Budget?)
-        print(f"[DEBUG] Score={total_reward:5.2f} | Nutri={nutrition_reward:5.2f} (CalDiff:{calorie_diff:4.0f}) | Budg={budget_reward:5.1f} | Var={variety_reward:3.1f}")
+        print(f"[DEBUG v2] Score={total_reward:5.2f} | Nutri={nutrition_reward:5.2f} (CalDiff:{abs(self.total_calories-self.target_calories):4.0f}) | Budg={budget_reward:5.1f} | Var={variety_reward:3.1f}")
         
         return total_reward
     
@@ -422,11 +418,28 @@ class MealPlanningEnv(gym.Env):
                     # 如果太贵了，直接屏蔽，不让模型选
                     mask[i] = False
         
-        # 防死锁兜底：如果这一餐所有符合餐次的菜都买不起（mask全false），
-        # 则放开价格限制，允许它选符合餐次的任意菜（哪怕被罚分也要走完这一步，不能卡死程序）
+        # 防死锁兜底逻辑优化
         if not possible_indices: 
-            for i, recipe in enumerate(self.recipes):
-                if current_meal_type in recipe['meal_type']:
-                    mask[i] = True
+            # 策略优化：如果没钱了，不能摆烂随便选（否则会选贵的导致罚分爆炸）
+            # 我们强制模型只能选当前餐次中【价格最低】的菜，进行“止损”
+            
+            # 1. 找出所有属于当前餐次的菜品索引
+            valid_meal_indices = [
+                i for i, r in enumerate(self.recipes) 
+                if current_meal_type in r['meal_type']
+            ]
+            
+            if valid_meal_indices:
+                # 2. 找到这些菜里的最低价格
+                min_price = min(self.recipes[i]['price'] for i in valid_meal_indices)
+                
+                # 3. 只解锁价格等于最低价的菜
+                for i in valid_meal_indices:
+                    if self.recipes[i]['price'] == min_price:
+                        mask[i] = True
+            
+            # 极少数情况：如果没有valid_meal_indices（说明数据库里没有这种餐次的菜），则全开防止报错
+            if not np.any(mask):
+                 mask[:] = True
                     
         return mask
