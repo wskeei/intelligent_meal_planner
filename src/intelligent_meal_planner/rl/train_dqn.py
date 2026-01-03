@@ -9,6 +9,8 @@ import argparse
 from pathlib import Path
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import VecNormalize
 from stable_baselines3.common.callbacks import CheckpointCallback
 from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback as EvalCallback
 from stable_baselines3.common.monitor import Monitor
@@ -58,39 +60,65 @@ def train_model(
     print(f"  Log Directory:   {log_dir}")
     print("="*60)
     
-    print("\n[1/4] Initializing Training Environment...")
-    env = MealPlanningEnv(
-        target_calories=2000.0,
-        target_protein=100.0,
-        target_carbs=250.0,
-        target_fat=65.0,
-        budget_limit=120.0,
-        disliked_tags=[],
+    
+    # ---------------------------------------------------------
+    # 1. & 2. Speed & Effectiveness Upgrade: VecEnv + Normalization
+    # ---------------------------------------------------------
+    
+    # Define environment factory
+    def make_env():
+        # Note: Monitor is handled by make_vec_env's monitor_dir argument (it wraps SubprocVecEnv/DummyVecEnv with VecMonitor? 
+        # Actually make_vec_env creates envs, wraps then in Monitor, then VecEnv. 
+        # But we need ActionMasker. ActionMasker must be applied on the individual environment before VecEnv wrapping.
+        env = MealPlanningEnv(
+            target_calories=2000.0,
+            target_protein=100.0,
+            target_carbs=250.0,
+            target_fat=65.0,
+            budget_limit=120.0,
+            disliked_tags=[],
+            training_mode=True
+        )
+        env = ActionMasker(env, mask_fn)
+        return env
+
+    print("\n[1/4] Initializing Vectorized Environment (n_envs=4)...")
+    env = make_vec_env(
+        make_env, 
+        n_envs=4, 
+        monitor_dir=str(log_dir / "train")
     )
     
-    # 使用 Monitor 包装环境以记录统计信息
-    env = Monitor(env, str(log_dir / "train"))
-    
-    # 包装环境以支持动作屏蔽
-    env = ActionMasker(env, mask_fn)
+    print("       Applying VecNormalize...")
+    env = VecNormalize(
+        env,
+        norm_obs=True,
+        norm_reward=True,
+        clip_obs=10.0,
+        gamma=gamma
+    )
     
     print("\n[2/4] Initializing Evaluation Environment...")
-    # 创建评估环境
-    eval_env = MealPlanningEnv(
-        target_calories=2000.0,
-        target_protein=100.0,
-        target_carbs=250.0,
-        target_fat=65.0,
-        budget_limit=120.0,
-        disliked_tags=[],
-    )
-    eval_env = Monitor(eval_env, str(log_dir / "eval"))
-    # 评估环境也需要支持动作屏蔽
-    eval_env = ActionMasker(eval_env, mask_fn)
+    # Evaluation Env (also vectorized/normalized)
+    def make_eval_env():
+         env = MealPlanningEnv(
+            target_calories=2000.0,
+            budget_limit=120.0,
+            training_mode=False 
+         )
+         env = ActionMasker(env, mask_fn)
+         return env
+
+    eval_env = make_vec_env(make_eval_env, n_envs=1, monitor_dir=str(log_dir / "eval"))
+    # Use VecNormalize for eval too, but with training=False to avoid polluting stats?
+    # However, keeping training=True for eval env allows it to adapt to its own distribution (if separate).
+    # Ideally should share stats, but passing the object is complex with make_vec_env.
+    # We will use training=True for stability in this context, or load stats? 
+    # Let's set training=True so it normalizes based on what it sees, ensuring inputs are in range.
+    eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, clip_obs=10.0, gamma=gamma, training=True)
     
     print("\n[3/4] Building MaskablePPO Policy Network...")
-    # 创建 MaskablePPO 模型
-    # policy_kwargs: 定义网络结构，使用的是 net_arch=[256, 256] 以增强 Critic 能力 (解决 Explained Variance 低的问题)
+    # policy_kwargs: 定义网络结构，使用的是 net_arch=[256, 256] 以增强 Critic 能力
     policy_kwargs = dict(net_arch=[256, 256])
     
     model = MaskablePPO(
@@ -98,7 +126,7 @@ def train_model(
         env,
         learning_rate=learning_rate,
         # PPO params
-        n_steps=2048,
+        n_steps=2048 // 4, # Adjust steps per env to keep batch size reasonable, or keep 2048 for larger batch
         batch_size=batch_size,
         n_epochs=10,
         gamma=gamma,
@@ -112,18 +140,18 @@ def train_model(
     
     # 创建回调函数
     checkpoint_callback = CheckpointCallback(
-        save_freq=10000,
+        save_freq=10000 // 4,
         save_path=str(model_save_path / "checkpoints"),
-        name_prefix="ppo_meal_planner", # Changed prefix
-        save_replay_buffer=False, # PPO is on-policy, no replay buffer
-        save_vecnormalize=True,
+        name_prefix="ppo_meal_planner", 
+        save_replay_buffer=False, 
+        save_vecnormalize=True, # Important to save stats
     )
     
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=str(model_save_path),
         log_path=str(log_dir / "eval"),
-        eval_freq=5000,
+        eval_freq=5000 // 4,
         n_eval_episodes=10,
         deterministic=True,
         render=False,
@@ -136,36 +164,34 @@ def train_model(
     model.learn(
         total_timesteps=total_timesteps,
         callback=[checkpoint_callback, eval_callback],
-        log_interval=10, # PPO updates less frequently than DQN, so log every update (approx)
+        log_interval=10, 
         progress_bar=True,
     )
     
     # 保存最终模型
     final_model_path = model_save_path / "ppo_meal_planner_final.zip"
     model.save(str(final_model_path))
+    # Save normalization stats explicitly as well
+    env.save(str(model_save_path / "vec_normalize.pkl"))
+    
     print("="*60)
     print(f"\nTraining Complete!")
     print(f"Model saved to: {final_model_path}")
-
-    # Fallback for explicit steps file
-    expected_path = model_save_path / "checkpoints" / "ppo_meal_planner_final.zip"
+    print(f"Normalization stats saved to: {model_save_path / 'vec_normalize.pkl'}")
     
     # 清理
     env.close()
     eval_env.close()
     
-    print("\n训练完成！")
-    print("="*60)
-    
     return model
 
 
-def test_model(model_path: str, n_episodes: int = 5):
+def test_model(model_path: str, n_episodes: int = 5, randomize: bool = False):
     """
     测试训练好的模型
     """
     print("="*60)
-    print("测试模型")
+    print(f"测试模型 (随机化目标: {randomize})")
     print("="*60)
     
     # 加载模型
@@ -175,42 +201,82 @@ def test_model(model_path: str, n_episodes: int = 5):
         print(f"加载模型失败: {e}")
         return
     
-    # 创建测试环境
-    env = MealPlanningEnv(
-        target_calories=2000.0,
-        target_protein=100.0,
-        target_carbs=250.0,
-        target_fat=65.0,
-        budget_limit=120.0,
-        disliked_tags=[],
-    )
-    # 不一定要 wrap，但为了 predict 中用到 action_masks
-    env = ActionMasker(env, mask_fn)
     
+    # Analyze model path to find stats
+    model_path_obj = Path(model_path)
+    # Check for stats in same dir or parent (e.g. if model is in checkpoints/)
+    stats_path = model_path_obj.parent / "vec_normalize.pkl"
+    if not stats_path.exists():
+        stats_path = model_path_obj.parent.parent / "vec_normalize.pkl"
+        
+    print(f"Loading model from: {model_path}")
+    if stats_path.exists():
+        print(f"Found normalization stats: {stats_path}")
+    else:
+        print("Warning: No normalization stats found. Model might perform poorly if it expects normalized inputs.")
+
+    # Create Test Env (Vectorized for compatibility with VecNormalize)
+    def make_test_env():
+         env = MealPlanningEnv(
+            target_calories=2000.0,
+            # 如果开启 randomize，则设为 training_mode=True (允许 reset 时随机)
+            # 但要注意 env.train_mode 只是 flag，具体随机逻辑看 reset
+            training_mode=randomize 
+         )
+         env = ActionMasker(env, mask_fn)
+         return env
+         
+    env = make_vec_env(make_test_env, n_envs=1)
+    
+    # Load Normalization Stats if available
+    if stats_path.exists():
+        env = VecNormalize.load(str(stats_path), env)
+        env.training = False # Don't update stats during test
+        env.norm_reward = False # We want real rewards for logging
+        
     total_rewards = []
     
     for episode in range(n_episodes):
-        obs, info = env.reset()
+        obs = env.reset() # VecEnv reset returns just obs
+        # 如果是随机模式，我们可以打印一下当前的目标（需要 hack 一下访问内部 env）
+        if randomize:
+            # VecEnv -> get_attr -> list of values
+            targets = env.get_attr("target_calories")
+            budgets = env.get_attr("budget_limit")
+            print(f"  [随机目标] 卡路里: {targets[0]:.0f}, 预算: {budgets[0]:.0f}")
         episode_reward = 0
         done = False
         
         print(f"\n第 {episode + 1} 回合:")
         
         while not done:
-            # 使用模型预测动作 (需要显式传递 masks 或使用 ActionMasker 包装的正确调用方式)
-            action_masks = env.action_masks()
-            action, _states = model.predict(obs, action_masks=action_masks, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(action)
-            episode_reward += reward
-            done = terminated or truncated
+            # VecEnv observation is already (n_envs, features)
+            # Action mask calculation for VecEnv?
+            # ActionMasker in VecEnv puts masks in 'action_mask' key of info dict if using sb3-contrib wrappers?
+            # Or we need to call env.env_method("action_masks")?
+            # Actually, sb3-contrib MaskablePPO predict handles VecEnv automatically? 
+            # predict(obs, action_masks=...)
+            # We need to get masks manually for the single env.
+            # access list of masks:
+            action_masks = env.env_method("action_masks")[0]
             
-            if info.get('valid_action', False) or True: # Info check
+            action, _states = model.predict(obs, action_masks=action_masks, deterministic=True)
+            
+            # VecEnv step
+            obs, rewards, dones, infos = env.step(action)
+            
+            reward = rewards[0]
+            done = dones[0]
+            info = infos[0]
+            
+            episode_reward += reward
+            
+            if info.get('valid_action', False) or True: 
                 name = info.get('selected_recipe', 'Unknown')
                 print(f"  选择: {name} (Reward: {reward:.1f})")
         
         total_rewards.append(episode_reward)
         print(f"  总奖励: {episode_reward:.2f}")
-        # env.render() # Removed render call to reduce spam or if env doesn't support it well in loop
     
     avg_reward = sum(total_rewards) / len(total_rewards)
     print(f"\n平均奖励: {avg_reward:.2f}")
@@ -247,6 +313,11 @@ def main():
         default=None,
         help="模型保存路径"
     )
+    parser.add_argument(
+        "--randomize",
+        action="store_true",
+        help="在测试模式下启用域随机化 (验证模型的泛化能力)"
+    )
     
     args = parser.parse_args()
     
@@ -259,7 +330,7 @@ def main():
         if args.model_path is None:
             print("错误: 测试模式需要提供 --model-path 参数")
             return
-        test_model(args.model_path)
+        test_model(args.model_path, randomize=args.randomize)
 
 
 if __name__ == "__main__":

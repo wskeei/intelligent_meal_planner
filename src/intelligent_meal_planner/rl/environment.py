@@ -34,6 +34,7 @@ class MealPlanningEnv(gym.Env):
         weight_nutrition: float = 1.0,
         weight_budget: float = 0.5,
         weight_variety: float = 0.3,
+        training_mode: bool = True,
     ):
         """
         初始化配餐环境
@@ -49,8 +50,16 @@ class MealPlanningEnv(gym.Env):
             weight_nutrition: 营养奖励权重
             weight_budget: 预算奖励权重
             weight_variety: 多样性奖励权重
+            training_mode: 是否为训练模式 (开启域随机化)
         """
         super().__init__()
+        
+        self.training_mode = training_mode
+        self.default_target_calories = target_calories
+        self.default_budget_limit = budget_limit
+        self.default_target_protein = target_protein
+        self.default_target_carbs = target_carbs
+        self.default_target_fat = target_fat
         
         # 加载菜品数据库
         if recipes_path is None:
@@ -112,6 +121,64 @@ class MealPlanningEnv(gym.Env):
             info: 额外信息字典
         """
         super().reset(seed=seed)
+        
+
+        
+        # 域随机化 (仅在训练模式下)
+        if self.training_mode:
+            # 1. 随机化卡路里目标 (1200 ~ 3000 kcal) - 覆盖减脂到增肌
+            self.target_calories = np.random.uniform(1200.0, 3000.0)
+            
+            # 2. 随机化预算 (40 ~ 200 元) - 覆盖穷游到奢华
+            self.budget_limit = np.random.uniform(40.0, 200.0)
+            
+            # 3. 随机化营养比例 (Macros Distributions)
+            # 为了让模型适应不同的饮食风格 (如低碳、高蛋白、均衡等)，我们随机生成宏量营养素比例
+            
+            # 随机生成三种饮食模式之一的概率
+            mode_roll = np.random.random()
+            
+            if mode_roll < 0.2: 
+                # Keto/低碳模式 (低碳水, 高脂肪)
+                carb_ratio = np.random.uniform(0.05, 0.15)
+                protein_ratio = np.random.uniform(0.20, 0.35)
+                # 剩余给脂肪
+            elif mode_roll < 0.5:
+                # 健身/高蛋白模式 (高蛋白, 中碳水, 低脂)
+                protein_ratio = np.random.uniform(0.30, 0.50)
+                fat_ratio = np.random.uniform(0.15, 0.25)
+                carb_ratio = 1.0 - protein_ratio - fat_ratio
+            else:
+                # 均衡/普通模式
+                protein_ratio = np.random.uniform(0.15, 0.25)
+                fat_ratio = np.random.uniform(0.20, 0.35)
+                carb_ratio = 1.0 - protein_ratio - fat_ratio
+                
+            # 保证比例归一化 (防止浮点误差)
+            total_ratio = protein_ratio + fat_ratio + carb_ratio
+            if abs(mode_roll - 0.2) < 0.001: # Check if we were in keto logic (re-derive fat) -> simplified above, just normalize
+                 pass
+            
+            # Calculate macros based on ratios and calories
+            # 1g Protein = 4 kcal, 1g Carbs = 4 kcal, 1g Fat = 9 kcal
+            
+            # Re-normalize just in case
+            protein_ratio = protein_ratio / total_ratio
+            fat_ratio = fat_ratio / total_ratio
+            carb_ratio = carb_ratio / total_ratio
+
+            self.target_protein = (self.target_calories * protein_ratio) / 4.0
+            self.target_carbs = (self.target_calories * carb_ratio) / 4.0
+            self.target_fat = (self.target_calories * fat_ratio) / 9.0
+            
+        else:
+            # 测试模式恢复默认
+            self.target_calories = self.default_target_calories
+            self.budget_limit = self.default_budget_limit
+            self.target_protein = self.default_target_protein
+            self.target_carbs = self.default_target_carbs
+            self.target_fat = self.default_target_fat
+
         
         # 重置所有状态变量
         self.current_step_idx = 0
