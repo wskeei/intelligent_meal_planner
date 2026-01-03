@@ -125,12 +125,21 @@ class MealPlanningEnv(gym.Env):
             
             # 2. 修改：预算应基于卡路里生成，并给予一定的浮动
             # 数据分析显示：Min Price/100kcal: 3.95, Median: 11.76, Mean: 13.96
-            # 我们设定一个合理的范围，比如 12.0 ~ 20.0 元/100kcal，保证大部分时候有解
-            base_cost_per_100kcal = np.random.uniform(12.0, 20.0) 
+            # 优化建议：10.0 ~ 16.0 元/100kcal，预算上限 400
+            base_cost_per_100kcal = np.random.uniform(10.0, 16.0) 
             estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
             
-            # 设置预算，确保至少有 100 元保底，最高不超过 600
-            self.budget_limit = np.clip(estimated_cost, 100.0, 600.0)
+            # 设置预算，确保至少有 80 元保底，最高不超过 400
+            self.budget_limit = np.clip(estimated_cost, 80.0, 400.0)
+            
+            # 3. 随机化营养比例 (Macros Distributions)
+            # ... (rest of macro logic is fine, skip to feasibility check) ...
+
+            # [SAME LOGIC OMITTED FOR BREVITY, just jump to end of reset block logic] 
+            # Note: Since I cannot skip lines inside a Replace block easily without context, 
+            # I will target the specific blocks separately. 
+            # Let's do budget first.
+
             
             # 3. 随机化营养比例 (Macros Distributions)
             # 为了让模型适应不同的饮食风格 (如低碳、高蛋白、均衡等)，我们随机生成宏量营养素比例
@@ -190,6 +199,12 @@ class MealPlanningEnv(gym.Env):
         self.total_cost = 0.0
         self.selected_recipes = []
         self.selected_categories = []
+        
+        # [优化] 可行性检查：防止生成完全无解的低预算场景
+        if self.training_mode:
+            min_cost_6_items = 30.0 # 预估最小值 (5元/道 * 6)
+            if self.budget_limit < min_cost_6_items * 1.2:
+                 self.budget_limit = min_cost_6_items * 1.2
         
         observation = self._get_observation()
         info = {}
@@ -254,9 +269,11 @@ class MealPlanningEnv(gym.Env):
             reward += self._calculate_reward()
         else:
             # 中间步骤给予平滑的进度奖励 (增强引导)
-            # 3. 增加中间步骤的“前瞻性”奖励 (Dense Reward)
-            # 引导模型时刻关注剩余资源. 只要没有严重偏离（比如第一顿就吃超了），就给一点生存分
-            reward += 0.1
+            # [优化] 增加与营养进度相关的即时奖励 (Dense Reward)
+            ideal_cal = (self.current_step_idx / self.max_steps) * self.target_calories
+            # 距离理想进度越近，奖励越高
+            cal_progress_reward = np.exp(-abs(self.total_calories - ideal_cal) / 300.0) * 0.5
+            reward += cal_progress_reward
         
         observation = self._get_observation()
         info = {
@@ -287,21 +304,18 @@ class MealPlanningEnv(gym.Env):
         # 截断到 [-2.0, 2.0] 范围内，防止极值影响
         return np.clip(obs, -2.0, 2.0)
     
-    def _nutrient_score(self, actual, target, max_bonus=10.0):
+    def _nutrient_score(self, actual, target, max_bonus=10.0, sigma=0.15):
         """
         优化后的营养评分：使用高斯函数提供平滑的梯度奖励
         即使偏差较大，只要在接近，也能获得部分奖励，引导模型收敛
+        Args:
+            sigma: 高斯函数的标准差，控制奖励衰减的敏感度。
+                   sigma=0.15 (±15% 偏差得高分), sigma=0.25 (±25% 偏差得高分)
         """
         if target <= 0: return 0.0
         ratio = actual / target
         
         # 使用高斯型奖励函数: exp(-0.5 * ((x - mu) / sigma)^2)
-        # mu = 1.0 (target), sigma = 0.15 (允许 ±15% 偏差保持高分)
-        # 在 ±15% 处，得分为 max_bonus * 0.6
-        # 在 ±30% 处，得分为 max_bonus * 0.13
-        # 相比之前的硬截断，这能提供全程的梯度指引
-        
-        sigma = 0.15 
         score = max_bonus * np.exp(-0.5 * ((ratio - 1.0) / sigma) ** 2)
         
         return score
@@ -311,10 +325,11 @@ class MealPlanningEnv(gym.Env):
         计算最终奖励
         """
         # 1. 营养达标奖励
-        calorie_reward = self._nutrient_score(self.total_calories, self.target_calories, max_bonus=15.0)
-        protein_reward = self._nutrient_score(self.total_protein, self.target_protein, max_bonus=12.0)
-        carbs_reward   = self._nutrient_score(self.total_carbs, self.target_carbs, max_bonus=10.0)
-        fat_reward     = self._nutrient_score(self.total_fat, self.target_fat, max_bonus=10.0)
+        # [优化] 分营养素设置 sigma，对难以精确控制的宏量（如脂肪）给予更高容忍度
+        calorie_reward = self._nutrient_score(self.total_calories, self.target_calories, max_bonus=15.0, sigma=0.15)
+        protein_reward = self._nutrient_score(self.total_protein, self.target_protein, max_bonus=12.0, sigma=0.20)
+        carbs_reward   = self._nutrient_score(self.total_carbs, self.target_carbs, max_bonus=10.0, sigma=0.20)
+        fat_reward     = self._nutrient_score(self.total_fat, self.target_fat, max_bonus=10.0, sigma=0.25)
         
         nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0 
 
