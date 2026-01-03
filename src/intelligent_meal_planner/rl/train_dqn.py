@@ -9,7 +9,8 @@ import argparse
 from pathlib import Path
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
-from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from stable_baselines3.common.callbacks import CheckpointCallback
+from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback as EvalCallback
 from stable_baselines3.common.monitor import Monitor
 from .environment import MealPlanningEnv
 
@@ -196,8 +197,9 @@ def test_model(model_path: str, n_episodes: int = 5):
         print(f"\n第 {episode + 1} 回合:")
         
         while not done:
-            # 使用模型预测动作 (MaskablePPO 自动使用 env 的 action_masks)
-            action, _states = model.predict(obs, deterministic=True)
+            # 使用模型预测动作 (需要显式传递 masks 或使用 ActionMasker 包装的正确调用方式)
+            action_masks = env.action_masks()
+            action, _states = model.predict(obs, action_masks=action_masks, deterministic=True)
             obs, reward, terminated, truncated, info = env.step(action)
             episode_reward += reward
             done = terminated or truncated
