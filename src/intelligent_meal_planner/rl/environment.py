@@ -287,8 +287,8 @@ class MealPlanningEnv(gym.Env):
         计算最终奖励
         
         综合考虑：
-        1. 营养达标程度
-        2. 预算控制
+        1. 营养达标程度 (优化版：放宽标准差，提供更平滑的梯度)
+        2. 预算控制 (优化版：降低基础奖励，避免不想努力)
         3. 菜品多样性
         4. 忌口惩罚
         
@@ -298,48 +298,49 @@ class MealPlanningEnv(gym.Env):
         # 1. 营养达标奖励（使用高斯函数）
         nutrition_reward = 0.0
         
-        # 卡路里偏差
+        # 卡路里偏差 (标准差 200 -> 500)
         calorie_diff = abs(self.total_calories - self.target_calories)
-        calorie_reward = np.exp(-calorie_diff / 200.0) * 10  # 标准差200
+        calorie_reward = np.exp(-calorie_diff / 500.0) * 10 
         
-        # 蛋白质偏差
+        # 蛋白质偏差 (标准差 20 -> 50)
         protein_diff = abs(self.total_protein - self.target_protein)
-        protein_reward = np.exp(-protein_diff / 20.0) * 10  # 标准差20
+        protein_reward = np.exp(-protein_diff / 50.0) * 10
         
-        # 碳水偏差
+        # 碳水偏差 (标准差 50 -> 100)
         carbs_diff = abs(self.total_carbs - self.target_carbs)
-        carbs_reward = np.exp(-carbs_diff / 50.0) * 10  # 标准差50
+        carbs_reward = np.exp(-carbs_diff / 100.0) * 10
         
-        # 脂肪偏差
+        # 脂肪偏差 (标准差 15 -> 30)
         fat_diff = abs(self.total_fat - self.target_fat)
-        fat_reward = np.exp(-fat_diff / 15.0) * 10  # 标准差15
+        fat_reward = np.exp(-fat_diff / 30.0) * 10
         
         nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0
         
         # 2. 预算奖励
         if self.total_cost <= self.budget_limit:
-            budget_reward = 10.0  # 在预算内给予满分
+            budget_reward = 2.0  # 10.0 -> 2.0 (不再喧宾夺主，只要合格就行)
         else:
             # 超出预算给予惩罚
             over_budget = self.total_cost - self.budget_limit
-            # 修改点：使用上限保护，防止惩罚过大导致模型“学废了”
-            budget_reward = max(-20.0, -over_budget * 1.5) 
+            # 保持惩罚力度，或者稍微加大
+            budget_reward = max(-20.0, -over_budget * 2.0) 
         
         # 3. 多样性奖励
         variety_reward = 0.0
         unique_categories = len(set(self.selected_categories))
-        if unique_categories >= 5: # Expect more variety with 9 items
-            variety_reward = 10.0
-        elif unique_categories >= 3:
+        if unique_categories >= 3:
             variety_reward = 5.0
+        if unique_categories >= 2: # 稍微给点鼓励
+            variety_reward += 2.0
         
         # 4. 忌口惩罚
         dislike_penalty = 0.0
         for recipe in self.selected_recipes:
             recipe_tags = set(recipe['tags'])
-            disliked = recipe_tags.intersection(set(self.disliked_tags))
-            if disliked:
-                dislike_penalty -= 50.0  # 严重惩罚
+            if self.disliked_tags:
+                disliked = recipe_tags.intersection(set(self.disliked_tags))
+                if disliked:
+                    dislike_penalty -= 50.0  # 严重惩罚
         
         # 综合奖励
         total_reward = (

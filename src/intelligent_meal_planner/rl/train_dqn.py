@@ -23,11 +23,12 @@ def mask_fn(env: MealPlanningEnv) -> list:
 
 def train_model(
     total_timesteps: int = 2000000,
-    learning_rate: float = 0.0001, # Decreased for stability
-    batch_size: int = 64,
+    learning_rate: float = 0.0003, # Slightly higher LR for larger batch? Keep 0.0001 or user suggested 0.0003 in prompt? Prompt said 0.0003.
+    batch_size: int = 512,
     gamma: float = 0.99,
     model_save_path: str = None,
     log_dir: str = None,
+    n_envs: int = 16, 
 ):
     """
     训练 MaskablePPO 模型
@@ -49,14 +50,15 @@ def train_model(
     log_dir.mkdir(parents=True, exist_ok=True)
     
     print("="*60)
-    print("MaskablePPO Model Training (Optimization Version)")
+    print("MaskablePPO High-Performance Training (Speed Optimized)")
     print("="*60)
     print(f"Configuration:")
+    print(f"  Device:          RTX 4060 (CUDA)")
+    print(f"  CPU Parallel:    {n_envs} Environments")
     print(f"  Total Timesteps: {total_timesteps}")
     print(f"  Learning Rate:   {learning_rate}")
     print(f"  Batch Size:      {batch_size}")
     print(f"  Gamma:           {gamma}")
-    print(f"  Model Path:      {model_save_path}")
     print(f"  Log Directory:   {log_dir}")
     print("="*60)
     
@@ -82,10 +84,10 @@ def train_model(
         env = ActionMasker(env, mask_fn)
         return env
 
-    print("\n[1/4] Initializing Vectorized Environment (n_envs=4)...")
+    print(f"\n[1/4] Initializing Vectorized Environment (n_envs={n_envs})...")
     env = make_vec_env(
         make_env, 
-        n_envs=4, 
+        n_envs=n_envs, 
         monitor_dir=str(log_dir / "train")
     )
     
@@ -118,40 +120,46 @@ def train_model(
     eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, clip_obs=10.0, gamma=gamma, training=True)
     
     print("\n[3/4] Building MaskablePPO Policy Network...")
-    # policy_kwargs: 定义网络结构，使用的是 net_arch=[256, 256] 以增强 Critic 能力
+    # policy_kwargs: 定义网络结构，使用的是 net_arch=[256, 256] 以重增强 Critic 能力
     policy_kwargs = dict(net_arch=[256, 256])
+    
+    # Calculate n_steps to keep total buffer size reasonable (e.g. ~4096 or 8192)
+    # n_envs * n_steps = buffer_size
+    # With 16 envs, n_steps=256 -> 4096 buffer
+    steps_per_env = 4096 // n_envs
     
     model = MaskablePPO(
         "MlpPolicy",
         env,
         learning_rate=learning_rate,
         # PPO params
-        n_steps=2048 // 4, # Adjust steps per env to keep batch size reasonable, or keep 2048 for larger batch
+        n_steps=steps_per_env, 
         batch_size=batch_size,
         n_epochs=10,
         gamma=gamma,
         gae_lambda=0.95,
         clip_range=0.2,
-        ent_coef=0.01,
+        ent_coef=0.05, 
         policy_kwargs=policy_kwargs,
         verbose=1,
         tensorboard_log=str(log_dir / "tensorboard"),
+        device="cuda" # Force GPU
     )
     
     # 创建回调函数
     checkpoint_callback = CheckpointCallback(
-        save_freq=10000 // 4,
+        save_freq=max(10000 // n_envs, 1), # Checkpoint freq in steps per env
         save_path=str(model_save_path / "checkpoints"),
         name_prefix="ppo_meal_planner", 
         save_replay_buffer=False, 
-        save_vecnormalize=True, # Important to save stats
+        save_vecnormalize=True, 
     )
     
     eval_callback = EvalCallback(
         eval_env,
         best_model_save_path=str(model_save_path),
         log_path=str(log_dir / "eval"),
-        eval_freq=5000 // 4,
+        eval_freq=max(5000 // n_envs, 1),
         n_eval_episodes=10,
         deterministic=True,
         render=False,
