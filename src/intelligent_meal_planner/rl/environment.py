@@ -143,6 +143,7 @@ class MealPlanningEnv(gym.Env):
                 carb_ratio = np.random.uniform(0.05, 0.15)
                 protein_ratio = np.random.uniform(0.20, 0.35)
                 # 剩余给脂肪
+                fat_ratio = 1.0 - protein_ratio - carb_ratio
             elif mode_roll < 0.5:
                 # 健身/高蛋白模式 (高蛋白, 中碳水, 低脂)
                 protein_ratio = np.random.uniform(0.30, 0.50)
