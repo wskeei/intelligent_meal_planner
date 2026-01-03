@@ -86,7 +86,7 @@ class MealPlanningEnv(gym.Env):
         # 餐次定义
         self.meal_types = ['breakfast', 'lunch', 'dinner']
         self.num_meals_per_day = len(self.meal_types)
-        self.items_per_meal = 1 # Modified for single-dish meals from new dataset
+        self.items_per_meal = 2 # 增加每餐菜品数量，提高解空间自由度 (3餐 x 2道 = 6道菜/天)
         self.max_steps = self.num_meals_per_day * self.items_per_meal
         
         # 定义观察空间 (状态空间) - 归一化后
@@ -123,14 +123,19 @@ class MealPlanningEnv(gym.Env):
         super().reset(seed=seed)
         
 
-        
         # 域随机化 (仅在训练模式下)
         if self.training_mode:
             # 1. 随机化卡路里目标 (1200 ~ 3000 kcal) - 覆盖减脂到增肌
             self.target_calories = np.random.uniform(1200.0, 3000.0)
             
-            # 2. 随机化预算 (40 ~ 200 元) - 覆盖穷游到奢华
-            self.budget_limit = np.random.uniform(40.0, 200.0)
+            # 2. 修改：预算应基于卡路里生成，并给予一定的浮动
+            # 数据分析显示：Min Price/100kcal: 1.71, Median: 5.82
+            # 我们设定一个合理的范围，比如 3.0 ~ 8.0 元/100kcal，保证大部分时候有解，偶尔紧巴巴
+            base_cost_per_100kcal = np.random.uniform(3.0, 8.0) 
+            estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
+            
+            # 设置预算，确保至少有 40 元保底，最高不超过 300
+            self.budget_limit = np.clip(estimated_cost, 40.0, 300.0)
             
             # 3. 随机化营养比例 (Macros Distributions)
             # 为了让模型适应不同的饮食风格 (如低碳、高蛋白、均衡等)，我们随机生成宏量营养素比例
@@ -298,21 +303,21 @@ class MealPlanningEnv(gym.Env):
         # 1. 营养达标奖励（使用高斯函数）
         nutrition_reward = 0.0
         
-        # 卡路里偏差 (标准差 200 -> 500)
+        # 卡路里偏差 (标准差 500 -> 800，老师建议)
         calorie_diff = abs(self.total_calories - self.target_calories)
-        calorie_reward = np.exp(-calorie_diff / 500.0) * 10 
+        calorie_reward = np.exp(-calorie_diff / 800.0) * 10 
         
-        # 蛋白质偏差 (标准差 20 -> 50)
+        # 蛋白质偏差 (标准差 50 -> 80，老师建议)
         protein_diff = abs(self.total_protein - self.target_protein)
-        protein_reward = np.exp(-protein_diff / 50.0) * 10
+        protein_reward = np.exp(-protein_diff / 80.0) * 10
         
-        # 碳水偏差 (标准差 50 -> 100)
+        # 碳水偏差 (标准差 100 -> 150)
         carbs_diff = abs(self.total_carbs - self.target_carbs)
-        carbs_reward = np.exp(-carbs_diff / 100.0) * 10
+        carbs_reward = np.exp(-carbs_diff / 150.0) * 10
         
-        # 脂肪偏差 (标准差 15 -> 30)
+        # 脂肪偏差 (标准差 30 -> 50)
         fat_diff = abs(self.total_fat - self.target_fat)
-        fat_reward = np.exp(-fat_diff / 30.0) * 10
+        fat_reward = np.exp(-fat_diff / 50.0) * 10
         
         nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0
         
@@ -350,6 +355,10 @@ class MealPlanningEnv(gym.Env):
             dislike_penalty
         )
         
+        # Debug Print (Visible in console during training)
+        # This helps us see WHY the score is low (e.g. is it Nutrition or Budget?)
+        print(f"[DEBUG] Score={total_reward:5.2f} | Nutri={nutrition_reward:5.2f} (CalDiff:{calorie_diff:4.0f}) | Budg={budget_reward:5.1f} | Var={variety_reward:3.1f}")
+        
         return total_reward
     
     def render(self):
@@ -385,18 +394,39 @@ class MealPlanningEnv(gym.Env):
 
     def action_masks(self) -> np.ndarray:
         """
-        获取动作屏蔽掩码 (True表示有效，False表示无效)
-        用于 sb3-contrib 的 MaskableDQN
+        生成动作掩码：屏蔽无效动作。
+        1. 必须符合当前餐次 (早餐只能选早餐菜)
+        2. [新增] 必须买得起 (当前价格 <= 剩余预算 + 缓冲)
         """
         mask = np.zeros(self.action_space.n, dtype=bool)
         
         if self.current_step_idx >= self.max_steps:
-            return mask # All false if done? Or all true to avoid error? Usually handled by done flag.
+            return mask 
             
         current_meal_type = self._get_current_meal_type()
         
+        # 计算剩余预算，并给予一定的浮动 (例如允许超支 10% 用于最后微调)
+        remaining_budget = self.budget_limit - self.total_cost
+        budget_buffer = self.budget_limit * 0.10 
+        max_affordable_price = remaining_budget + budget_buffer
+        
+        possible_indices = []
+        
         for i, recipe in enumerate(self.recipes):
+            # 只有同时满足：1. 餐次对，2. 价格别太离谱，才允许选
             if current_meal_type in recipe['meal_type']:
-                mask[i] = True
-                
+                if recipe['price'] <= max_affordable_price:
+                    mask[i] = True
+                    possible_indices.append(i)
+                else:
+                    # 如果太贵了，直接屏蔽，不让模型选
+                    mask[i] = False
+        
+        # 防死锁兜底：如果这一餐所有符合餐次的菜都买不起（mask全false），
+        # 则放开价格限制，允许它选符合餐次的任意菜（哪怕被罚分也要走完这一步，不能卡死程序）
+        if not possible_indices: 
+            for i, recipe in enumerate(self.recipes):
+                if current_meal_type in recipe['meal_type']:
+                    mask[i] = True
+                    
         return mask
