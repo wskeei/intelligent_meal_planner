@@ -29,7 +29,7 @@ class MealPlanningEnv(gym.Env):
         target_protein: float = 100.0,
         target_carbs: float = 250.0,
         target_fat: float = 65.0,
-        budget_limit: float = 60.0,
+        budget_limit: float = 120.0,
         disliked_tags: Optional[List[str]] = None,
         weight_nutrition: float = 1.0,
         weight_budget: float = 0.5,
@@ -77,7 +77,7 @@ class MealPlanningEnv(gym.Env):
         # 餐次定义
         self.meal_types = ['breakfast', 'lunch', 'dinner']
         self.num_meals_per_day = len(self.meal_types)
-        self.items_per_meal = 3 # Main, Side, Drink/Extra
+        self.items_per_meal = 1 # Modified for single-dish meals from new dataset
         self.max_steps = self.num_meals_per_day * self.items_per_meal
         
         # 定义观察空间 (状态空间) - 归一化后
@@ -185,8 +185,8 @@ class MealPlanningEnv(gym.Env):
         if terminated:
             reward += self._calculate_reward()
         else:
-            # 中间步骤给予小的进度奖励
-            reward += 0.1
+            # 中间步骤给予平滑的进度奖励 (增强引导)
+            reward += 1.0
         
         observation = self._get_observation()
         info = {

@@ -19,8 +19,8 @@ def mask_fn(env: MealPlanningEnv) -> list:
 
 
 def train_model(
-    total_timesteps: int = 100000,
-    learning_rate: float = 0.0003, # PPO default usually higher than DQN
+    total_timesteps: int = 2000000,
+    learning_rate: float = 0.0001, # Decreased for stability
     batch_size: int = 64,
     gamma: float = 0.99,
     model_save_path: str = None,
@@ -46,24 +46,24 @@ def train_model(
     log_dir.mkdir(parents=True, exist_ok=True)
     
     print("="*60)
-    print("开始训练 MaskablePPO 配餐模型")
+    print("MaskablePPO Model Training (Optimization Version)")
     print("="*60)
-    print(f"训练参数:")
-    print(f"  总步数: {total_timesteps}")
-    print(f"  学习率: {learning_rate}")
-    print(f"  批次大小: {batch_size}")
-    print(f"  折扣因子: {gamma}")
-    print(f"  模型保存路径: {model_save_path}")
-    print(f"  日志目录: {log_dir}")
+    print(f"Configuration:")
+    print(f"  Total Timesteps: {total_timesteps}")
+    print(f"  Learning Rate:   {learning_rate}")
+    print(f"  Batch Size:      {batch_size}")
+    print(f"  Gamma:           {gamma}")
+    print(f"  Model Path:      {model_save_path}")
+    print(f"  Log Directory:   {log_dir}")
     print("="*60)
     
-    # 创建训练环境
+    print("\n[1/4] Initializing Training Environment...")
     env = MealPlanningEnv(
         target_calories=2000.0,
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=60.0,
+        budget_limit=120.0,
         disliked_tags=[],
     )
     
@@ -73,20 +73,25 @@ def train_model(
     # 包装环境以支持动作屏蔽
     env = ActionMasker(env, mask_fn)
     
+    print("\n[2/4] Initializing Evaluation Environment...")
     # 创建评估环境
     eval_env = MealPlanningEnv(
         target_calories=2000.0,
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=60.0,
+        budget_limit=120.0,
         disliked_tags=[],
     )
     eval_env = Monitor(eval_env, str(log_dir / "eval"))
     # 评估环境也需要支持动作屏蔽
     eval_env = ActionMasker(eval_env, mask_fn)
     
+    print("\n[3/4] Building MaskablePPO Policy Network...")
     # 创建 MaskablePPO 模型
+    # policy_kwargs: 定义网络结构，使用的是 net_arch=[256, 256] 以增强 Critic 能力 (解决 Explained Variance 低的问题)
+    policy_kwargs = dict(net_arch=[256, 256])
+    
     model = MaskablePPO(
         "MlpPolicy",
         env,
@@ -98,7 +103,8 @@ def train_model(
         gamma=gamma,
         gae_lambda=0.95,
         clip_range=0.2,
-        ent_coef=0.01, # 增加一点熵系数以鼓励探索
+        ent_coef=0.01,
+        policy_kwargs=policy_kwargs,
         verbose=1,
         tensorboard_log=str(log_dir / "tensorboard"),
     )
@@ -123,7 +129,9 @@ def train_model(
     )
     
     # 开始训练
-    print("\n开始训练...")
+    print("\n[4/4] Starting Training Process...")
+    print("       (Check Tensorboard for real-time metrics)")
+    print(f"       (Progress bar below shows steps/{total_timesteps})")
     model.learn(
         total_timesteps=total_timesteps,
         callback=[checkpoint_callback, eval_callback],
@@ -134,7 +142,9 @@ def train_model(
     # 保存最终模型
     final_model_path = model_save_path / "ppo_meal_planner_final.zip"
     model.save(str(final_model_path))
-    print(f"\n模型已保存到: {final_model_path}")
+    print("="*60)
+    print(f"\nTraining Complete!")
+    print(f"Model saved to: {final_model_path}")
 
     # Fallback for explicit steps file
     expected_path = model_save_path / "checkpoints" / "ppo_meal_planner_final.zip"
@@ -220,7 +230,7 @@ def main():
     parser.add_argument(
         "--timesteps",
         type=int,
-        default=100000,
+        default=2000000,
         help="训练总步数"
     )
     parser.add_argument(
