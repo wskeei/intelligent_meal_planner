@@ -98,7 +98,10 @@ class MealPlanService:
         meals = []
         meal_names = {'breakfast': '早餐', 'lunch': '午餐', 'dinner': '晚餐'}
         
-        for meal_type, recipe_id in meal_plan.items():
+        for key, recipe_id in meal_plan.items():
+            # Strip suffix if present (e.g. "breakfast_0" -> "breakfast")
+            meal_type = key.split('_')[0] if '_' in key else key
+            
             recipe = self.recipe_service.get_by_id(recipe_id)
             if recipe:
                 meals.append(MealItem(

@@ -58,7 +58,7 @@ source .venv/bin/activate
 1. **启动后端**
    ```bash
    # 首次启动会自动创建 SQLite 数据库并迁移菜谱数据
-   uv run uvicorn intelligent_meal_planner.api.main:app --reload
+   uv run python main.py api
    ```
    后端 API 地址: `http://127.0.0.1:8000`
 

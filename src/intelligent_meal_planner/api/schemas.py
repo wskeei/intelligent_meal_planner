@@ -58,7 +58,7 @@ class RecipeBase(BaseModel):
     price: float
     tags: List[str]
     meal_type: List[str]
-    cooking_time: int
+    cooking_time: int = 15
     description: Optional[str] = None
     ingredients: Optional[List[str]] = None
     instructions: Optional[List[str]] = None
