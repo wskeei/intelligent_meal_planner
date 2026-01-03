@@ -181,7 +181,7 @@ def test_model(model_path: str, n_episodes: int = 5):
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=60.0,
+        budget_limit=120.0,
         disliked_tags=[],
     )
     # 不一定要 wrap，但为了 predict 中用到 action_masks
