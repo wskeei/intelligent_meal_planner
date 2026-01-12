@@ -84,15 +84,25 @@ class MealPlanningEnv(gym.Env):
         self.items_per_meal = 2 # 增加每餐菜品数量，提高解空间自由度 (3餐 x 2道 = 6道菜/天)
         self.max_steps = self.num_meals_per_day * self.items_per_meal
         
-        # 定义观察空间 (状态空间) - 归一化后
-        # [当前步骤/max, 累卡/目标, 累蛋/目标, 累碳/目标, 累脂/目标, 累花/预算, 剩余卡/目标, 剩余预算/预算]
+        # 定义观察空间 (状态空间) - 归一化后 [优化版: 13维]
+        # [0] 当前步骤/max
+        # [1] 累卡/目标, [2] 累蛋/目标, [3] 累碳/目标, [4] 累脂/目标
+        # [5] 累花/预算
+        # [6] 剩余卡/目标, [7] 剩余预算/预算
+        # [8] 剩余步数/max (新增)
+        # [9-11] 当前餐次one-hot: breakfast, lunch, dinner (新增)
+        # [12] 多样性指标 (新增)
         # 范围设为 -2.0 ~ 2.0 (允许超出一倍，且剩余量可能是负数)
         self.observation_space = spaces.Box(
             low=-2.0,
             high=2.0,
-            shape=(8,),
+            shape=(13,),
             dtype=np.float32
         )
+
+        # 课程学习阶段 (用于训练时动态调整难度)
+        self.curriculum_stage = 1  # 1=简单固定, 2=轻度随机, 3=完全随机
+        self.global_step = 0  # 由外部trainer设置
         
         # 定义动作空间 (菜品选择)
         self.action_space = spaces.Discrete(len(self.recipes))
@@ -110,77 +120,81 @@ class MealPlanningEnv(gym.Env):
     def reset(self, seed=None, options=None):
         """
         重置环境到初始状态
-        
+
         Returns:
             observation: 初始观察值
             info: 额外信息字典
         """
         super().reset(seed=seed)
-        
 
-        # 域随机化 (仅在训练模式下)
+        # ========== 课程学习 (Curriculum Learning) ==========
+        # 根据训练进度动态调整难度
         if self.training_mode:
-            # 1. 随机化卡路里目标 (1200 ~ 3000 kcal) - 覆盖减脂到增肌
-            self.target_calories = np.random.uniform(1200.0, 3000.0)
-            
-            # 2. 修改：预算应基于卡路里生成，并给予一定的浮动
-            # 数据分析显示：Min Price/100kcal: 3.95, Median: 11.76, Mean: 13.96
-            # 优化建议：10.0 ~ 16.0 元/100kcal，预算上限 400
-            base_cost_per_100kcal = np.random.uniform(10.0, 16.0) 
-            estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
-            
-            # 设置预算，确保至少有 80 元保底，最高不超过 400
-            self.budget_limit = np.clip(estimated_cost, 80.0, 400.0)
-            
-            # 3. 随机化营养比例 (Macros Distributions)
-            # ... (rest of macro logic is fine, skip to feasibility check) ...
-
-            # [SAME LOGIC OMITTED FOR BREVITY, just jump to end of reset block logic] 
-            # Note: Since I cannot skip lines inside a Replace block easily without context, 
-            # I will target the specific blocks separately. 
-            # Let's do budget first.
-
-            
-            # 3. 随机化营养比例 (Macros Distributions)
-            # 为了让模型适应不同的饮食风格 (如低碳、高蛋白、均衡等)，我们随机生成宏量营养素比例
-            
-            # 随机生成三种饮食模式之一的概率
-            mode_roll = np.random.random()
-            
-            if mode_roll < 0.2: 
-                # Keto/低碳模式 (低碳水, 高脂肪)
-                carb_ratio = np.random.uniform(0.05, 0.15)
-                protein_ratio = np.random.uniform(0.20, 0.35)
-                # 剩余给脂肪
-                fat_ratio = 1.0 - protein_ratio - carb_ratio
-            elif mode_roll < 0.5:
-                # 健身/高蛋白模式 (高蛋白, 中碳水, 低脂)
-                protein_ratio = np.random.uniform(0.30, 0.50)
-                fat_ratio = np.random.uniform(0.15, 0.25)
-                carb_ratio = 1.0 - protein_ratio - fat_ratio
+            # 根据global_step自动判断阶段
+            if self.global_step < 100000:
+                self.curriculum_stage = 1  # 简单固定
+            elif self.global_step < 300000:
+                self.curriculum_stage = 2  # 轻度随机
             else:
-                # 均衡/普通模式
-                protein_ratio = np.random.uniform(0.15, 0.25)
-                fat_ratio = np.random.uniform(0.20, 0.35)
-                carb_ratio = 1.0 - protein_ratio - fat_ratio
-                
-            # 保证比例归一化 (防止浮点误差)
-            total_ratio = protein_ratio + fat_ratio + carb_ratio
-            if abs(mode_roll - 0.2) < 0.001: # Check if we were in keto logic (re-derive fat) -> simplified above, just normalize
-                 pass
-            
-            # Calculate macros based on ratios and calories
-            # 1g Protein = 4 kcal, 1g Carbs = 4 kcal, 1g Fat = 9 kcal
-            
-            # Re-normalize just in case
-            protein_ratio = protein_ratio / total_ratio
-            fat_ratio = fat_ratio / total_ratio
-            carb_ratio = carb_ratio / total_ratio
+                self.curriculum_stage = 3  # 完全随机
 
-            self.target_protein = (self.target_calories * protein_ratio) / 4.0
-            self.target_carbs = (self.target_calories * carb_ratio) / 4.0
-            self.target_fat = (self.target_calories * fat_ratio) / 9.0
-            
+            if self.curriculum_stage == 1:
+                # ========== 阶段1: 简单固定目标 (0-100k steps) ==========
+                # 让模型先学会基本的配餐逻辑
+                self.target_calories = 2000.0
+                self.budget_limit = 150.0  # 给足够宽松的预算
+                self.target_protein = 100.0  # 20% 蛋白质
+                self.target_carbs = 250.0    # 50% 碳水
+                self.target_fat = 65.0       # 30% 脂肪
+
+            elif self.curriculum_stage == 2:
+                # ========== 阶段2: 轻度随机 (100k-300k steps) ==========
+                # 在基础目标附近轻微波动
+                self.target_calories = np.random.uniform(1800.0, 2200.0)
+                self.budget_limit = np.random.uniform(120.0, 180.0)
+                # 固定营养比例，减少变量
+                self.target_protein = (self.target_calories * 0.20) / 4.0
+                self.target_carbs = (self.target_calories * 0.50) / 4.0
+                self.target_fat = (self.target_calories * 0.30) / 9.0
+
+            else:
+                # ========== 阶段3: 完全随机 (300k+ steps) ==========
+                # 1. 随机化卡路里目标 (1200 ~ 3000 kcal) - 覆盖减脂到增肌
+                self.target_calories = np.random.uniform(1200.0, 3000.0)
+
+                # 2. 预算基于卡路里生成
+                base_cost_per_100kcal = np.random.uniform(10.0, 16.0)
+                estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
+                self.budget_limit = np.clip(estimated_cost, 80.0, 400.0)
+
+                # 3. 随机化营养比例
+                mode_roll = np.random.random()
+
+                if mode_roll < 0.2:
+                    # Keto/低碳模式
+                    carb_ratio = np.random.uniform(0.05, 0.15)
+                    protein_ratio = np.random.uniform(0.20, 0.35)
+                    fat_ratio = 1.0 - protein_ratio - carb_ratio
+                elif mode_roll < 0.5:
+                    # 健身/高蛋白模式
+                    protein_ratio = np.random.uniform(0.30, 0.50)
+                    fat_ratio = np.random.uniform(0.15, 0.25)
+                    carb_ratio = 1.0 - protein_ratio - fat_ratio
+                else:
+                    # 均衡/普通模式
+                    protein_ratio = np.random.uniform(0.15, 0.25)
+                    fat_ratio = np.random.uniform(0.20, 0.35)
+                    carb_ratio = 1.0 - protein_ratio - fat_ratio
+
+                # 归一化
+                total_ratio = protein_ratio + fat_ratio + carb_ratio
+                protein_ratio /= total_ratio
+                fat_ratio /= total_ratio
+                carb_ratio /= total_ratio
+
+                self.target_protein = (self.target_calories * protein_ratio) / 4.0
+                self.target_carbs = (self.target_calories * carb_ratio) / 4.0
+                self.target_fat = (self.target_calories * fat_ratio) / 9.0
         else:
             # 测试模式恢复默认
             self.target_calories = self.default_target_calories
@@ -189,7 +203,6 @@ class MealPlanningEnv(gym.Env):
             self.target_carbs = self.default_target_carbs
             self.target_fat = self.default_target_fat
 
-        
         # 重置所有状态变量
         self.current_step_idx = 0
         self.total_calories = 0.0
@@ -199,16 +212,20 @@ class MealPlanningEnv(gym.Env):
         self.total_cost = 0.0
         self.selected_recipes = []
         self.selected_categories = []
-        
-        # [优化] 可行性检查：防止生成完全无解的低预算场景
+
+        # 可行性检查：防止生成完全无解的低预算场景
         if self.training_mode:
-            min_cost_6_items = 30.0 # 预估最小值 (5元/道 * 6)
+            min_cost_6_items = 30.0  # 预估最小值 (5元/道 * 6)
             if self.budget_limit < min_cost_6_items * 1.2:
-                 self.budget_limit = min_cost_6_items * 1.2
-        
+                self.budget_limit = min_cost_6_items * 1.2
+
         observation = self._get_observation()
-        info = {}
-        
+        info = {
+            'curriculum_stage': self.curriculum_stage if self.training_mode else 0,
+            'target_calories': self.target_calories,
+            'budget_limit': self.budget_limit
+        }
+
         return observation, info
     
     def _get_current_meal_type(self):
@@ -220,10 +237,10 @@ class MealPlanningEnv(gym.Env):
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict]:
         """
         执行一个动作
-        
+
         Args:
             action: 动作索引（菜品ID对应的索引）
-        
+
         Returns:
             observation: 新的观察值
             reward: 奖励值
@@ -233,18 +250,18 @@ class MealPlanningEnv(gym.Env):
         """
         # 获取选中的菜品
         recipe = self.recipes[action]
-        
+
         # 检查菜品是否适合当前餐次
         current_meal_type = self._get_current_meal_type()
-        
-        # 如果菜品不适合当前餐次，给予惩罚
+
+        # [修复] 动作屏蔽应该已经阻止了错误餐次选择
+        # 如果仍然发生，说明action_masks有bug，给极大惩罚并提前终止
         if current_meal_type not in recipe['meal_type']:
-            reward = -20.0  # 给予一次性惩罚
-            # terminated = False # 不结束，允许重试，但RL通常是一步一动。为简化训练，我们仍继续。
-            # Better strategy: Allow move but give huge penalty so it learns not to do it.
-            # But if we terminate, it might be stuck. Let's just Penalty + Continue.
-        else:
-            reward = 0.0 # Base reward
+            print(f"[ERROR] Action masking failed! Selected {recipe['name']} for {current_meal_type}")
+            return self._get_observation(), -100.0, True, False, {
+                'error': 'Invalid meal type selection',
+                'selected_recipe': recipe['name']
+            }
 
         # 更新累计营养和花费
         self.total_calories += recipe['calories']
@@ -252,124 +269,230 @@ class MealPlanningEnv(gym.Env):
         self.total_carbs += recipe['carbs']
         self.total_fat += recipe['fat']
         self.total_cost += recipe['price']
-        
+
         # 记录选择的菜品
         self.selected_recipes.append(recipe)
         self.selected_categories.append(recipe['category'])
-        
-        # 移动到下一餐
+
+        # 移动到下一步
         self.current_step_idx += 1
-        
+
         # 检查是否完成一天的配餐
         terminated = self.current_step_idx >= self.max_steps
         truncated = False
-        
-        # 计算奖励
+
+        # ========== 奖励计算 ==========
         if terminated:
-            reward += self._calculate_reward()
+            # Episode结束时给予最终奖励
+            reward = self._calculate_reward()
         else:
-            # 中间步骤给予平滑的进度奖励 (增强引导)
-            # [优化] 增加与营养进度相关的即时奖励 (Dense Reward)
-            ideal_cal = (self.current_step_idx / self.max_steps) * self.target_calories
-            # 距离理想进度越近，奖励越高
-            cal_progress_reward = np.exp(-abs(self.total_calories - ideal_cal) / 300.0) * 0.5
-            reward += cal_progress_reward
-        
+            # ========== 增强的中间步骤奖励 (Dense Reward) ==========
+            reward = self._calculate_step_reward()
+
         observation = self._get_observation()
         info = {
             'selected_recipe': recipe['name'],
             'valid_action': True,
             'total_cost': self.total_cost,
-            'total_calories': self.total_calories
+            'total_calories': self.total_calories,
+            'step': self.current_step_idx,
+            'unique_categories': len(set(self.selected_categories))
         }
-        
+
         return observation, reward, terminated, truncated, info
+
+    def _calculate_step_reward(self) -> float:
+        """
+        计算中间步骤的即时奖励 (Dense Reward)
+        目标：引导模型在每一步都朝着正确方向前进
+        """
+        reward = 0.0
+
+        # 理想进度
+        progress = self.current_step_idx / self.max_steps
+        ideal_cal = progress * self.target_calories
+        ideal_budget = progress * self.budget_limit
+
+        # 1. 卡路里进度奖励 (范围: -2 到 +2)
+        cal_deviation = abs(self.total_calories - ideal_cal)
+        if cal_deviation < 100:
+            cal_reward = 2.0 - (cal_deviation / 50.0)
+        elif cal_deviation < 300:
+            cal_reward = 1.0 - (cal_deviation - 100) / 200.0
+        else:
+            cal_reward = max(-2.0, 0.0 - (cal_deviation - 300) / 300.0)
+        reward += cal_reward * 0.5  # 权重0.5
+
+        # 2. 预算进度奖励 (范围: -1 到 +1)
+        budget_deviation = self.total_cost - ideal_budget
+        if budget_deviation <= 0:
+            # 花费低于预期，轻微奖励
+            budget_reward = 0.5
+        elif budget_deviation < 10:
+            # 花费略高，还可以接受
+            budget_reward = 0.5 - (budget_deviation / 20.0)
+        else:
+            # 花费过高，惩罚
+            budget_reward = max(-1.0, 0.0 - (budget_deviation / 30.0))
+        reward += budget_reward * 0.3  # 权重0.3
+
+        # 3. 多样性奖励 (鼓励选择不同类别的菜品)
+        unique_categories = len(set(self.selected_categories))
+        if unique_categories > 1:
+            # 每多一个独特类别，奖励0.3分
+            diversity_reward = (unique_categories - 1) * 0.3
+            reward += diversity_reward
+
+        # 4. 重复惩罚 (如果选了重复的菜品)
+        recipe_names = [r['name'] for r in self.selected_recipes]
+        if len(recipe_names) != len(set(recipe_names)):
+            reward -= 1.0  # 选了重复的菜，扣分
+
+        return reward
     
     def _get_observation(self) -> np.ndarray:
         """
-        获取当前观察值 (归一化)
+        获取当前观察值 (归一化) - 13维版本
         """
+        current_meal = self._get_current_meal_type()
+
         obs = np.array([
-            self.current_step_idx / self.max_steps,
-            self.total_calories / self.target_calories,
-            self.total_protein / self.target_protein,
-            self.total_carbs / self.target_carbs,
-            self.total_fat / self.target_fat,
-            self.total_cost / self.budget_limit,
-            # [新增] 剩余资源比例 (可以是负数)
-            (self.target_calories - self.total_calories) / self.target_calories,  
-            (self.budget_limit - self.total_cost) / self.budget_limit,
+            # 原有的8维
+            self.current_step_idx / self.max_steps,                              # [0] 当前进度
+            self.total_calories / self.target_calories,                          # [1] 累计卡路里比例
+            self.total_protein / self.target_protein,                            # [2] 累计蛋白质比例
+            self.total_carbs / self.target_carbs,                                # [3] 累计碳水比例
+            self.total_fat / self.target_fat,                                    # [4] 累计脂肪比例
+            self.total_cost / self.budget_limit,                                 # [5] 累计花费比例
+            (self.target_calories - self.total_calories) / self.target_calories, # [6] 剩余卡路里比例
+            (self.budget_limit - self.total_cost) / self.budget_limit,           # [7] 剩余预算比例
+
+            # 新增的5维
+            (self.max_steps - self.current_step_idx) / self.max_steps,           # [8] 剩余步数比例
+            float(current_meal == 'breakfast'),                                  # [9] 当前是否早餐
+            float(current_meal == 'lunch'),                                      # [10] 当前是否午餐
+            float(current_meal == 'dinner'),                                     # [11] 当前是否晚餐
+            len(set(self.selected_categories)) / max(1, len(self.selected_recipes)),  # [12] 多样性指标
         ], dtype=np.float32)
-        
+
         # 截断到 [-2.0, 2.0] 范围内，防止极值影响
         return np.clip(obs, -2.0, 2.0)
     
-    def _nutrient_score(self, actual, target, max_bonus=10.0, sigma=0.15):
+    def _nutrient_score(self, actual, target, max_bonus=10.0, tolerance=0.15):
         """
-        优化后的营养评分：使用高斯函数提供平滑的梯度奖励
-        即使偏差较大，只要在接近，也能获得部分奖励，引导模型收敛
+        简化版营养评分：线性分段奖励 (替代高斯函数)
+
         Args:
-            sigma: 高斯函数的标准差，控制奖励衰减的敏感度。
-                   sigma=0.15 (±15% 偏差得高分), sigma=0.25 (±25% 偏差得高分)
+            actual: 实际值
+            target: 目标值
+            max_bonus: 最大奖励分数
+            tolerance: 容忍度，例如0.15表示±15%内得满分
+
+        Returns:
+            score: 奖励分数
         """
-        if target <= 0: return 0.0
+        if target <= 0:
+            return 0.0
+
         ratio = actual / target
-        
-        # 使用高斯型奖励函数: exp(-0.5 * ((x - mu) / sigma)^2)
-        score = max_bonus * np.exp(-0.5 * ((ratio - 1.0) / sigma) ** 2)
-        
-        return score
+        error = abs(ratio - 1.0)
+
+        if error <= tolerance:
+            # 在容忍范围内，给满分
+            return max_bonus
+        elif error <= tolerance * 2:
+            # 在2倍容忍范围内，线性递减到50%
+            return max_bonus * (1.0 - 0.5 * (error - tolerance) / tolerance)
+        elif error <= tolerance * 3:
+            # 在3倍容忍范围内，线性递减到0
+            return max_bonus * 0.5 * (1.0 - (error - tolerance * 2) / tolerance)
+        else:
+            # 超出3倍容忍范围，给小幅惩罚
+            return max(-max_bonus * 0.3, -error * max_bonus * 0.5)
 
     def _calculate_reward(self) -> float:
         """
-        计算最终奖励
+        计算最终奖励 (Episode结束时)
         """
-        # 1. 营养达标奖励
-        # [优化] 分营养素设置 sigma，对难以精确控制的宏量（如脂肪）给予更高容忍度
-        calorie_reward = self._nutrient_score(self.total_calories, self.target_calories, max_bonus=15.0, sigma=0.15)
-        protein_reward = self._nutrient_score(self.total_protein, self.target_protein, max_bonus=12.0, sigma=0.20)
-        carbs_reward   = self._nutrient_score(self.total_carbs, self.target_carbs, max_bonus=10.0, sigma=0.20)
-        fat_reward     = self._nutrient_score(self.total_fat, self.target_fat, max_bonus=10.0, sigma=0.25)
-        
-        nutrition_reward = (calorie_reward + protein_reward + carbs_reward + fat_reward) / 4.0 
+        # ========== 1. 营养达标奖励 ==========
+        # 使用简化的线性分段奖励，不同营养素给予不同容忍度
+        calorie_reward = self._nutrient_score(
+            self.total_calories, self.target_calories,
+            max_bonus=15.0, tolerance=0.10  # ±10% 卡路里得满分
+        )
+        protein_reward = self._nutrient_score(
+            self.total_protein, self.target_protein,
+            max_bonus=10.0, tolerance=0.20  # ±20% 蛋白质得满分
+        )
+        carbs_reward = self._nutrient_score(
+            self.total_carbs, self.target_carbs,
+            max_bonus=8.0, tolerance=0.25  # ±25% 碳水得满分
+        )
+        fat_reward = self._nutrient_score(
+            self.total_fat, self.target_fat,
+            max_bonus=7.0, tolerance=0.30  # ±30% 脂肪得满分 (最难控制)
+        )
 
-        # 2. 预算奖励 (优化版)
-        over_ratio = max(0.0, (self.total_cost - self.budget_limit) / (self.budget_limit + 1e-8))
-        if over_ratio <= 0.05:
-            budget_reward = 3.0  # 合规奖励
+        # 总营养奖励 (最高40分)
+        nutrition_reward = calorie_reward + protein_reward + carbs_reward + fat_reward
+
+        # ========== 2. 预算奖励 ==========
+        budget_ratio = self.total_cost / self.budget_limit
+        if budget_ratio <= 0.90:
+            # 花费低于90%，给予额外奖励
+            budget_reward = 5.0
+        elif budget_ratio <= 1.0:
+            # 花费在90%-100%，正常奖励
+            budget_reward = 3.0
+        elif budget_ratio <= 1.05:
+            # 花费在100%-105%，轻微惩罚
+            budget_reward = 1.0
+        elif budget_ratio <= 1.15:
+            # 花费在105%-115%，中等惩罚
+            budget_reward = -2.0
         else:
-            # 软惩罚：每超 10% 扣 2 分
-            budget_reward = 3.0 - (over_ratio * 20.0)
-            budget_reward = max(-5.0, budget_reward) # 封底太狠会掩盖营养奖励
-        
-        # 3. 多样性奖励
-        variety_reward = 0.0
+            # 超支超过15%，重惩罚
+            budget_reward = max(-8.0, -5.0 - (budget_ratio - 1.15) * 20)
+
+        # ========== 3. 多样性奖励 ==========
         unique_categories = len(set(self.selected_categories))
-        if unique_categories >= 3:
-            variety_reward = 5.0
-        elif unique_categories >= 2: 
+        unique_recipes = len(set(r['name'] for r in self.selected_recipes))
+
+        if unique_categories >= 4:
+            variety_reward = 6.0
+        elif unique_categories >= 3:
+            variety_reward = 4.0
+        elif unique_categories >= 2:
             variety_reward = 2.0
-        
-        # 4. 忌口惩罚
+        else:
+            variety_reward = 0.0
+
+        # 额外奖励：如果6道菜都不重复
+        if unique_recipes == self.max_steps:
+            variety_reward += 3.0
+
+        # ========== 4. 忌口惩罚 ==========
         dislike_penalty = 0.0
-        for recipe in self.selected_recipes:
-            recipe_tags = set(recipe['tags'])
-            if self.disliked_tags:
+        if self.disliked_tags:
+            for recipe in self.selected_recipes:
+                recipe_tags = set(recipe.get('tags', []))
                 disliked = recipe_tags.intersection(set(self.disliked_tags))
                 if disliked:
-                    dislike_penalty -= 10.0 
-        
-        # 综合奖励
+                    dislike_penalty -= 8.0  # 每触犯一个忌口扣8分
+
+        # ========== 综合奖励 ==========
         total_reward = (
             self.weight_nutrition * nutrition_reward +
             self.weight_budget * budget_reward +
             self.weight_variety * variety_reward +
             dislike_penalty
         )
-        
-        # Debug Print (Visible in console during training)
-        print(f"[DEBUG v2] Score={total_reward:5.2f} | Nutri={nutrition_reward:5.2f} (CalDiff:{abs(self.total_calories-self.target_calories):4.0f}) | Budg={budget_reward:5.1f} | Var={variety_reward:3.1f}")
-        
+
+        # Debug输出 (训练时可见)
+        cal_error = abs(self.total_calories - self.target_calories) / self.target_calories * 100
+        print(f"[FINAL] R={total_reward:6.2f} | Nutri={nutrition_reward:5.1f} (CalErr:{cal_error:4.1f}%) | "
+              f"Budg={budget_reward:4.1f} ({budget_ratio*100:.0f}%) | Var={variety_reward:3.1f} ({unique_categories}cat)")
+
         return total_reward
     
     def render(self):
