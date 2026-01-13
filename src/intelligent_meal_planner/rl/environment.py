@@ -24,7 +24,7 @@ class MealPlanningEnv(gym.Env):
         target_protein: float = 100.0,
         target_carbs: float = 250.0,
         target_fat: float = 65.0,
-        budget_limit: float = 120.0,
+        budget_limit: float = 100.0,  # 根据中国菜谱调整：平均日花费约90元
         disliked_tags: Optional[List[str]] = None,
         weight_nutrition: float = 1.0,
         weight_budget: float = 0.5,
@@ -116,6 +116,7 @@ class MealPlanningEnv(gym.Env):
         self.total_cost = 0.0
         self.selected_recipes = []
         self.selected_categories = []
+        self.selected_recipe_indices = set()  # 记录已选菜品索引，防止重复
     
     def reset(self, seed=None, options=None):
         """
@@ -142,7 +143,7 @@ class MealPlanningEnv(gym.Env):
                 # ========== 阶段1: 简单固定目标 (0-100k steps) ==========
                 # 让模型先学会基本的配餐逻辑
                 self.target_calories = 2000.0
-                self.budget_limit = 150.0  # 给足够宽松的预算
+                self.budget_limit = 120.0  # 给够宽松的预算 (平均日花费90元)
                 self.target_protein = 100.0  # 20% 蛋白质
                 self.target_carbs = 250.0    # 50% 碳水
                 self.target_fat = 65.0       # 30% 脂肪
@@ -151,7 +152,7 @@ class MealPlanningEnv(gym.Env):
                 # ========== 阶段2: 轻度随机 (100k-300k steps) ==========
                 # 在基础目标附近轻微波动
                 self.target_calories = np.random.uniform(1800.0, 2200.0)
-                self.budget_limit = np.random.uniform(120.0, 180.0)
+                self.budget_limit = np.random.uniform(80.0, 150.0)  # 根据中国菜谱价格调整
                 # 固定营养比例，减少变量
                 self.target_protein = (self.target_calories * 0.20) / 4.0
                 self.target_carbs = (self.target_calories * 0.50) / 4.0
@@ -162,10 +163,11 @@ class MealPlanningEnv(gym.Env):
                 # 1. 随机化卡路里目标 (1200 ~ 3000 kcal) - 覆盖减脂到增肌
                 self.target_calories = np.random.uniform(1200.0, 3000.0)
 
-                # 2. 预算基于卡路里生成
-                base_cost_per_100kcal = np.random.uniform(10.0, 16.0)
+                # 2. 预算基于卡路里生成 (根据中国菜谱价格调整)
+                # 平均每100kcal约4.5元 (90元/2000kcal)
+                base_cost_per_100kcal = np.random.uniform(3.5, 6.0)
                 estimated_cost = (self.target_calories / 100.0) * base_cost_per_100kcal
-                self.budget_limit = np.clip(estimated_cost, 80.0, 400.0)
+                self.budget_limit = np.clip(estimated_cost, 50.0, 250.0)
 
                 # 3. 随机化营养比例
                 mode_roll = np.random.random()
@@ -212,10 +214,11 @@ class MealPlanningEnv(gym.Env):
         self.total_cost = 0.0
         self.selected_recipes = []
         self.selected_categories = []
+        self.selected_recipe_indices = set()  # 记录已选菜品的索引，用于防止重复
 
         # 可行性检查：防止生成完全无解的低预算场景
         if self.training_mode:
-            min_cost_6_items = 30.0  # 预估最小值 (5元/道 * 6)
+            min_cost_6_items = 24.0  # 中国菜谱最低成本预估 (最便宜约4元/道 * 6)
             if self.budget_limit < min_cost_6_items * 1.2:
                 self.budget_limit = min_cost_6_items * 1.2
 
@@ -248,6 +251,9 @@ class MealPlanningEnv(gym.Env):
             truncated: 是否被截断
             info: 额外信息
         """
+        # 确保 action 是 Python int (可能从 numpy 传入)
+        action = int(action)
+
         # 获取选中的菜品
         recipe = self.recipes[action]
 
@@ -273,6 +279,7 @@ class MealPlanningEnv(gym.Env):
         # 记录选择的菜品
         self.selected_recipes.append(recipe)
         self.selected_categories.append(recipe['category'])
+        self.selected_recipe_indices.add(action)  # 记录已选菜品索引
 
         # 移动到下一步
         self.current_step_idx += 1
@@ -343,10 +350,7 @@ class MealPlanningEnv(gym.Env):
             diversity_reward = (unique_categories - 1) * 0.3
             reward += diversity_reward
 
-        # 4. 重复惩罚 (如果选了重复的菜品)
-        recipe_names = [r['name'] for r in self.selected_recipes]
-        if len(recipe_names) != len(set(recipe_names)):
-            reward -= 1.0  # 选了重复的菜，扣分
+        # 注：重复惩罚已移除，因为 action_masks 已禁止选择重复菜品
 
         return reward
     
@@ -456,7 +460,6 @@ class MealPlanningEnv(gym.Env):
 
         # ========== 3. 多样性奖励 ==========
         unique_categories = len(set(self.selected_categories))
-        unique_recipes = len(set(r['name'] for r in self.selected_recipes))
 
         if unique_categories >= 4:
             variety_reward = 6.0
@@ -467,9 +470,8 @@ class MealPlanningEnv(gym.Env):
         else:
             variety_reward = 0.0
 
-        # 额外奖励：如果6道菜都不重复
-        if unique_recipes == self.max_steps:
-            variety_reward += 3.0
+        # 6道菜不重复的奖励 (由于action_masks强制不重复，这个奖励现在总是获得)
+        variety_reward += 3.0
 
         # ========== 4. 忌口惩罚 ==========
         dislike_penalty = 0.0
@@ -530,54 +532,66 @@ class MealPlanningEnv(gym.Env):
         """
         生成动作掩码：屏蔽无效动作。
         1. 必须符合当前餐次 (早餐只能选早餐菜)
-        2. [新增] 必须买得起 (当前价格 <= 剩余预算 + 缓冲)
+        2. 必须买得起 (当前价格 <= 剩余预算 + 缓冲)
+        3. [新增] 不能选择已经选过的菜品 (防止重复，增加多样性)
         """
         mask = np.zeros(self.action_space.n, dtype=bool)
-        
+
         if self.current_step_idx >= self.max_steps:
-            return mask 
-            
+            return mask
+
         current_meal_type = self._get_current_meal_type()
-        
+
         # 计算剩余预算，并给予一定的浮动 (例如允许超支 10% 用于最后微调)
         remaining_budget = self.budget_limit - self.total_cost
-        budget_buffer = self.budget_limit * 0.10 
+        budget_buffer = self.budget_limit * 0.10
         max_affordable_price = remaining_budget + budget_buffer
-        
+
         possible_indices = []
-        
+
         for i, recipe in enumerate(self.recipes):
-            # 只有同时满足：1. 餐次对，2. 价格别太离谱，才允许选
-            if current_meal_type in recipe['meal_type']:
-                if recipe['price'] <= max_affordable_price:
-                    mask[i] = True
-                    possible_indices.append(i)
-                else:
-                    # 如果太贵了，直接屏蔽，不让模型选
-                    mask[i] = False
-        
-        # 防死锁兜底逻辑优化
-        if not possible_indices: 
-            # 策略优化：如果没钱了，不能摆烂随便选（否则会选贵的导致罚分爆炸）
-            # 我们强制模型只能选当前餐次中【价格最低】的菜，进行“止损”
-            
-            # 1. 找出所有属于当前餐次的菜品索引
+            # 条件1: 餐次必须对
+            if current_meal_type not in recipe['meal_type']:
+                continue
+
+            # 条件2: 不能选已经选过的菜 (核心改动：防止重复)
+            if i in self.selected_recipe_indices:
+                continue
+
+            # 条件3: 价格必须在预算范围内
+            if recipe['price'] <= max_affordable_price:
+                mask[i] = True
+                possible_indices.append(i)
+
+        # 防死锁兜底逻辑
+        if not possible_indices:
+            # 情况1: 预算不够但还有未选的菜 -> 选最便宜的未选过的菜
             valid_meal_indices = [
-                i for i, r in enumerate(self.recipes) 
-                if current_meal_type in r['meal_type']
+                i for i, r in enumerate(self.recipes)
+                if current_meal_type in r['meal_type'] and i not in self.selected_recipe_indices
             ]
-            
+
             if valid_meal_indices:
-                # 2. 找到这些菜里的最低价格
                 min_price = min(self.recipes[i]['price'] for i in valid_meal_indices)
-                
-                # 3. 只解锁价格等于最低价的菜
                 for i in valid_meal_indices:
                     if self.recipes[i]['price'] == min_price:
                         mask[i] = True
-            
-            # 极少数情况：如果没有valid_meal_indices（说明数据库里没有这种餐次的菜），则全开防止报错
+                        possible_indices.append(i)
+
+            # 情况2: 所有符合餐次的菜都选过了 -> 允许重复选择 (极端情况兜底)
+            if not possible_indices:
+                valid_meal_indices = [
+                    i for i, r in enumerate(self.recipes)
+                    if current_meal_type in r['meal_type']
+                ]
+                if valid_meal_indices:
+                    min_price = min(self.recipes[i]['price'] for i in valid_meal_indices)
+                    for i in valid_meal_indices:
+                        if self.recipes[i]['price'] == min_price:
+                            mask[i] = True
+
+            # 极端情况：如果还是没有可选的，全开
             if not np.any(mask):
-                 mask[:] = True
-                    
+                mask[:] = True
+
         return mask

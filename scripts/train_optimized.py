@@ -159,7 +159,7 @@ def make_train_env():
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=150.0,
+        budget_limit=100.0,  # 根据中国菜谱调整 (平均日花费约90元)
         disliked_tags=[],
         training_mode=True
     )
@@ -174,7 +174,7 @@ def make_eval_env():
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=150.0,
+        budget_limit=100.0,  # 根据中国菜谱调整
         training_mode=False
     )
     env = ActionMasker(env, mask_fn)

@@ -20,7 +20,7 @@ def make_test_env(randomize=False):
         target_protein=100.0,
         target_carbs=250.0,
         target_fat=65.0,
-        budget_limit=150.0,
+        budget_limit=100.0,  # 根据中国菜谱调整
         training_mode=randomize
     )
     env = ActionMasker(env, mask_fn)
@@ -35,7 +35,7 @@ model = MaskablePPO.load(model_path)
 
 # 测试固定目标
 print("\n" + "=" * 70)
-print("TEST 1: Fixed Target (2000 kcal, 150 yuan budget)")
+print("TEST 1: Fixed Target (2000 kcal, 100 yuan budget)")
 print("=" * 70)
 
 env = make_vec_env(lambda: make_test_env(False), n_envs=1)
