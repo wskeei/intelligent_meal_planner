@@ -2,16 +2,40 @@
 配餐方案相关 API 路由
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from typing import List, Optional
 
 from ..schemas import (
     MealPlanRequest, MealPlanResponse, MealPlanHistory,
     UserPreferences, HealthGoal
 )
 from ..services import meal_plan_service
+from ..feasibility import feasibility_service, FeasibilityResult
 
 router = APIRouter(prefix="/meal-plans", tags=["配餐方案"])
+
+
+@router.get("/feasibility", response_model=FeasibilityResult, summary="检查参数可行性")
+async def check_feasibility(
+    budget: float = Query(50.0, ge=10, le=200, description="预算(元)"),
+    target_calories: int = Query(2000, ge=1200, le=4000, description="目标热量(kcal)"),
+    target_protein: int = Query(100, ge=30, le=300, description="目标蛋白质(g)"),
+    target_carbs: int = Query(250, ge=50, le=500, description="目标碳水(g)"),
+    target_fat: int = Query(60, ge=20, le=200, description="目标脂肪(g)")
+):
+    """
+    检查给定参数的可行性
+    
+    返回在给定预算下能达到的最大营养值，以及各指标的可达性百分比。
+    当目标超出可达范围时会返回警告信息。
+    """
+    return feasibility_service.check_feasibility(
+        budget=budget,
+        target_calories=target_calories,
+        target_protein=target_protein,
+        target_carbs=target_carbs,
+        target_fat=target_fat
+    )
 
 
 @router.post("", response_model=MealPlanResponse, summary="生成配餐方案")

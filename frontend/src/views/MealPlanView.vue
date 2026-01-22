@@ -50,7 +50,7 @@
                 <span>{{ $t('meal_plan.calories') }}</span>
                 <span class="val">{{ form.target_calories }} kcal</span>
               </div>
-              <el-slider v-model="form.target_calories" :min="1200" :max="4000" :step="50" :show-tooltip="false" />
+              <el-slider v-model="form.target_calories" :min="1200" :max="4000" :step="50" :show-tooltip="false" @change="checkFeasibility" />
             </div>
 
             <div class="slider-group">
@@ -58,7 +58,7 @@
                 <span>{{ $t('meal_plan.protein') }}</span>
                 <span class="val">{{ form.target_protein }} g</span>
               </div>
-              <el-slider v-model="form.target_protein" :min="30" :max="250" :step="5" :show-tooltip="false" />
+              <el-slider v-model="form.target_protein" :min="30" :max="250" :step="5" :show-tooltip="false" @change="checkFeasibility" />
             </div>
 
             <div class="slider-group">
@@ -84,8 +84,19 @@
                 <span>{{ $t('meal_plan.budget') }}</span>
                 <span class="val">¥{{ form.max_budget }}</span>
               </div>
-              <el-slider v-model="form.max_budget" :min="20" :max="200" :step="5" :show-tooltip="false" />
+              <el-slider v-model="form.max_budget" :min="20" :max="200" :step="5" :show-tooltip="false" @change="checkFeasibility" />
             </div>
+
+            <!-- 可行性警告 -->
+            <el-alert
+              v-if="feasibilityWarning"
+              :type="feasibilityWarning.type"
+              :title="feasibilityWarning.title"
+              :description="feasibilityWarning.description"
+              show-icon
+              :closable="false"
+              class="feasibility-alert"
+            />
 
             <el-button 
               type="primary" 
@@ -258,7 +269,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useShoppingStore } from '@/stores/shopping'
-import { mealPlanApi, type MealPlan, type MealItem } from '@/api'
+import { mealPlanApi, feasibilityApi, type MealPlan, type MealItem, type FeasibilityResult } from '@/api'
 import { ElMessage } from 'element-plus'
 import { Operation, MagicStick, ShoppingCart, More, ChatLineRound } from '@element-plus/icons-vue'
 
@@ -273,6 +284,7 @@ const detailsVisible = ref(false)
 const selectedMeal = ref<MealItem | null>(null)
 const activeTab = ref('manual')
 const aiMessage = ref('')
+const feasibilityWarning = ref<{ type: 'warning' | 'error' | 'info'; title: string; description: string } | null>(null)
 
 // Form
 const form = reactive({
@@ -313,7 +325,62 @@ function applyPreset() {
   } else {
      Object.assign(form, p)
   }
+  // Check feasibility after preset is applied
+  checkFeasibility()
 }
+
+// 检查参数可行性
+let feasibilityTimeout: ReturnType<typeof setTimeout> | null = null
+async function checkFeasibility() {
+  // 防抖：避免频繁请求
+  if (feasibilityTimeout) clearTimeout(feasibilityTimeout)
+  feasibilityTimeout = setTimeout(async () => {
+    try {
+      const { data } = await feasibilityApi.check({
+        budget: form.max_budget,
+        target_calories: form.target_calories,
+        target_protein: form.target_protein,
+        target_carbs: form.target_carbs,
+        target_fat: form.target_fat
+      })
+      
+      if (data.has_warning) {
+        // 根据可达性百分比决定警告级别
+        const lowestFeasibility = Math.min(
+          data.calories_feasibility,
+          data.protein_feasibility
+        )
+        
+        let warningType: 'warning' | 'error' | 'info' = 'info'
+        let title = ''
+        
+        if (lowestFeasibility < 50) {
+          warningType = 'error'
+          title = '目标可能无法达成'
+        } else if (lowestFeasibility < 80) {
+          warningType = 'warning'
+          title = '目标可能较难达成'
+        } else {
+          warningType = 'info'
+          title = '提示'
+        }
+        
+        feasibilityWarning.value = {
+          type: warningType,
+          title: title,
+          description: data.warning_message
+        }
+      } else {
+        feasibilityWarning.value = null
+      }
+    } catch (error) {
+      console.error('Feasibility check failed:', error)
+      // 静默失败，不影响用户操作
+      feasibilityWarning.value = null
+    }
+  }, 300)
+}
+
 
 const loadingText = ref('Connecting to your personal chef...')
 let loadingInterval: any = null
@@ -612,6 +679,22 @@ function useExample(msg: string) {
   border-radius: var(--radius-md);
   font-size: 1rem;
 }
+
+/* 可行性警告样式 */
+.feasibility-alert {
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+}
+
+.feasibility-alert :deep(.el-alert__title) {
+  font-weight: 600;
+}
+
+.feasibility-alert :deep(.el-alert__description) {
+  margin-top: 4px;
+  font-size: 0.85rem;
+}
+
 
 /* Results Area */
 .empty-state {

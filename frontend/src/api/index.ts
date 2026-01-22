@@ -92,4 +92,29 @@ export const mealPlanApi = {
     api.get<MealPlan>(`/meal-plans/${id}`)
 }
 
+// 可行性检查
+export interface FeasibilityResult {
+  budget: number
+  max_calories: number
+  max_protein: number
+  max_carbs: number
+  max_fat: number
+  calories_feasibility: number
+  protein_feasibility: number
+  carbs_feasibility: number
+  fat_feasibility: number
+  has_warning: boolean
+  warning_message: string
+}
+
+export const feasibilityApi = {
+  check: (params: {
+    budget: number
+    target_calories: number
+    target_protein: number
+    target_carbs: number
+    target_fat: number
+  }) => api.get<FeasibilityResult>('/meal-plans/feasibility', { params })
+}
+
 export default api
