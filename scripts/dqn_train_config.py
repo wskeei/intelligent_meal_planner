@@ -25,6 +25,26 @@ from intelligent_meal_planner.rl.dqn import MaskableDQNAgent
 
 # ============ 超参数配置 (AI Agent 修改区) ============
 
+# 价格 & 预算缩放 — 调控配餐问题的可行域
+# PRICE_SCALE: 缩放所有菜品价格 (0.5=半价, 1.0=原价, 2.0=双倍)
+# BUDGET_SCALE: 缩放所有预算限制 (0.5=紧缩, 1.0=原始, 2.0=宽松)
+# 范围: 0.3 ~ 3.0，中国正常饮食建议 PRICE_SCALE * avg_price ∈ [5, 35] 元
+PRICE_SCALE = 1.0
+BUDGET_SCALE = 1.0
+
+# 自定义菜品 — AI agent 可在此添加新菜品（最多 150 道）
+# 每道菜品必须通过 recipe_validator 验证，不合法的会被自动过滤
+# 格式示例:
+# CUSTOM_RECIPES = [
+#     {
+#         "name": "鸡胸肉沙拉",
+#         "calories": 350, "protein": 35, "carbs": 15, "fat": 12,
+#         "price": 18, "meal_type": ["lunch", "dinner"],
+#         "category": "Poultry", "tags": ["healthy"],
+#     },
+# ]
+CUSTOM_RECIPES = []
+
 # 网络结构
 HIDDEN_DIMS = [256, 256, 128]
 
@@ -90,6 +110,9 @@ def get_config(timesteps: int) -> dict:
         "n_envs": N_ENVS,
         "device": DEVICE,
         "total_timesteps": timesteps,
+        "price_scale": PRICE_SCALE,
+        "budget_scale": BUDGET_SCALE,
+        "custom_recipes": CUSTOM_RECIPES,
     }
 
 
@@ -106,9 +129,14 @@ def train(timesteps: int) -> MaskableDQNAgent:
     """
     config = get_config(timesteps)
     n_envs = config["n_envs"]
+    price_scale = config["price_scale"]
+    custom_recipes = config.get("custom_recipes", [])
 
-    envs = [MealPlanningEnv(training_mode=True) for _ in range(n_envs)]
-    agent = MaskableDQNAgent(state_dim=13, action_dim=150, config=config)
+    envs = [
+        MealPlanningEnv(training_mode=True, price_scale=price_scale, custom_recipes=custom_recipes)
+        for _ in range(n_envs)
+    ]
+    agent = MaskableDQNAgent(state_dim=13, action_dim=300, config=config)
 
     obs_list = [env.reset()[0] for env in envs]
     mask_list = [env.action_masks() for env in envs]

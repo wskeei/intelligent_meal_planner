@@ -30,10 +30,12 @@ class MealPlanningEnv(gym.Env):
         weight_budget: float = 0.5,
         weight_variety: float = 0.3,
         training_mode: bool = True,
+        price_scale: float = 1.0,
+        custom_recipes: Optional[List[Dict]] = None,
     ):
         """
         初始化配餐环境
-        
+
         Args:
             recipes_path: 菜品数据库路径
             target_calories: 目标总卡路里
@@ -46,6 +48,8 @@ class MealPlanningEnv(gym.Env):
             weight_budget: 预算奖励权重
             weight_variety: 多样性奖励权重
             training_mode: 是否为训练模式 (开启域随机化)
+            price_scale: 菜品价格缩放因子 (1.0=原价)
+            custom_recipes: 自定义菜品列表 (已通过验证)
         """
         super().__init__()
         
@@ -64,6 +68,27 @@ class MealPlanningEnv(gym.Env):
         with open(recipes_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             self.recipes = data['recipes']
+
+        # 价格缩放：按 price_scale 调整所有菜品价格
+        self.price_scale = price_scale
+        if price_scale != 1.0:
+            for recipe in self.recipes:
+                recipe['price'] = round(recipe['price'] * price_scale, 1)
+
+        # 合并自定义菜品（已通过 recipe_validator 验证）
+        if custom_recipes:
+            base_id = max(r['id'] for r in self.recipes) + 1
+            for i, cr in enumerate(custom_recipes):
+                entry = dict(cr)
+                entry['id'] = base_id + i
+                if isinstance(entry.get('meal_type'), str):
+                    entry['meal_type'] = [entry['meal_type']]
+                if 'tags' not in entry:
+                    entry['tags'] = []
+                if price_scale != 1.0:
+                    entry['price'] = round(entry['price'] * price_scale, 1)
+                self.recipes.append(entry)
+        self.n_real_recipes = len(self.recipes)
         
         # 用户目标参数
         self.target_calories = target_calories
@@ -104,8 +129,8 @@ class MealPlanningEnv(gym.Env):
         self.curriculum_stage = 1  # 1=简单固定, 2=轻度随机, 3=完全随机
         self.global_step = 0  # 由外部trainer设置
         
-        # 定义动作空间 (菜品选择)
-        self.action_space = spaces.Discrete(len(self.recipes))
+        # 定义动作空间 (固定 300: 原始150 + 最多150自定义, 未用slot通过mask屏蔽)
+        self.action_space = spaces.Discrete(300)
         
         # 初始化状态
         self.current_step_idx = 0
@@ -590,8 +615,8 @@ class MealPlanningEnv(gym.Env):
                         if self.recipes[i]['price'] == min_price:
                             mask[i] = True
 
-            # 极端情况：如果还是没有可选的，全开
+            # 极端情况：如果还是没有可选的，开放所有实际菜品
             if not np.any(mask):
-                mask[:] = True
+                mask[:self.n_real_recipes] = True
 
         return mask

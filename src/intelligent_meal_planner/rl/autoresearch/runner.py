@@ -8,13 +8,13 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Optional
 
 import numpy as np
 import torch
 
 from intelligent_meal_planner.rl.autoresearch.benchmark import get_default_benchmark_cases
-from intelligent_meal_planner.rl.autoresearch.evaluator import evaluate_agent
+from intelligent_meal_planner.rl.autoresearch.evaluator import evaluate_agent, evaluate_agent_dual
 
 # Required keys in the output summary.json
 SUMMARY_REQUIRED_KEYS = [
@@ -131,46 +131,43 @@ def run_experiment(
     timesteps: int,
     output_dir: str,
     description: str = "",
+    price_scale: float = 1.0,
+    budget_scale: float = 1.0,
+    custom_recipes: Optional[list] = None,
 ) -> Dict[str, Any]:
-    """Run a single autoresearch experiment: train, evaluate, save.
-
-    Args:
-        run_id: Unique identifier for this experiment run.
-        timesteps: Number of training timesteps.
-        output_dir: Base directory for output artifacts.
-        description: Optional text description of the experiment.
-
-    Returns:
-        Dict containing per_case results and aggregate report.
-    """
+    """Run a single autoresearch experiment: train, evaluate, save."""
     run_dir = Path(output_dir) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
 
-    # Train
     agent = _train_and_get_agent(timesteps, str(run_dir / "checkpoints"))
 
-    # Evaluate
     cases = get_default_benchmark_cases()
-    eval_results = evaluate_agent(agent, cases)
+    eval_results = evaluate_agent_dual(
+        agent, cases,
+        price_scale=price_scale, budget_scale=budget_scale,
+        custom_recipes=custom_recipes,
+    )
 
-    # Build summary
     report = eval_results["report"]
+    closed_per_case = eval_results["closed_result"]["per_case"]
     summary = {
         "run_id": run_id,
         "timesteps": timesteps,
         "description": description,
         "timestamp": datetime.now().isoformat(),
         "aggregate_score": report["aggregate_score"],
+        "closed_score": report.get("closed_score", report["aggregate_score"]),
+        "open_score": report.get("open_score", report["aggregate_score"]),
         "avg_reward": report["avg_reward"],
         "calorie_error_pct": report["calorie_error_pct"],
         "budget_violation_rate": report["budget_violation_rate"],
         "diversity_score": report["diversity_score"],
-        "per_case": eval_results["per_case"],
+        "per_case": closed_per_case,
     }
 
-    # Save
     summary_path = run_dir / "summary.json"
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
 
+    eval_results["per_case"] = closed_per_case
     return eval_results
