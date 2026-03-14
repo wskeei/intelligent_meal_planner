@@ -97,7 +97,7 @@ def train(total_timesteps: int = None):
     # 创建 Agent
     config = DQN_CONFIG.copy()
     config['total_timesteps'] = total_timesteps
-    agent = MaskableDQNAgent(state_dim=13, action_dim=150, config=config)
+    agent = MaskableDQNAgent(state_dim=13, action_dim=300, config=config)
 
     # TensorBoard
     run_name = f"dqn_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

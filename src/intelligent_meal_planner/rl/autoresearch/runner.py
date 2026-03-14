@@ -81,7 +81,7 @@ def _train_and_get_agent(timesteps: int, checkpoint_dir: str, train_fn=None):
 
     n_envs = config["n_envs"]
     envs = [MealPlanningEnv(training_mode=True) for _ in range(n_envs)]
-    agent = MaskableDQNAgent(state_dim=13, action_dim=150, config=config)
+    agent = MaskableDQNAgent(state_dim=13, action_dim=300, config=config)
 
     obs_list = [env.reset()[0] for env in envs]
     mask_list = [env.action_masks() for env in envs]
