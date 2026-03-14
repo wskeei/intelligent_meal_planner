@@ -4,9 +4,10 @@ DQN Autoresearch 单次实验执行入口
 这是 autoresearch 循环中每轮实验的执行脚本。
 AI agent 不应修改此文件。
 
-使用方式:
-    uv run python scripts/dqn_autoresearch_run.py > run.log 2>&1
-    uv run python scripts/dqn_autoresearch_run.py --timesteps 50000
+使用方式 (conda ai_lab + GPU):
+    conda activate ai_lab
+    python scripts/dqn_autoresearch_run.py > run.log 2>&1
+    python scripts/dqn_autoresearch_run.py --timesteps 50000
 
 提取结果:
     grep "^aggregate_score:\\|^avg_reward:" run.log
@@ -22,6 +23,7 @@ from pathlib import Path
 
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
+sys.path.insert(0, str(project_root / "scripts"))
 
 from intelligent_meal_planner.rl.autoresearch.benchmark import get_default_benchmark_cases
 from intelligent_meal_planner.rl.autoresearch.evaluator import evaluate_agent

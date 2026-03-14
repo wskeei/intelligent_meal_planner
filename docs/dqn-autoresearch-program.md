@@ -2,6 +2,15 @@
 
 这是一个自主研究实验框架。你（AI agent）将独立迭代 DQN 配餐模型的训练配置，运行实验，评估结果，并决定保留或丢弃改动。
 
+## 执行环境
+
+**必须使用 conda ai_lab 环境 + GPU 训练。**
+
+- Python: `D:/Download/tools/conda/envs/ai_lab/python.exe`
+- GPU: NVIDIA RTX 4060 (CUDA)
+- 所有训练和实验命令前需要 `conda activate ai_lab`，或直接使用完整路径调用 python
+- 项目 src 已通过 sys.path 自动注入，无需 pip install
+
 ## Setup
 
 与用户一起完成初始设置：
@@ -85,7 +94,8 @@ d4e5f6g	0.000000	0.000000	crash	batch_size=2048 OOM
 1. 查看当前 git 状态和 results.tsv 中的历史
 2. 修改 `scripts/dqn_train_config.py`，尝试一个实验想法
 3. `git commit -m "描述"`
-4. 运行实验：`uv run python scripts/dqn_autoresearch_run.py --timesteps 50000 > run.log 2>&1`
+4. 运行实验：`conda activate ai_lab && python scripts/dqn_autoresearch_run.py --timesteps 50000 > run.log 2>&1`
+   - 使用 conda ai_lab 环境（RTX 4060 GPU 加速）
    - 将所有输出重定向到 run.log（不要用 tee）
 5. 提取结果：`grep "^aggregate_score:\|^avg_reward:" run.log`
 6. 如果 grep 输出为空，表示 crash。运行 `tail -n 50 run.log` 查看错误，尝试修复简单 bug

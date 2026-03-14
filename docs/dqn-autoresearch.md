@@ -19,14 +19,19 @@ scripts/
 
 ## 快速开始
 
+> **环境要求**：使用 conda ai_lab 环境 + RTX 4060 GPU 训练。
+> 激活环境：`conda activate ai_lab`
+
 ### 单次实验
 
 ```bash
+conda activate ai_lab
+
 # 短暂 smoke test（2000 步）
-uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 2000 --run-id smoke
+python scripts/run_dqn_autoresearch_experiment.py --timesteps 2000 --run-id smoke
 
 # 正式实验（50000 步）
-uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run-id exp001 --desc "baseline config"
+python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run-id exp001 --desc "baseline config"
 ```
 
 输出保存至 `models/autoresearch/<run-id>/summary.json`。
@@ -34,11 +39,13 @@ uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run
 ### 多次循环实验
 
 ```bash
+conda activate ai_lab
+
 # 运行 5 轮实验，每轮 50000 步
-uv run python scripts/dqn_autoresearch_loop.py --iterations 5 --timesteps 50000
+python scripts/dqn_autoresearch_loop.py --iterations 5 --timesteps 50000
 
 # 自定义基线分数
-uv run python scripts/dqn_autoresearch_loop.py --iterations 10 --timesteps 100000 --baseline-score 60.0
+python scripts/dqn_autoresearch_loop.py --iterations 10 --timesteps 100000 --baseline-score 60.0
 ```
 
 循环结果追加至 `models/autoresearch/results.tsv`。
@@ -88,6 +95,18 @@ exp002	lr=5e-5	68.20	16.50	15.3	0.40	0.70	discard
 
 - `decision=keep`：分数 >= 当前基线，保留该实验配置
 - `decision=discard`：分数 < 基线，丢弃
+
+### AI Agent 自动进化模式
+
+```bash
+conda activate ai_lab
+
+# 单次 AI 实验（agent 修改 dqn_train_config.py 后执行）
+python scripts/dqn_autoresearch_run.py --timesteps 50000 > run.log 2>&1
+grep "^aggregate_score:" run.log
+```
+
+详见 [dqn-autoresearch-program.md](dqn-autoresearch-program.md) 了解完整的 AI agent 自主循环协议。
 
 ## 运行测试
 
