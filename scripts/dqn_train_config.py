@@ -51,7 +51,7 @@ HIDDEN_DIMS = [256, 256, 128]
 # 优化
 LEARNING_RATE = 3e-4
 LEARNING_RATE_END = 1e-5
-GAMMA = 0.995
+GAMMA = 0.99
 BATCH_SIZE = 256
 GRAD_CLIP = 10.0
 
@@ -80,9 +80,9 @@ def get_epsilon_schedule(timesteps: int):
     返回: list of (start_step, end_step, start_eps, end_eps) 元组
     """
     return [
-        (0, max(1, timesteps // 5), 1.0, 0.3),
-        (max(1, timesteps // 5), max(2, timesteps * 3 // 5), 0.3, 0.1),
-        (max(2, timesteps * 3 // 5), timesteps, 0.1, 0.02),
+        (0, max(1, timesteps // 10), 1.0, 0.3),
+        (max(1, timesteps // 10), max(2, timesteps * 2 // 5), 0.3, 0.05),
+        (max(2, timesteps * 2 // 5), timesteps, 0.05, 0.01),
     ]
 
 
