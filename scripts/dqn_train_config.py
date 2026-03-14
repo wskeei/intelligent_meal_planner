@@ -29,7 +29,7 @@ from intelligent_meal_planner.rl.dqn import MaskableDQNAgent
 HIDDEN_DIMS = [256, 256, 128]
 
 # 优化
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 3e-4
 LEARNING_RATE_END = 1e-5
 GAMMA = 0.99
 BATCH_SIZE = 256
@@ -116,7 +116,7 @@ def train(timesteps: int) -> MaskableDQNAgent:
     global_step = 0
     while global_step < timesteps:
         for env in envs:
-            env.global_step = global_step
+            env.global_step = global_step * 10
 
         actions = [
             agent.select_action(obs_list[i], mask_list[i], global_step)
