@@ -141,6 +141,20 @@ uv remove <package-name>
 uv sync --upgrade
 ```
 
+## DQN Autoresearch
+
+自动化 DQN 训练实验循环，支持单次实验和多轮循环：
+
+```bash
+# 单次实验
+uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run-id exp001
+
+# 多轮循环
+uv run python scripts/dqn_autoresearch_loop.py --iterations 5 --timesteps 50000
+```
+
+详见 [docs/dqn-autoresearch.md](docs/dqn-autoresearch.md)。
+
 ## 开发指南
 
 ### 代码格式化
