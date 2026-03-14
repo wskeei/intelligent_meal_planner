@@ -30,12 +30,27 @@ SUMMARY_REQUIRED_KEYS = [
 ]
 
 
-def _train_and_get_agent(timesteps: int, checkpoint_dir: str):
+def _train_and_get_agent(timesteps: int, checkpoint_dir: str, train_fn=None):
     """Train a DQN agent and return it for evaluation.
 
-    This function runs actual training using the existing DQN training loop.
-    It is designed to be mockable in tests.
+    This function is designed to be mockable in tests. When train_fn is
+    provided (e.g. from dqn_train_config.py), it delegates to that function.
+    Otherwise falls back to a built-in default training loop.
+
+    Args:
+        timesteps: Number of training timesteps.
+        checkpoint_dir: Directory to save the checkpoint.
+        train_fn: Optional callable(timesteps) -> agent. If provided, uses
+            this instead of the built-in training loop.
     """
+    if train_fn is not None:
+        agent = train_fn(timesteps)
+        ckpt_path = Path(checkpoint_dir) / "agent.pt"
+        ckpt_path.parent.mkdir(parents=True, exist_ok=True)
+        agent.save(str(ckpt_path))
+        return agent
+
+    # Default built-in training loop (backward compatible)
     from intelligent_meal_planner.rl.environment import MealPlanningEnv
     from intelligent_meal_planner.rl.dqn import MaskableDQNAgent
 
