@@ -100,10 +100,12 @@ d4e5f6g	0.000000	0.000000	crash	batch_size=2048 OOM
 5. 提取结果：`grep "^aggregate_score:\|^avg_reward:" run.log`
 6. 如果 grep 输出为空，表示 crash。运行 `tail -n 50 run.log` 查看错误，尝试修复简单 bug
 7. 记录到 results.tsv（注意：不要 git commit results.tsv，保持 untracked）
-8. **保留/丢弃决策：**
+8. **刷新进度图**：`python scripts/dqn_autoresearch_plot.py`
+   - 自动生成 `models/autoresearch/progress.png`，用户醒来可以直接查看
+9. **保留/丢弃决策：**
    - 如果 aggregate_score **提升（更高）**：保留 commit，更新最佳分数
    - 如果 aggregate_score **相同或更低**：`git reset --hard` 回退到之前的 commit
-9. 重复步骤 1
+10. 重复步骤 1
 
 ## 超时处理
 

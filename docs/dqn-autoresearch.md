@@ -108,6 +108,21 @@ grep "^aggregate_score:" run.log
 
 详见 [dqn-autoresearch-program.md](dqn-autoresearch-program.md) 了解完整的 AI agent 自主循环协议。
 
+### 查看进度图
+
+每轮实验后会自动刷新进度图，也可手动生成：
+
+```bash
+conda activate ai_lab
+python scripts/dqn_autoresearch_plot.py
+```
+
+图片保存在 `models/autoresearch/progress.png`，包含 4 个子图：
+- **Aggregate Score**：综合评分趋势 + 最佳分数线
+- **Avg Reward**：平均奖励趋势
+- **Calorie Error & Budget Violations**：热量误差和预算超支率（越低越好）
+- **Diversity Score**：菜品多样性 + keep/discard 饼图统计
+
 ## 运行测试
 
 ```bash
