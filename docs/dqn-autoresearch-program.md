@@ -30,7 +30,26 @@
 ## 规则
 
 **你可以做的：**
-- 修改 `scripts/dqn_train_config.py` — 这是你唯一编辑的文件。所有改动都允许：超参数、网络结构、epsilon 策略、PER 参数、训练循环、batch size 等。
+- 修改 `scripts/dqn_train_config.py` — 这是你唯一编辑的文件。所有改动都允许：超参数、网络结构、epsilon 策略、PER 参数、训练循环、batch size、**PRICE_SCALE**、**BUDGET_SCALE**、**CUSTOM_RECIPES** 等。
+
+**PRICE_SCALE / BUDGET_SCALE 说明：**
+- `PRICE_SCALE`：缩放所有菜品价格 (0.5=半价, 1.0=原价, 2.0=双倍)
+- `BUDGET_SCALE`：缩放所有预算限制 (0.5=紧缩, 1.0=原始, 2.0=宽松)
+- 中国正常饮食范围：PRICE_SCALE ∈ [0.3, 3.0]，建议 avg_price * PRICE_SCALE ∈ [5, 35] 元
+- 注意：PRICE_SCALE/BUDGET_SCALE/CUSTOM_RECIPES 只影响 Open 阶段评分（50%），Closed 阶段（50%）始终使用原始设置
+
+**CUSTOM_RECIPES 说明：**
+- 可以向 `CUSTOM_RECIPES` 列表中添加自定义菜品（最多 150 道）
+- 每道菜必须通过 recipe_validator 验证，不合法的会被自动过滤
+- 验证规则：价格 3-50 元，热量 50-800 kcal，kcal/元 8-80，protein/元 0.15-5.0
+- 必须指定 category（9 种之一：Meat/Vegan/Poultry/Breakfast/Seafood/Staple/Cold/Tofu/Soup）和 meal_type
+- action_dim 固定为 300（原始 150 + 最多 150 自定义）
+- 菜品是渐进式累积的：每次 keep 保留，下次在此基础上改
+
+**双阶段评分机制（防作弊）：**
+- **Closed 阶段 (50%)**：仅使用原始 150 道菜，price_scale=1.0, budget_scale=1.0。测试纯算法能力，不可操控。
+- **Open 阶段 (50%)**：使用全部菜品 + 自定义菜品 + scale。鼓励有价值的菜品添加和调参。
+- `aggregate_score = 0.5 * closed_score + 0.5 * open_score`
 
 **你不能做的：**
 - 修改 `environment.py` — 环境机制是固定的。
@@ -39,7 +58,7 @@
 - 修改 `dqn_autoresearch_run.py` — 执行入口是固定的。
 - 安装新依赖或修改 `pyproject.toml`。
 
-**目标：获得最高的 `aggregate_score`。** 评估使用 5 个固定的基准场景（standard、low_budget、high_protein、low_calorie、generous_budget），综合评分考虑热量准确度(30%)、预算合规(25%)、菜品多样性(15%)和平均奖励(30%)。
+**目标：获得最高的 `aggregate_score`。** 评估使用 8 个固定的基准场景（standard、low_budget、high_protein、low_calorie、generous_budget、tight_budget、keto_diet、bulk_diet），综合评分考虑热量准确度(30%，3x惩罚)、预算合规(25%)、菜品多样性(15%，≥3类别才有分)和平均奖励(30%)。
 
 **简洁原则：** 相同效果下，更简单的配置更好。小幅提升但增加大量复杂性不值得保留。删除代码获得相同或更好结果是好事。
 
@@ -50,10 +69,15 @@
 ```
 ---
 aggregate_score:      72.500000
+closed_score:         68.200000
+open_score:           76.800000
 avg_reward:           18.300000
 calorie_error_pct:    12.100000
 budget_violation_rate: 0.200000
 diversity_score:      0.750000
+price_scale:          1.00
+budget_scale:         1.00
+n_custom_recipes:     0
 timesteps:            50000
 ```
 
@@ -64,25 +88,32 @@ grep "^aggregate_score:" run.log
 
 ## 日志格式 (results.tsv)
 
-制表符分隔（NOT 逗号），6 列：
+制表符分隔（NOT 逗号），13 列：
 
 ```
-commit	aggregate_score	avg_reward	status	description
+run_id	description	aggregate_score	closed_score	open_score	avg_reward	calorie_error_pct	budget_violation_rate	diversity_score	price_scale	budget_scale	n_custom_recipes	decision
 ```
 
-1. git commit hash（短格式，7 字符）
-2. aggregate_score（例如 72.500000）— crash 时用 0.000000
-3. avg_reward（例如 18.300000）— crash 时用 0.000000
-4. status：`keep`、`discard` 或 `crash`
-5. 简短描述本次实验做了什么
+1. git commit hash / run_id
+2. aggregate_score — 综合分数 (0.5*closed + 0.5*open)
+3. closed_score — 封闭赛分数（原始菜品）
+4. open_score — 开放赛分数（含自定义菜品+scale）
+5. avg_reward — 平均奖励
+6. calorie_error_pct — 热量误差百分比
+7. budget_violation_rate — 预算超支率
+8. diversity_score — 多样性评分
+9. price_scale / budget_scale — 当前缩放因子
+10. n_custom_recipes — 自定义菜品数量
+11. decision：`keep`、`discard` 或 `crash`
+12. description — 简短描述
 
 示例：
 ```
-commit	aggregate_score	avg_reward	status	description
-a1b2c3d	65.230000	15.400000	keep	baseline
-b2c3d4e	68.100000	17.200000	keep	increase LR to 3e-4
-c3d4e5f	62.500000	14.100000	discard	reduce hidden dims to [128 128]
-d4e5f6g	0.000000	0.000000	crash	batch_size=2048 OOM
+commit	aggregate_score	closed_score	open_score	...	decision	description
+a1b2c3d	65.23	62.10	68.36	...	keep	baseline
+b2c3d4e	68.10	64.50	71.70	...	keep	add 3 recipes + budget_scale 1.1
+c3d4e5f	62.50	60.20	64.80	...	discard	price_scale 0.5 too aggressive
+d4e5f6g	0.00	0.00	0.00	...	crash	batch_size=2048 OOM
 ```
 
 ## 实验循环
@@ -156,3 +187,10 @@ d4e5f6g	0.000000	0.000000	crash	batch_size=2048 OOM
 - 不同的 min_buffer_size
 - 学习率 warmup
 - 梯度累积
+
+### 价格/预算/菜品调优
+- PRICE_SCALE: 0.7, 0.8, 0.9, 1.1, 1.2
+- BUDGET_SCALE: 1.0, 1.1, 1.2, 1.3
+- 添加针对特定 benchmark 短板的菜品（如低碳水菜品 for keto_diet）
+- 添加高性价比早餐菜品（数据库中早餐只有 20 道）
+- 先调好超参数（Closed 分），再加菜品优化（Open 分）
