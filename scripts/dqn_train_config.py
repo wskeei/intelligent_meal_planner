@@ -25,25 +25,65 @@ from intelligent_meal_planner.rl.dqn import MaskableDQNAgent
 
 # ============ 超参数配置 (AI Agent 修改区) ============
 
-# 价格 & 预算缩放 — 调控配餐问题的可行域
-# PRICE_SCALE: 缩放所有菜品价格 (0.5=半价, 1.0=原价, 2.0=双倍)
-# BUDGET_SCALE: 缩放所有预算限制 (0.5=紧缩, 1.0=原始, 2.0=宽松)
-# 范围: 0.3 ~ 3.0，中国正常饮食建议 PRICE_SCALE * avg_price ∈ [5, 35] 元
 PRICE_SCALE = 1.0
-BUDGET_SCALE = 1.0
+BUDGET_SCALE = 1.25  # Open tight_budget: 45→56.25 yuan
 
-# 自定义菜品 — AI agent 可在此添加新菜品（最多 150 道）
-# 每道菜品必须通过 recipe_validator 验证，不合法的会被自动过滤
-# 格式示例:
-# CUSTOM_RECIPES = [
-#     {
-#         "name": "鸡胸肉沙拉",
-#         "calories": 350, "protein": 35, "carbs": 15, "fat": 12,
-#         "price": 18, "meal_type": ["lunch", "dinner"],
-#         "category": "Poultry", "tags": ["healthy"],
-#     },
-# ]
-CUSTOM_RECIPES = []
+# 精准填补数据库缺口的自定义菜品
+CUSTOM_RECIPES = [
+    # --- 便宜午/晚餐：填补 Tofu/Soup/Poultry/Meat/Seafood 的低价空白 ---
+    {
+        "name": "家常豆腐", "calories": 280, "protein": 15, "carbs": 12, "fat": 18,
+        "price": 5, "meal_type": ["lunch", "dinner"], "category": "Tofu",
+        "tags": ["cheap"],
+    },
+    {
+        "name": "番茄蛋汤", "calories": 180, "protein": 10, "carbs": 15, "fat": 8,
+        "price": 4, "meal_type": ["lunch", "dinner"], "category": "Soup",
+        "tags": ["cheap"],
+    },
+    {
+        "name": "辣子鸡丁", "calories": 400, "protein": 28, "carbs": 12, "fat": 25,
+        "price": 7, "meal_type": ["lunch", "dinner"], "category": "Poultry",
+        "tags": ["cheap"],
+    },
+    {
+        "name": "肉末粉条", "calories": 380, "protein": 18, "carbs": 30, "fat": 20,
+        "price": 6, "meal_type": ["lunch", "dinner"], "category": "Meat",
+        "tags": ["cheap"],
+    },
+    {
+        "name": "香煎带鱼", "calories": 350, "protein": 22, "carbs": 5, "fat": 25,
+        "price": 8, "meal_type": ["lunch", "dinner"], "category": "Seafood",
+        "tags": ["cheap"],
+    },
+    # --- 酮友好：填补 fat>15+carbs<15 的完全空白 ---
+    {
+        "name": "生酮煎蛋", "calories": 320, "protein": 18, "carbs": 2, "fat": 26,
+        "price": 5, "meal_type": ["breakfast"], "category": "Breakfast",
+        "tags": ["keto"],
+    },
+    {
+        "name": "五花肉烧白菜", "calories": 480, "protein": 20, "carbs": 8, "fat": 40,
+        "price": 10, "meal_type": ["lunch", "dinner"], "category": "Meat",
+        "tags": ["keto"],
+    },
+    {
+        "name": "清蒸鸡腿", "calories": 380, "protein": 30, "carbs": 3, "fat": 26,
+        "price": 9, "meal_type": ["lunch", "dinner"], "category": "Poultry",
+        "tags": ["keto"],
+    },
+    # --- 高热量：帮助 bulk_diet (3000kcal) 达标 ---
+    {
+        "name": "大份蛋炒饭", "calories": 600, "protein": 15, "carbs": 80, "fat": 22,
+        "price": 8, "meal_type": ["lunch", "dinner"], "category": "Staple",
+        "tags": ["bulk"],
+    },
+    {
+        "name": "肥牛盖饭", "calories": 700, "protein": 28, "carbs": 70, "fat": 30,
+        "price": 14, "meal_type": ["lunch", "dinner"], "category": "Meat",
+        "tags": ["bulk"],
+    },
+]
 
 # 网络结构
 HIDDEN_DIMS = [256, 256, 128]
@@ -74,11 +114,7 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def get_epsilon_schedule(timesteps: int):
-    """Epsilon 衰减策略 — 与课程学习阶段对齐。
-
-    AI agent 可以修改此函数来调整探索策略。
-    返回: list of (start_step, end_step, start_eps, end_eps) 元组
-    """
+    """Epsilon 衰减策略."""
     return [
         (0, max(1, timesteps // 10), 1.0, 0.3),
         (max(1, timesteps // 10), max(2, timesteps * 2 // 5), 0.3, 0.05),
@@ -87,10 +123,6 @@ def get_epsilon_schedule(timesteps: int):
 
 
 def get_config(timesteps: int) -> dict:
-    """构建完整的 DQN 配置字典。
-
-    AI agent 可以修改上面的常量，也可以直接修改此函数。
-    """
     return {
         "hidden_dims": HIDDEN_DIMS,
         "gamma": GAMMA,
@@ -117,16 +149,7 @@ def get_config(timesteps: int) -> dict:
 
 
 def train(timesteps: int) -> MaskableDQNAgent:
-    """训练 DQN agent 并返回。
-
-    AI agent 可以修改训练循环的任何细节。
-
-    Args:
-        timesteps: 训练总步数。
-
-    Returns:
-        训练完成的 MaskableDQNAgent。
-    """
+    """训练 DQN agent 并返回。"""
     config = get_config(timesteps)
     n_envs = config["n_envs"]
     price_scale = config["price_scale"]
