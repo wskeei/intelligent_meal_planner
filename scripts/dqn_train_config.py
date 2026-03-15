@@ -172,5 +172,6 @@ def train(timesteps: int) -> MaskableDQNAgent:
 
         if global_step % config["train_freq"] == 0:
             agent.train_step_fn()
+            agent.train_step_fn()  # UTD ratio = 2
 
     return agent
