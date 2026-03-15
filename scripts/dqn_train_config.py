@@ -156,7 +156,7 @@ def train(timesteps: int) -> MaskableDQNAgent:
     custom_recipes = config.get("custom_recipes", [])
 
     envs = [
-        MealPlanningEnv(training_mode=True, price_scale=price_scale, custom_recipes=custom_recipes)
+        MealPlanningEnv(training_mode=True, price_scale=price_scale)
         for _ in range(n_envs)
     ]
     agent = MaskableDQNAgent(state_dim=13, action_dim=300, config=config)
