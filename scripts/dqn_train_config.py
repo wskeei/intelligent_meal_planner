@@ -26,7 +26,7 @@ from intelligent_meal_planner.rl.dqn import MaskableDQNAgent
 # ============ 超参数配置 (AI Agent 修改区) ============
 
 PRICE_SCALE = 1.0
-BUDGET_SCALE = 1.25  # Open tight_budget: 45→56.25 yuan
+BUDGET_SCALE = 1.5  # Open tight_budget: 45→67.5 yuan (agent spends 50-62)
 
 # 精准填补数据库缺口的自定义菜品
 CUSTOM_RECIPES = [
