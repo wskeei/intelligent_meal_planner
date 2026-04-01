@@ -1,131 +1,123 @@
-"""
-服务层 - 封装业务逻辑
-"""
+"""API service layer."""
 
 import json
 import uuid
 from datetime import datetime
-from typing import Optional, List, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .schemas import (
-    UserPreferences, MealPlanResponse, MealItem, 
-    NutritionSummary, RecipeBase, RecipeFilter
-)
+from sqlalchemy.orm import Session
+
+from ..db.models import MealChatMessage, MealChatSession, User
+from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
+from ..meal_chat.orchestrator import MealChatOrchestrator
+from .feasibility import feasibility_service
+from .schemas import MealItem, MealPlanResponse, NutritionSummary, RecipeBase, RecipeFilter, UserPreferences
 
 
 class RecipeService:
-    """菜品服务"""
-    
     def __init__(self):
         data_path = Path(__file__).parent.parent / "data" / "recipes.json"
-        with open(data_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        self.recipes = data.get('recipes', [])
-    
+        with open(data_path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        self.recipes = data.get("recipes", [])
+
     def get_all(self, filter: RecipeFilter) -> tuple[List[RecipeBase], int]:
-        """获取菜品列表"""
         results = []
-        for r in self.recipes:
-            if filter.meal_type and filter.meal_type not in r.get('meal_type', []):
+        for recipe in self.recipes:
+            if filter.meal_type and filter.meal_type not in recipe.get("meal_type", []):
                 continue
-            if filter.min_price and r['price'] < filter.min_price:
+            if filter.min_price is not None and recipe["price"] < filter.min_price:
                 continue
-            if filter.max_price and r['price'] > filter.max_price:
+            if filter.max_price is not None and recipe["price"] > filter.max_price:
                 continue
-            if filter.category and r['category'] != filter.category:
+            if filter.category and recipe["category"] != filter.category:
                 continue
-            if filter.tags and not all(t in r.get('tags', []) for t in filter.tags):
+            if filter.tags and not all(tag in recipe.get("tags", []) for tag in filter.tags):
                 continue
-            results.append(RecipeBase(**r))
-        
+            results.append(RecipeBase(**recipe))
+
         total = len(results)
-        return results[filter.offset:filter.offset + filter.limit], total
-    
+        return results[filter.offset : filter.offset + filter.limit], total
+
     def get_by_id(self, recipe_id: int) -> Optional[RecipeBase]:
-        """根据ID获取菜品"""
-        for r in self.recipes:
-            if r['id'] == recipe_id:
-                return RecipeBase(**r)
+        for recipe in self.recipes:
+            if recipe["id"] == recipe_id:
+                return RecipeBase(**recipe)
         return None
-    
+
     def get_by_ids(self, ids: List[int]) -> List[RecipeBase]:
-        """批量获取菜品"""
-        return [self.get_by_id(i) for i in ids if self.get_by_id(i)]
-    
+        return [recipe for recipe in (self.get_by_id(recipe_id) for recipe_id in ids) if recipe]
+
     def get_categories(self) -> List[str]:
-        """获取所有分类"""
-        return list(set(r['category'] for r in self.recipes))
-    
+        return list(set(recipe["category"] for recipe in self.recipes))
+
     def get_tags(self) -> List[str]:
-        """获取所有标签"""
         tags = set()
-        for r in self.recipes:
-            tags.update(r.get('tags', []))
+        for recipe in self.recipes:
+            tags.update(recipe.get("tags", []))
         return list(tags)
 
 
 class MealPlanService:
-    """配餐服务"""
-    
     def __init__(self):
         self.recipe_service = RecipeService()
         self._history: Dict[str, MealPlanResponse] = {}
-    
+
     def generate_plan(self, preferences: UserPreferences) -> MealPlanResponse:
-        """生成配餐方案"""
         try:
             from ..tools.rl_model_tool import create_rl_model_tool
+
             tool = create_rl_model_tool()
-            result = tool._run(
-                target_calories=preferences.target_calories,
-                target_protein=preferences.target_protein,
-                target_carbs=preferences.target_carbs,
-                target_fat=preferences.target_fat,
-                max_budget=preferences.max_budget
+            data = json.loads(
+                tool._run(
+                    target_calories=preferences.target_calories,
+                    target_protein=preferences.target_protein,
+                    target_carbs=preferences.target_carbs,
+                    target_fat=preferences.target_fat,
+                    max_budget=preferences.max_budget,
+                    disliked_ingredients=preferences.disliked_foods,
+                    preferred_tags=preferences.preferred_tags,
+                    strict_budget=True,
+                )
             )
-            data = json.loads(result)
             return self._build_response(data, preferences)
         except FileNotFoundError:
-            # 模型未找到时使用随机方案
             return self._generate_random_plan(preferences)
-    
+
     def _build_response(self, data: dict, preferences: UserPreferences) -> MealPlanResponse:
-        """构建响应"""
-        meal_plan = data.get('meal_plan', {})
-        metrics = data.get('metrics', {})
-        
+        meal_plan = data.get("meal_plan", {})
+        metrics = data.get("metrics", {})
+
         meals = []
-        meal_names = {'breakfast': '早餐', 'lunch': '午餐', 'dinner': '晚餐'}
-        
         for key, recipe_id in meal_plan.items():
-            # Strip suffix if present (e.g. "breakfast_0" -> "breakfast")
-            meal_type = key.split('_')[0] if '_' in key else key
-            
+            meal_type = key.split("_")[0] if "_" in key else key
             recipe = self.recipe_service.get_by_id(recipe_id)
             if recipe:
-                meals.append(MealItem(
-                    meal_type=meal_type,
-                    recipe_id=recipe.id,
-                    recipe_name=recipe.name,
-                    calories=recipe.calories,
-                    protein=recipe.protein,
-                    carbs=recipe.carbs,
-                    fat=recipe.fat,
-                    price=recipe.price
-                ))
-        
+                meals.append(
+                    MealItem(
+                        meal_type=meal_type,
+                        recipe_id=recipe.id,
+                        recipe_name=recipe.name,
+                        calories=recipe.calories,
+                        protein=recipe.protein,
+                        carbs=recipe.carbs,
+                        fat=recipe.fat,
+                        price=recipe.price,
+                    )
+                )
+
         nutrition = NutritionSummary(
-            total_calories=metrics.get('total_calories', 0),
-            total_protein=metrics.get('total_protein', 0),
-            total_carbs=metrics.get('total_carbs', 0),
-            total_fat=metrics.get('total_fat', 0),
-            total_price=metrics.get('total_cost', 0),
-            calories_achievement=metrics.get('calories_achievement', 0),
-            protein_achievement=metrics.get('protein_achievement', 0),
-            budget_usage=metrics.get('budget_usage', 0)
+            total_calories=metrics.get("total_calories", 0),
+            total_protein=metrics.get("total_protein", 0),
+            total_carbs=metrics.get("total_carbs", 0),
+            total_fat=metrics.get("total_fat", 0),
+            total_price=metrics.get("total_cost", 0),
+            calories_achievement=metrics.get("calories_achievement", 0),
+            protein_achievement=metrics.get("protein_achievement", 0),
+            budget_usage=metrics.get("budget_usage", 0),
         )
-        
+
         plan_id = str(uuid.uuid4())[:8]
         response = MealPlanResponse(
             id=plan_id,
@@ -133,71 +125,228 @@ class MealPlanService:
             meals=meals,
             nutrition=nutrition,
             target=preferences,
-            score=metrics.get('final_reward', 0)
+            score=metrics.get("final_reward", 0),
         )
-        
         self._history[plan_id] = response
         return response
-    
+
     def _generate_random_plan(self, preferences: UserPreferences) -> MealPlanResponse:
-        """生成随机方案（模型不可用时的备选）"""
         import random
-        
+
         meals = []
-        total_cal, total_pro, total_carb, total_fat, total_price = 0, 0, 0, 0, 0
-        
-        for meal_type in ['breakfast', 'lunch', 'dinner']:
-            candidates = [r for r in self.recipe_service.recipes 
-                         if meal_type in r.get('meal_type', [])]
-            if candidates:
-                recipe = random.choice(candidates)
-                meals.append(MealItem(
+        total_calories = total_protein = total_carbs = total_fat = total_price = 0.0
+
+        for meal_type in ["breakfast", "lunch", "dinner"]:
+            candidates = [recipe for recipe in self.recipe_service.recipes if meal_type in recipe.get("meal_type", [])]
+            if not candidates:
+                continue
+            recipe = random.choice(candidates)
+            meals.append(
+                MealItem(
                     meal_type=meal_type,
-                    recipe_id=recipe['id'],
-                    recipe_name=recipe['name'],
-                    calories=recipe['calories'],
-                    protein=recipe['protein'],
-                    carbs=recipe['carbs'],
-                    fat=recipe['fat'],
-                    price=recipe['price']
-                ))
-                total_cal += recipe['calories']
-                total_pro += recipe['protein']
-                total_carb += recipe['carbs']
-                total_fat += recipe['fat']
-                total_price += recipe['price']
-        
+                    recipe_id=recipe["id"],
+                    recipe_name=recipe["name"],
+                    calories=recipe["calories"],
+                    protein=recipe["protein"],
+                    carbs=recipe["carbs"],
+                    fat=recipe["fat"],
+                    price=recipe["price"],
+                )
+            )
+            total_calories += recipe["calories"]
+            total_protein += recipe["protein"]
+            total_carbs += recipe["carbs"]
+            total_fat += recipe["fat"]
+            total_price += recipe["price"]
+
         nutrition = NutritionSummary(
-            total_calories=total_cal,
-            total_protein=total_pro,
-            total_carbs=total_carb,
+            total_calories=total_calories,
+            total_protein=total_protein,
+            total_carbs=total_carbs,
             total_fat=total_fat,
             total_price=total_price,
-            calories_achievement=(total_cal / preferences.target_calories) * 100,
-            protein_achievement=(total_pro / preferences.target_protein) * 100,
-            budget_usage=(total_price / preferences.max_budget) * 100
+            calories_achievement=(total_calories / preferences.target_calories) * 100,
+            protein_achievement=(total_protein / preferences.target_protein) * 100,
+            budget_usage=(total_price / preferences.max_budget) * 100,
         )
-        
-        plan_id = str(uuid.uuid4())[:8]
+
         return MealPlanResponse(
-            id=plan_id,
+            id=str(uuid.uuid4())[:8],
             created_at=datetime.now(),
             meals=meals,
             nutrition=nutrition,
             target=preferences,
-            score=0
+            score=0,
         )
-    
+
     def get_history(self, limit: int = 10) -> List[MealPlanResponse]:
-        """获取历史记录"""
         items = list(self._history.values())
-        return sorted(items, key=lambda x: x.created_at, reverse=True)[:limit]
-    
+        return sorted(items, key=lambda item: item.created_at, reverse=True)[:limit]
+
     def get_by_id(self, plan_id: str) -> Optional[MealPlanResponse]:
-        """根据ID获取配餐方案"""
         return self._history.get(plan_id)
 
 
-# 单例服务实例
+class BudgetGuardService:
+    def check(self, budget, target_calories, target_protein, target_carbs, target_fat):
+        result = feasibility_service.check_feasibility(
+            budget=budget,
+            target_calories=target_calories,
+            target_protein=target_protein,
+            target_carbs=target_carbs,
+            target_fat=target_fat,
+        )
+        return (
+            result.calories_feasibility >= 100
+            and result.protein_feasibility >= 100
+            and result.carbs_feasibility >= 100
+            and result.fat_feasibility >= 100
+        )
+
+
+class StrictBudgetPlanner:
+    def generate(self, goal, budget, disliked_foods, preferred_tags, hidden_targets):
+        from ..tools.rl_model_tool import create_rl_model_tool
+
+        tool = create_rl_model_tool()
+        payload = json.loads(
+            tool._run(
+                target_calories=hidden_targets["target_calories"],
+                target_protein=hidden_targets["target_protein"],
+                target_carbs=hidden_targets["target_carbs"],
+                target_fat=hidden_targets["target_fat"],
+                max_budget=budget,
+                disliked_ingredients=disliked_foods,
+                preferred_tags=preferred_tags,
+                strict_budget=True,
+            )
+        )
+        if payload["status"] != "ok":
+            raise ValueError("budget_infeasible")
+
+        preferences = UserPreferences(
+            health_goal=goal,
+            target_calories=hidden_targets["target_calories"],
+            target_protein=hidden_targets["target_protein"],
+            target_carbs=hidden_targets["target_carbs"],
+            target_fat=hidden_targets["target_fat"],
+            max_budget=budget,
+            disliked_foods=disliked_foods,
+            preferred_tags=preferred_tags,
+        )
+        response = meal_plan_service._build_response(payload, preferences)
+        if response.nutrition.total_price > budget:
+            raise ValueError("budget_infeasible")
+        return response.model_dump(mode="json")
+
+
+class MealChatApplication:
+    def __init__(self):
+        self._orchestrator: Optional[MealChatOrchestrator] = None
+
+    @property
+    def orchestrator(self) -> MealChatOrchestrator:
+        if self._orchestrator is None:
+            self._orchestrator = MealChatOrchestrator(
+                extractor=DeepSeekSlotExtractor(),
+                budget_guard=BudgetGuardService(),
+                planner=StrictBudgetPlanner(),
+            )
+        return self._orchestrator
+
+    def _serialize_session(self, db: Session, session: MealChatSession) -> Dict[str, Any]:
+        messages = (
+            db.query(MealChatMessage)
+            .filter(MealChatMessage.session_id == session.id)
+            .order_by(MealChatMessage.created_at.asc())
+            .all()
+        )
+        return {
+            "session_id": session.id,
+            "status": session.status,
+            "messages": [
+                {
+                    "role": message.role,
+                    "content": message.content,
+                    "created_at": message.created_at,
+                }
+                for message in messages
+            ],
+            "meal_plan": session.final_plan,
+        }
+
+    def start_session(self, db: Session, user: User) -> Dict[str, Any]:
+        session = MealChatSession(
+            id=str(uuid.uuid4())[:8],
+            user_id=user.id,
+            status="collecting_profile",
+            collected_slots={},
+        )
+        db.add(session)
+        db.add(
+            MealChatMessage(
+                session_id=session.id,
+                role="assistant",
+                content="我会先了解你的身体情况、当前目标、预算和口味偏好，再帮你整理一份预算内的一日三餐方案。",
+                stage="collecting",
+            )
+        )
+        db.commit()
+        db.refresh(session)
+        return self._serialize_session(db, session)
+
+    def get_session(self, db: Session, user: User, session_id: str) -> Optional[Dict[str, Any]]:
+        session = (
+            db.query(MealChatSession)
+            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .first()
+        )
+        if not session:
+            return None
+        return self._serialize_session(db, session)
+
+    def handle_message(self, db: Session, user: User, session_id: str, content: str) -> Dict[str, Any]:
+        session = (
+            db.query(MealChatSession)
+            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .first()
+        )
+        if session is None:
+            raise ValueError("session_not_found")
+
+        db.add(MealChatMessage(session_id=session.id, role="user", content=content, stage=session.status))
+        result = self.orchestrator.advance(user, session, content)
+        session.status = result["status"]
+        if result["hidden_targets"] is not None:
+            session.hidden_targets = result["hidden_targets"]
+        if result["meal_plan"] is not None:
+            session.final_plan = result["meal_plan"]
+
+        db.add(user)
+        db.add(session)
+        db.add(
+            MealChatMessage(
+                session_id=session.id,
+                role="assistant",
+                content=result["assistant_message"],
+                stage=session.status,
+            )
+        )
+        db.commit()
+        db.refresh(session)
+        return self._serialize_session(db, session)
+
+    def get_completed_plans(self, db: Session, user_id: int, limit: int) -> List[Dict[str, Any]]:
+        rows = (
+            db.query(MealChatSession)
+            .filter(MealChatSession.user_id == user_id, MealChatSession.status == "completed")
+            .order_by(MealChatSession.updated_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [row.final_plan for row in rows if row.final_plan]
+
+
 recipe_service = RecipeService()
 meal_plan_service = MealPlanService()
+meal_chat_app = MealChatApplication()

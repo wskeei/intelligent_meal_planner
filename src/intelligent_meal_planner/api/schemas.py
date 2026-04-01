@@ -149,3 +149,20 @@ class ErrorResponse(BaseModel):
     error_code: str
     message: str
     detail: Optional[str] = None
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+    created_at: Optional[datetime] = None
+
+
+class MealChatMessageRequest(BaseModel):
+    content: str = Field(..., min_length=1)
+
+
+class MealChatSessionResponse(BaseModel):
+    session_id: str
+    status: str
+    messages: List[ChatMessage]
+    meal_plan: Optional[MealPlanResponse] = None

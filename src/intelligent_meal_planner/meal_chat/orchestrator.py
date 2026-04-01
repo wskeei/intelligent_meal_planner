@@ -97,13 +97,22 @@ class MealChatOrchestrator:
                 "meal_plan": None,
             }
 
-        meal_plan = self.planner.generate(
-            goal=goal,
-            budget=slots["budget"],
-            disliked_foods=slots.get("disliked_foods", []),
-            preferred_tags=slots.get("preferred_tags", []),
-            hidden_targets=targets,
-        )
+        try:
+            meal_plan = self.planner.generate(
+                goal=goal,
+                budget=slots["budget"],
+                disliked_foods=slots.get("disliked_foods", []),
+                preferred_tags=slots.get("preferred_tags", []),
+                hidden_targets=targets,
+            )
+        except ValueError:
+            session.status = "budget_rejected"
+            return {
+                "status": "budget_rejected",
+                "assistant_message": BUDGET_REJECTED_MESSAGE,
+                "hidden_targets": None,
+                "meal_plan": None,
+            }
         session.status = "completed"
         session.final_plan = meal_plan
         return {
