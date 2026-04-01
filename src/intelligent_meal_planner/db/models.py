@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Column, Float, Integer, String, Text, JSON
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from .database import Base
 
 class User(Base):
@@ -40,3 +42,27 @@ class Recipe(Base):
     # New Fields for Detail View
     ingredients = Column(JSON) # List of strings or objects
     instructions = Column(JSON) # List of steps
+
+
+class MealChatSession(Base):
+    __tablename__ = "meal_chat_sessions"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    status = Column(String, nullable=False, default="collecting_profile")
+    collected_slots = Column(JSON, nullable=False, default=dict)
+    hidden_targets = Column(JSON, nullable=True)
+    final_plan = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class MealChatMessage(Base):
+    __tablename__ = "meal_chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, ForeignKey("meal_chat_sessions.id"), nullable=False, index=True)
+    role = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    stage = Column(String, nullable=False, default="collecting")
+    created_at = Column(DateTime, default=datetime.utcnow)
