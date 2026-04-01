@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ...db.database import get_db
 from ...db.models import User
@@ -36,11 +36,25 @@ class UserCreate(BaseModel):
     activity_level: Optional[str] = None
     health_goal: Optional[str] = "healthy"
 
+
+class UserProfileUpdate(BaseModel):
+    age: Optional[int] = Field(default=None, ge=10, le=100)
+    gender: Optional[str] = None
+    height: Optional[float] = Field(default=None, ge=100, le=250)
+    weight: Optional[float] = Field(default=None, ge=30, le=250)
+    activity_level: Optional[str] = None
+    health_goal: Optional[str] = None
+
+
 class UserOut(BaseModel):
     id: int
     username: str
     email: str
     age: Optional[int]
+    gender: Optional[str]
+    height: Optional[float]
+    weight: Optional[float]
+    activity_level: Optional[str]
     health_goal: str
 
     class Config:
@@ -128,4 +142,20 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @router.get("/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/me/profile", response_model=UserOut)
+async def update_profile(
+    payload: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    updates = payload.model_dump(exclude_unset=True)
+    for field, value in updates.items():
+        setattr(current_user, field, value)
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user
