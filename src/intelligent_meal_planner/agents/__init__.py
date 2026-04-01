@@ -1,9 +1,7 @@
 """
-智能配餐系统 - CrewAI Agents 模块
+Deprecated compatibility exports for the removed single-turn CrewAI runtime.
 
-包含两个核心 Agent：
-1. UserProfilerAgent - 用户需求分析师
-2. RLChefAgent - 强化学习配餐师
+Runtime meal planning now lives in the conversational meal-chat flow.
 """
 
 from .user_profiler import UserProfilerAgent

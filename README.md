@@ -1,193 +1,134 @@
-# 基于强化学习与多Agent协作的智能配餐系统
+# 基于强化学习与多 Agent 协作的智能配餐系统
 
 ## 项目简介
 
-本项目是一个智能配餐系统，采用以下核心技术：
-- **强化学习算法**：使用 DQN（深度Q网络）进行配餐优化
-- **多Agent协作**：基于 CrewAI 框架实现智能营养师团队
-- **Web服务**：FastAPI 后端 (SQLite) + Vue3 前端 (Element Plus)
-- **用户系统**：基于 JWT 的身份认证与个人档案管理
-- **增强菜谱**：基于数据库的高级筛选与搜索
+本项目是一个智能配餐系统，当前运行时主流程已经切换为“营养师多轮对话 + 隐藏目标量化 + 严格预算约束”的配餐模式。
+
+核心技术：
+
+- 强化学习算法：使用 RL 模型生成一日三餐候选方案
+- 对话式编排：FastAPI 后端维护会话状态、预算校验和正式出餐时机
+- 结构化提取：DeepSeek（OpenAI 兼容接口）用于从自然语言中抽取资料和偏好
+- Web 服务：FastAPI 后端 + Vue 3 / Element Plus 前端
+- 用户系统：JWT 身份认证与服务端个人档案
+
+## 对话式配餐
+
+用户进入 `/meal-plan` 后，不再手动设置热量、蛋白质、碳水、脂肪等显式数值，而是通过与“营养师”对话完成配餐：
+
+1. 优先读取账户中已保存的身体资料
+2. 对缺失的性别、年龄、身高、体重、活动水平逐项补问
+3. 采集预算、忌口、口味偏好和健康目标
+4. 在后端映射为隐藏营养目标
+5. 使用严格预算模式调用 RL 规划器
+6. 若预算不足，则明确提示提高预算，不返回超预算方案
 
 ## 环境配置
 
-本项目使用 `uv` 进行 Python 环境和依赖管理，确保跨平台一致性。
+本项目使用 `uv` 管理 Python 环境和依赖。
 
 ### 前置要求
 
 - 安装 [uv](https://docs.astral.sh/uv/) 包管理器
+- Node.js 18+
 - Windows 10/11 或 Linux/macOS
 
-### 快速开始
-
-#### 1. 克隆项目
+### 1. 克隆项目
 
 ```bash
 git clone <your-repo-url>
 cd intelligent_meal_planner
 ```
 
-#### 2. 使用 uv 同步环境
+### 2. 同步 Python 环境
 
 ```bash
-# uv 会自动：
-# 1. 安装项目指定的 Python 版本（3.10.16）
-# 2. 创建独立的虚拟环境 .venv
-# 3. 安装所有依赖包
 uv sync
 ```
 
-#### 3. 激活虚拟环境
+### 3. 配置 DeepSeek
 
-**Windows:**
-```cmd
-.venv\Scripts\activate
+复制 `.env.example` 为 `.env`，然后填写你的 DeepSeek 配置：
+
+```env
+DEEPSEEK_API_KEY=your_key_here
+DEEPSEEK_API_BASE=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
 ```
 
-**Linux/macOS:**
-```bash
-source .venv/bin/activate
-```
-
-#### 4. 运行项目
-
-**方式一：现代 Web 版 (Vue + FastAPI)**
-
-这是推荐的完整体验方式。
-
-1. **启动后端**
-   ```bash
-   # 首次启动会自动创建 SQLite 数据库并迁移菜谱数据
-   uv run python main.py api
-   ```
-   后端 API 地址: `http://127.0.0.1:8000`
-
-2. **启动前端**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-   访问: `http://localhost:5173`
-
-   > **注意**: 首次注册时请填写真实身体数据以获得准确推荐。
-
-### 4. 功能使用指南
-
-#### 🥘 菜谱模块 (Recipes)
-- **搜索**: 顶部搜索栏支持按菜名实时过滤。
-- **筛选**: 左侧侧边栏提供多维筛选：
-  - **Meal Type**: 勾选 Breakfast/Lunch/Dinner。
-  - **Calories**: 拖动滑块筛选热量区间 (0-1500 kcal)。
-  - **Price**: 拖动滑块筛选价格区间 (¥0-100)。
-- **详情**: 点击任意菜谱卡片，查看详细配料表、烹饪步骤和营养成分表。
-
-**方式二：演示原型 (Streamlit)**
-
-适合快速验证算法和查看数据。
+### 4. 启动后端
 
 ```bash
-uv run streamlit run src/intelligent_meal_planner/app.py
+uv run python main.py api
 ```
-   访问: `http://localhost:8501`
+
+后端地址：`http://127.0.0.1:8000`
+
+### 5. 启动前端
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端地址：`http://localhost:5173`
+
+## 运行时说明
+
+- `/meal-plan`：对话式配餐入口
+- `/profile`：服务端档案编辑页，聊天中补齐的资料会同步回这里
+- `/history`：查看已完成会话中的正式配餐结果
+
+旧的单轮 CrewAI 运行入口已经退役，`main.py agent` 只保留兼容提示，不再参与实际配餐链路。
 
 ## 项目结构
 
-```
+```text
 intelligent_meal_planner/
-├── frontend/                 # Vue 3 前端项目
-│   ├── src/
-│   └── package.json
-├── src/
-│   └── intelligent_meal_planner/
-│       ├── __init__.py
-│       ├── data/
-│       │   └── recipes.json          # 菜品数据库
-│       ├── rl/
-│       │   ├── environment.py        # 强化学习环境
-│       │   └── dqn_model.py          # DQN 模型训练
-│       ├── agents/
-│       │   ├── user_profiler.py      # 用户需求分析师
-│       │   └── rl_chef.py            # 强化学习配餐师
-│       ├── tools/
-│       │   ├── rl_model_tool.py      # 模型调用工具
-│       │   └── recipe_db_tool.py     # 数据库查询工具
-│       ├── api.py                    # FastAPI 后端
-│       └── app.py                    # Streamlit 前端
-├── models/                           # 训练好的模型文件
-├── tests/                            # 测试文件
-├── pyproject.toml                    # 项目配置
-├── uv.lock                           # 依赖锁定文件
-└── README.md
+├── frontend/
+├── src/intelligent_meal_planner/
+│   ├── api/
+│   ├── db/
+│   ├── meal_chat/
+│   ├── rl/
+│   ├── tools/
+│   └── agents/        # 已退役，仅保留兼容占位
+├── tests/
+├── docs/
+├── pyproject.toml
+└── uv.lock
 ```
 
-## 依赖管理
+## 开发命令
 
-### 添加新依赖
-
-```bash
-uv add <package-name>
-```
-
-### 移除依赖
-
-```bash
-uv remove <package-name>
-```
-
-### 更新依赖
-
-```bash
-uv sync --upgrade
-```
-
-## DQN Autoresearch
-
-自动化 DQN 训练实验循环，支持单次实验和多轮循环：
-
-```bash
-# 单次实验
-uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run-id exp001
-
-# 多轮循环
-uv run python scripts/dqn_autoresearch_loop.py --iterations 5 --timesteps 50000
-```
-
-详见 [docs/dqn-autoresearch.md](docs/dqn-autoresearch.md)。
-
-## 开发指南
-
-### 代码格式化
-
-```bash
-uv run black src/
-uv run ruff check src/
-```
-
-### 运行测试
+### 后端测试
 
 ```bash
 uv run pytest
 ```
 
-## 技术栈
+### 前端构建
 
-- **Python**: 3.10.16 (由 uv 管理)
-- **强化学习**: Stable-Baselines3, Gymnasium
-- **多Agent框架**: CrewAI
-- **Web框架**: FastAPI (后端)
-- **前端界面**: Vue 3 + Element Plus (主应用), Streamlit (原型演示)
-- **深度学习**: PyTorch
+```bash
+cd frontend
+npm run build
+```
 
-## 注意事项
+### 代码格式化
 
-1. **虚拟环境隔离**：本项目使用 uv 创建的独立虚拟环境，不依赖 conda
-2. **跨平台兼容**：`uv.lock` 文件确保在不同机器上环境一致
-3. **中文编码**：Windows 系统下确保使用 UTF-8 编码，避免乱码
+```bash
+uv run black src tests
+uv run ruff check src tests
+```
 
-## 学习资源
+## DQN Autoresearch
 
-- [uv 官方文档](https://docs.astral.sh/uv/)
-- [Stable-Baselines3 文档](https://stable-baselines3.readthedocs.io/)
-- [CrewAI 文档](https://docs.crewai.com/)
-- [FastAPI 教程](https://fastapi.tiangolo.com/)
+自动化 DQN 训练实验循环：
+
+```bash
+uv run python scripts/run_dqn_autoresearch_experiment.py --timesteps 50000 --run-id exp001
+uv run python scripts/dqn_autoresearch_loop.py --iterations 5 --timesteps 50000
+```
+
+详见 [docs/dqn-autoresearch.md](docs/dqn-autoresearch.md)。
