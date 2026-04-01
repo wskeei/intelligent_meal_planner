@@ -269,7 +269,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useShoppingStore } from '@/stores/shopping'
-import { mealPlanApi, feasibilityApi, type MealPlan, type MealItem, type FeasibilityResult } from '@/api'
+import { mealPlanApi, feasibilityApi, type MealPlan, type MealItem } from '@/api'
 import { ElMessage } from 'element-plus'
 import { Operation, MagicStick, ShoppingCart, More, ChatLineRound } from '@element-plus/icons-vue'
 

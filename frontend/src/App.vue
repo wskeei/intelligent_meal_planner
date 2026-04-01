@@ -13,7 +13,7 @@
 
           <div class="nav-links">
             <router-link to="/" class="nav-item" active-class="active">
-              <el-icon><ODOMETER /></el-icon>
+              <el-icon><Odometer /></el-icon>
               <span>{{ $t('nav.dashboard') }}</span>
             </router-link>
             <router-link to="/meal-plan" class="nav-item" active-class="active">
@@ -78,13 +78,12 @@ import { Food, Odometer, MagicStick, ShoppingCart, Dish, User, SwitchButton, Arr
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
 const auth = useAuthStore()
-const router = useRouter()
 const route = useRoute()
 
 const handleLogout = () => {
