@@ -32,6 +32,7 @@ class MealPlanningEnv(gym.Env):
         training_mode: bool = True,
         price_scale: float = 1.0,
         custom_recipes: Optional[List[Dict]] = None,
+        strict_budget: bool = False,
     ):
         """
         初始化配餐环境
@@ -97,6 +98,7 @@ class MealPlanningEnv(gym.Env):
         self.target_fat = target_fat
         self.budget_limit = budget_limit
         self.disliked_tags = disliked_tags if disliked_tags else []
+        self.strict_budget = strict_budget
         
         # 奖励权重
         self.weight_nutrition = weight_nutrition
@@ -569,7 +571,7 @@ class MealPlanningEnv(gym.Env):
 
         # 计算剩余预算，并给予一定的浮动 (例如允许超支 10% 用于最后微调)
         remaining_budget = self.budget_limit - self.total_cost
-        budget_buffer = self.budget_limit * 0.10
+        budget_buffer = 0.0 if self.strict_budget else self.budget_limit * 0.10
         max_affordable_price = remaining_budget + budget_buffer
 
         possible_indices = []
@@ -589,6 +591,9 @@ class MealPlanningEnv(gym.Env):
                 possible_indices.append(i)
 
         # 防死锁兜底逻辑
+        if self.strict_budget:
+            return mask
+
         if not possible_indices:
             # 情况1: 预算不够但还有未选的菜 -> 选最便宜的未选过的菜
             valid_meal_indices = [
