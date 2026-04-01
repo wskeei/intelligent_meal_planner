@@ -49,10 +49,10 @@ CUSTOM_RECIPES = []
 HIDDEN_DIMS = [256, 256, 128]
 
 # 优化
-LEARNING_RATE = 3e-4
+LEARNING_RATE = 1e-4
 LEARNING_RATE_END = 1e-5
-GAMMA = 0.995
-BATCH_SIZE = 256
+GAMMA = 0.99
+BATCH_SIZE = 512
 GRAD_CLIP = 10.0
 
 # 经验回放
@@ -61,8 +61,8 @@ MIN_BUFFER_SIZE = 10000
 
 # 训练频率
 TRAIN_FREQ = 4
-TARGET_UPDATE_FREQ = 1000
-N_ENVS = 4
+TARGET_UPDATE_FREQ = 500
+N_ENVS = 8
 
 # 优先经验回放 (PER)
 PER_ALPHA = 0.6
@@ -80,9 +80,9 @@ def get_epsilon_schedule(timesteps: int):
     返回: list of (start_step, end_step, start_eps, end_eps) 元组
     """
     return [
-        (0, max(1, timesteps // 5), 1.0, 0.3),
-        (max(1, timesteps // 5), max(2, timesteps * 3 // 5), 0.3, 0.1),
-        (max(2, timesteps * 3 // 5), timesteps, 0.1, 0.02),
+        (0, max(1, timesteps // 10), 1.0, 0.3),
+        (max(1, timesteps // 10), max(2, timesteps * 2 // 5), 0.3, 0.05),
+        (max(2, timesteps * 2 // 5), timesteps, 0.05, 0.01),
     ]
 
 
@@ -172,5 +172,6 @@ def train(timesteps: int) -> MaskableDQNAgent:
 
         if global_step % config["train_freq"] == 0:
             agent.train_step_fn()
+            agent.train_step_fn()  # UTD ratio = 2
 
     return agent
