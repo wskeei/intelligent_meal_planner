@@ -1,11 +1,21 @@
 import axios from 'axios'
 
+import { API_BASE_URL } from './config'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 120000
 })
 
-// 类型定义
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers = config.headers ?? {}
+    ;(config.headers as Record<string, string>).Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 export interface Recipe {
   id: number
   name: string
@@ -63,36 +73,28 @@ export interface MealPlan {
   score: number
 }
 
-// API 方法
-export const recipeApi = {
-  getList: (params?: Record<string, any>) =>
-    api.get<{ total: number; items: Recipe[] }>('/recipes', { params }),
-
-  getById: (id: number) =>
-    api.get<Recipe>(`/recipes/${id}`),
-
-  getCategories: () =>
-    api.get<string[]>('/recipes/categories'),
-
-  getTags: () =>
-    api.get<string[]>('/recipes/tags')
+export interface ChatMessage {
+  role: 'assistant' | 'user'
+  content: string
+  created_at?: string
 }
 
-export const mealPlanApi = {
-  create: (preferences: Partial<UserPreferences>, use_agent = false, user_message = '') =>
-    api.post<MealPlan>('/meal-plans', { preferences, use_agent, user_message }),
-
-  quickPlan: (healthGoal: string, budget: number) =>
-    api.post<MealPlan>(`/meal-plans/quick?health_goal=${healthGoal}&budget=${budget}`),
-
-  getHistory: (limit = 10) =>
-    api.get<MealPlan[]>('/meal-plans', { params: { limit } }),
-
-  getById: (id: string) =>
-    api.get<MealPlan>(`/meal-plans/${id}`)
+export interface MealChatSession {
+  session_id: string
+  status: 'collecting_profile' | 'collecting_preferences' | 'budget_rejected' | 'completed'
+  messages: ChatMessage[]
+  meal_plan: MealPlan | null
 }
 
-// 可行性检查
+export interface UserProfilePatch {
+  age?: number | null
+  gender?: 'male' | 'female' | null
+  height?: number | null
+  weight?: number | null
+  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | null
+  health_goal?: 'lose_weight' | 'gain_muscle' | 'maintain' | 'healthy'
+}
+
 export interface FeasibilityResult {
   budget: number
   max_calories: number
@@ -105,6 +107,41 @@ export interface FeasibilityResult {
   fat_feasibility: number
   has_warning: boolean
   warning_message: string
+}
+
+export const recipeApi = {
+  getList: (params?: Record<string, any>) =>
+    api.get<{ total: number; items: Recipe[] }>('/recipes', { params }),
+
+  getById: (id: number) => api.get<Recipe>(`/recipes/${id}`),
+
+  getCategories: () => api.get<string[]>('/recipes/categories'),
+
+  getTags: () => api.get<string[]>('/recipes/tags')
+}
+
+export const authApi = {
+  me: () => api.get('/auth/me'),
+  updateProfile: (payload: UserProfilePatch) => api.patch('/auth/me/profile', payload)
+}
+
+export const mealPlanApi = {
+  create: (preferences: Partial<UserPreferences>, use_agent = false, user_message = '') =>
+    api.post<MealPlan>('/meal-plans', { preferences, use_agent, user_message }),
+
+  quickPlan: (healthGoal: string, budget: number) =>
+    api.post<MealPlan>(`/meal-plans/quick?health_goal=${healthGoal}&budget=${budget}`),
+
+  getHistory: (limit = 10) => api.get<MealPlan[]>('/meal-plans', { params: { limit } }),
+
+  getById: (id: string) => api.get<MealPlan>(`/meal-plans/${id}`)
+}
+
+export const mealChatApi = {
+  createSession: () => api.post<MealChatSession>('/meal-chat/sessions'),
+  getSession: (sessionId: string) => api.get<MealChatSession>(`/meal-chat/sessions/${sessionId}`),
+  sendMessage: (sessionId: string, content: string) =>
+    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/messages`, { content })
 }
 
 export const feasibilityApi = {

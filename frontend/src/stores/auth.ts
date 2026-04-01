@@ -1,75 +1,75 @@
+import axios from 'axios'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
-import router from '@/router'
 
-// API base
-const API_URL = 'http://localhost:8000/api/auth'
+import { authApi } from '@/api'
+import { AUTH_API_URL } from '@/api/config'
+import router from '@/router'
+import { useUserStore } from '@/stores/user'
 
 export const useAuthStore = defineStore('auth', () => {
-    const token = ref<string | null>(localStorage.getItem('token'))
-    const user = ref<any>(null)
-    const isAuthenticated = ref(!!token.value)
+  const token = ref<string | null>(localStorage.getItem('token'))
+  const user = ref<any>(null)
+  const isAuthenticated = ref(Boolean(token.value))
 
-    async function login(username: string, password: string) {
-        const formData = new FormData()
-        formData.append('username', username)
-        formData.append('password', password)
+  async function login(username: string, password: string) {
+    const formData = new FormData()
+    formData.append('username', username)
+    formData.append('password', password)
 
-        try {
-            const { data } = await axios.post(`${API_URL}/token`, formData)
-            token.value = data.access_token
-            localStorage.setItem('token', data.access_token)
-            isAuthenticated.value = true
+    try {
+      const { data } = await axios.post(`${AUTH_API_URL}/token`, formData)
+      token.value = data.access_token
+      localStorage.setItem('token', data.access_token)
+      isAuthenticated.value = true
 
-            // Load user profile
-            await fetchUser()
-
-            router.push('/')
-            return true
-        } catch (error) {
-            console.error('Login failed', error)
-            return false
-        }
+      await fetchUser()
+      router.push('/')
+      return true
+    } catch (error) {
+      console.error('Login failed', error)
+      return false
     }
+  }
 
-    async function register(payload: any) {
-        try {
-            await axios.post(`${API_URL}/register`, payload)
-            return true
-        } catch (error) {
-            console.error('Registration failed', error)
-            return false
-        }
+  async function register(payload: any) {
+    try {
+      await axios.post(`${AUTH_API_URL}/register`, payload)
+      return true
+    } catch (error) {
+      console.error('Registration failed', error)
+      return false
     }
+  }
 
-    async function fetchUser() {
-        if (!token.value) return
-        try {
-            const { data } = await axios.get(`${API_URL}/me`, {
-                headers: { Authorization: `Bearer ${token.value}` }
-            })
-            user.value = data
-        } catch (e) {
-            logout()
-        }
-    }
+  async function fetchUser() {
+    if (!token.value) return
 
-    function logout() {
-        token.value = null
-        user.value = null
-        isAuthenticated.value = false
-        localStorage.removeItem('token')
-        router.push('/login')
+    try {
+      const { data } = await authApi.me()
+      user.value = data
+      useUserStore().hydrateFromAuthUser(data)
+    } catch (_error) {
+      logout()
     }
+  }
 
-    return {
-        token,
-        user,
-        isAuthenticated,
-        login,
-        register,
-        logout,
-        fetchUser
-    }
+  function logout() {
+    token.value = null
+    user.value = null
+    isAuthenticated.value = false
+    localStorage.removeItem('token')
+    useUserStore().resetProfile()
+    router.push('/login')
+  }
+
+  return {
+    token,
+    user,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    fetchUser
+  }
 })

@@ -1,95 +1,120 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { computed, ref } from 'vue'
+
+import { authApi } from '@/api'
 
 export interface UserProfile {
-    name: string
-    age: number
-    gender: 'male' | 'female'
-    height: number // cm
-    weight: number // kg
-    activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active'
-    goal: 'lose_weight' | 'gain_muscle' | 'maintain' | 'healthy'
-    dietaryRestrictions: string[]
+  username: string
+  name: string
+  age: number | null
+  gender: 'male' | 'female' | null
+  height: number | null
+  weight: number | null
+  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active' | null
+  goal: 'lose_weight' | 'gain_muscle' | 'maintain' | 'healthy'
 }
 
+const emptyProfile = (): UserProfile => ({
+  username: '',
+  name: '',
+  age: null,
+  gender: null,
+  height: null,
+  weight: null,
+  activityLevel: null,
+  goal: 'healthy'
+})
+
 export const useUserStore = defineStore('user', () => {
-    // Default State
-    const profile = ref<UserProfile>({
-        name: 'User',
-        age: 25,
-        gender: 'male',
-        height: 175,
-        weight: 70,
-        activityLevel: 'moderate',
-        goal: 'maintain',
-        dietaryRestrictions: []
-    })
+  const profile = ref<UserProfile>(emptyProfile())
 
-    // Load from LocalStorage
-    if (localStorage.getItem('userProfile')) {
-        try {
-            profile.value = JSON.parse(localStorage.getItem('userProfile')!)
-        } catch (e) {
-            console.error('Failed to load profile', e)
-        }
+  const profileComplete = computed(() =>
+    Boolean(
+      profile.value.gender &&
+        profile.value.age &&
+        profile.value.height &&
+        profile.value.weight &&
+        profile.value.activityLevel
+    )
+  )
+
+  const targetCalories = computed(() => {
+    const { weight, height, age, gender, activityLevel, goal } = profile.value
+    if (!weight || !height || !age || !gender || !activityLevel) return 0
+
+    const base = 10 * weight + 6.25 * height - 5 * age
+    const bmr = gender === 'male' ? base + 5 : base - 161
+    const multiplierMap: Record<NonNullable<UserProfile['activityLevel']>, number> = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      very_active: 1.9
     }
+    const tdee = Math.round(bmr * multiplierMap[activityLevel])
 
-    // Auto-save to LocalStorage
-    watch(profile, (newVal) => {
-        localStorage.setItem('userProfile', JSON.stringify(newVal))
-    }, { deep: true })
+    switch (goal) {
+      case 'lose_weight':
+        return tdee - 500
+      case 'gain_muscle':
+        return tdee + 300
+      default:
+        return tdee
+    }
+  })
 
-    // Computed: BMR (Basal Metabolic Rate) - Mifflin-St Jeor Equation
-    const bmr = computed(() => {
-        const { weight, height, age, gender } = profile.value
-        let base = (10 * weight) + (6.25 * height) - (5 * age)
-        return gender === 'male' ? base + 5 : base - 161
-    })
-
-    // Computed: TDEE (Total Daily Energy Expenditure)
-    const tdee = computed(() => {
-        const multipliers: Record<string, number> = {
-            sedentary: 1.2,
-            light: 1.375,
-            moderate: 1.55,
-            active: 1.725,
-            very_active: 1.9
-        }
-        return Math.round(bmr.value * (multipliers[profile.value.activityLevel] || 1.2))
-    })
-
-    // Computed: Target Calories based on Goal
-    const targetCalories = computed(() => {
-        const t = tdee.value
-        switch (profile.value.goal) {
-            case 'lose_weight': return t - 500
-            case 'gain_muscle': return t + 300
-            case 'healthy': return t
-            default: return t
-        }
-    })
-
-    // Computed: Macros Targets
-    const targetMacros = computed(() => {
-        const cals = targetCalories.value
-        // Simple breakdown: Protein 30%, Fat 30%, Carbs 40% (approx)
-        return {
-            protein: Math.round((cals * 0.3) / 4),
-            fat: Math.round((cals * 0.3) / 9),
-            carbs: Math.round((cals * 0.4) / 4)
-        }
-    })
-
-    function updateProfile(newProfile: Partial<UserProfile>) {
-        profile.value = { ...profile.value, ...newProfile }
+  const targetMacros = computed(() => {
+    const calories = targetCalories.value
+    if (!calories) {
+      return { protein: 0, carbs: 0, fat: 0 }
     }
 
     return {
-        profile,
-        bmr,
-        tdee,
-        targetCalories,
-        targetMacros,
-        updateProfile
+      protein: Math.round((calories * 0.3) / 4),
+      carbs: Math.round((calories * 0.4) / 4),
+      fat: Math.round((calories * 0.3) / 9)
     }
+  })
+
+  function hydrateFromAuthUser(user: any) {
+    if (!user) return
+    profile.value = {
+      username: user.username ?? '',
+      name: user.username ?? '',
+      age: user.age ?? null,
+      gender: user.gender ?? null,
+      height: user.height ?? null,
+      weight: user.weight ?? null,
+      activityLevel: user.activity_level ?? null,
+      goal: user.health_goal ?? 'healthy'
+    }
+  }
+
+  async function saveProfile(patch: Partial<UserProfile>) {
+    const payload = {
+      age: patch.age,
+      gender: patch.gender,
+      height: patch.height,
+      weight: patch.weight,
+      activity_level: patch.activityLevel,
+      health_goal: patch.goal
+    }
+    const { data } = await authApi.updateProfile(payload)
+    hydrateFromAuthUser(data)
+    return data
+  }
+
+  function resetProfile() {
+    profile.value = emptyProfile()
+  }
+
+  return {
+    profile,
+    profileComplete,
+    targetCalories,
+    targetMacros,
+    hydrateFromAuthUser,
+    saveProfile,
+    resetProfile
+  }
 })
