@@ -70,6 +70,31 @@ def get_default_benchmark_cases() -> List[BenchmarkCase]:
             target_fat=80.0,
             budget_limit=200.0,
         ),
+        # --- 新增高难度 benchmark cases ---
+        BenchmarkCase(
+            name="tight_budget",
+            target_calories=2000.0,
+            target_protein=90.0,
+            target_carbs=260.0,
+            target_fat=60.0,
+            budget_limit=45.0,
+        ),
+        BenchmarkCase(
+            name="keto_diet",
+            target_calories=1800.0,
+            target_protein=135.0,
+            target_carbs=50.0,
+            target_fat=120.0,
+            budget_limit=100.0,
+        ),
+        BenchmarkCase(
+            name="bulk_diet",
+            target_calories=3000.0,
+            target_protein=180.0,
+            target_carbs=350.0,
+            target_fat=80.0,
+            budget_limit=150.0,
+        ),
     ]
 
 
@@ -93,14 +118,17 @@ def compute_score(
     Returns:
         A float score where higher is better.
     """
-    # Calorie component: 100 when error is 0, drops linearly
-    calorie_component = max(0.0, 100.0 - calorie_error_pct * 2.0)
+    # Calorie component: 100 when error is 0, drops with 3x penalty per %
+    calorie_component = max(0.0, 100.0 - calorie_error_pct * 3.0)
 
     # Budget component: 100 when no violations, 0 when all violate
     budget_component = (1.0 - budget_violation_rate) * 100.0
 
-    # Diversity component: 0-100 scale
-    diversity_component = diversity_score * 100.0
+    # Diversity component: 0-100 scale, floor at 3 categories minimum
+    if diversity_score < 0.5:
+        diversity_component = 0.0
+    else:
+        diversity_component = diversity_score * 100.0
 
     # Reward component: normalize assuming reward range ~[-10, 50]
     reward_component = max(0.0, min(100.0, (avg_reward + 10.0) * (100.0 / 60.0)))

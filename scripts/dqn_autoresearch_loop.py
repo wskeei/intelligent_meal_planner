@@ -72,6 +72,8 @@ def main():
             run_id=run_id,
             description=description,
             aggregate_score=score,
+            closed_score=report.get("closed_score", score),
+            open_score=report.get("open_score", score),
             avg_reward=report["avg_reward"],
             calorie_error_pct=report["calorie_error_pct"],
             budget_violation_rate=report["budget_violation_rate"],
