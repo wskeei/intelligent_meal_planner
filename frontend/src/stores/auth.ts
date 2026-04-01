@@ -63,6 +63,10 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
+  if (token.value) {
+    void fetchUser()
+  }
+
   return {
     token,
     user,

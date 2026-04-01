@@ -5,7 +5,6 @@ import { authApi } from '@/api'
 
 export interface UserProfile {
   username: string
-  name: string
   age: number | null
   gender: 'male' | 'female' | null
   height: number | null
@@ -16,7 +15,6 @@ export interface UserProfile {
 
 const emptyProfile = (): UserProfile => ({
   username: '',
-  name: '',
   age: null,
   gender: null,
   height: null,
@@ -38,49 +36,10 @@ export const useUserStore = defineStore('user', () => {
     )
   )
 
-  const targetCalories = computed(() => {
-    const { weight, height, age, gender, activityLevel, goal } = profile.value
-    if (!weight || !height || !age || !gender || !activityLevel) return 0
-
-    const base = 10 * weight + 6.25 * height - 5 * age
-    const bmr = gender === 'male' ? base + 5 : base - 161
-    const multiplierMap: Record<NonNullable<UserProfile['activityLevel']>, number> = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    }
-    const tdee = Math.round(bmr * multiplierMap[activityLevel])
-
-    switch (goal) {
-      case 'lose_weight':
-        return tdee - 500
-      case 'gain_muscle':
-        return tdee + 300
-      default:
-        return tdee
-    }
-  })
-
-  const targetMacros = computed(() => {
-    const calories = targetCalories.value
-    if (!calories) {
-      return { protein: 0, carbs: 0, fat: 0 }
-    }
-
-    return {
-      protein: Math.round((calories * 0.3) / 4),
-      carbs: Math.round((calories * 0.4) / 4),
-      fat: Math.round((calories * 0.3) / 9)
-    }
-  })
-
   function hydrateFromAuthUser(user: any) {
     if (!user) return
     profile.value = {
       username: user.username ?? '',
-      name: user.username ?? '',
       age: user.age ?? null,
       gender: user.gender ?? null,
       height: user.height ?? null,
@@ -111,8 +70,6 @@ export const useUserStore = defineStore('user', () => {
   return {
     profile,
     profileComplete,
-    targetCalories,
-    targetMacros,
     hydrateFromAuthUser,
     saveProfile,
     resetProfile

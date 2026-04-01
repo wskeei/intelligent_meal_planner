@@ -1,898 +1,560 @@
 <template>
-  <div class="meal-plan-page">
-    <div class="page-header">
-      <h1>{{ $t('meal_plan.title') }}</h1>
-      <p class="subtitle">{{ $t('meal_plan.subtitle') }}</p>
-    </div>
+  <div class="meal-chat-page">
+    <section class="hero-shell">
+      <div class="hero-copy">
+        <p class="eyebrow">{{ $t('meal_plan.nutritionist') }}</p>
+        <h1>{{ $t('meal_plan.chat_title') }}</h1>
+        <p class="subtitle">{{ $t('meal_plan.chat_subtitle') }}</p>
+      </div>
+      <div class="hero-note">
+        <span class="note-chip">{{ $t('meal_plan.session_tip') }}</span>
+        <span class="note-chip muted">
+          {{ profileComplete ? $t('meal_plan.sync_profile') : $t('dashboard.profile_missing') }}
+        </span>
+      </div>
+    </section>
 
-    <el-row :gutter="24">
-      <!-- Left: Configuration -->
-      <el-col :span="24" :lg="8">
-        <el-card class="config-card" shadow="hover">
+    <section class="chat-layout">
+      <el-card class="chat-card" shadow="hover">
+        <template #header>
+          <div class="section-head">
+            <div>
+              <h2>{{ $t('meal_plan.chat_title') }}</h2>
+              <p>{{ $t('meal_plan.goal_summary') }}</p>
+            </div>
+            <el-button text type="primary" :disabled="loading" @click="bootstrapSession">
+              {{ $t('meal_plan.new_session') }}
+            </el-button>
+          </div>
+        </template>
+
+        <div ref="messagesRef" class="messages">
+          <div
+            v-for="(message, index) in messages"
+            :key="`${message.role}-${index}-${message.created_at ?? 'local'}`"
+            :class="['message-row', message.role]"
+          >
+            <div class="message-meta">
+              <span>{{ message.role === 'assistant' ? $t('meal_plan.nutritionist') : profile.username || $t('common.you') }}</span>
+            </div>
+            <div class="bubble">
+              {{ message.content }}
+            </div>
+          </div>
+
+          <div v-if="loading" class="message-row assistant pending">
+            <div class="message-meta">
+              <span>{{ $t('meal_plan.nutritionist') }}</span>
+            </div>
+            <div class="bubble pending-bubble">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer">
+          <el-input
+            v-model="draft"
+            type="textarea"
+            :rows="3"
+            resize="none"
+            :placeholder="$t('meal_plan.chat_placeholder')"
+            @keydown.enter.exact.prevent="sendMessage"
+          />
+          <div class="composer-actions">
+            <p>{{ $t('meal_plan.draft_hint') }}</p>
+            <el-button type="primary" :loading="loading" @click="sendMessage">
+              {{ $t('meal_plan.send') }}
+            </el-button>
+          </div>
+        </div>
+      </el-card>
+
+      <aside class="result-stack">
+        <el-card class="status-card" shadow="hover">
+          <p class="eyebrow muted">{{ $t('meal_plan.final_plan') }}</p>
+          <h3>{{ finalPlan ? $t('meal_plan.budget_safe_hint') : $t('meal_plan.awaiting_reply') }}</h3>
+          <p class="status-copy">
+            {{ finalPlan ? goalLabel : $t('meal_plan.session_tip') }}
+          </p>
+        </el-card>
+
+        <el-card v-if="finalPlan" class="result-card" shadow="hover">
           <template #header>
-            <div class="card-title">
-              <el-icon><Operation /></el-icon>
-              <span>{{ $t('meal_plan.config') }}</span>
+            <div class="section-head compact">
+              <div>
+                <h2>{{ $t('meal_plan.final_plan') }}</h2>
+                <p>{{ $t('meal_plan.budget_safe_hint') }}</p>
+              </div>
+              <div class="price-pill">¥{{ finalPlan.nutrition.total_price.toFixed(1) }}</div>
             </div>
           </template>
 
-          <transition name="fade">
-
-            <div v-if="loading" class="loading-overlay">
-              <div class="breathing-container">
-                <div class="breath-core">
-                  <div class="ripple"></div>
-                  <div class="ripple"></div>
-                  <div class="core-circle"></div>
-                </div>
-                <div class="status-text">
-                  {{ loadingText }}
-                </div>
-                <!-- <p class="status-sub">Designing your perfect healthy menu...</p> -->
+          <div class="meal-groups">
+            <section v-for="group in groupedMeals" :key="group.key" class="meal-group">
+              <div class="meal-group-head">
+                <span class="meal-label">{{ mealLabel(group.key) }}</span>
+                <span class="meal-count">{{ group.items.length }} {{ $t('meal_plan.items') }}</span>
               </div>
-            </div>
-          </transition>
 
-          <el-tabs v-model="activeTab" class="config-tabs">
-            <el-tab-pane :label="$t('meal_plan.preferences')" name="manual">
-            <el-form label-position="top" size="large">
-            <el-form-item :label="$t('meal_plan.health_goal')">
-               <el-select v-model="form.health_goal" @change="applyPreset">
-                <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
-                <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
-                <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
-                <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
-              </el-select>
-            </el-form-item>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>{{ $t('meal_plan.calories') }}</span>
-                <span class="val">{{ form.target_calories }} kcal</span>
+              <div class="meal-list">
+                <article v-for="meal in group.items" :key="`${group.key}-${meal.recipe_id}`" class="meal-item">
+                  <div>
+                    <p class="meal-name">{{ meal.recipe_name }}</p>
+                    <p class="meal-metrics">
+                      {{ meal.calories.toFixed(0) }} kcal · {{ meal.protein.toFixed(0) }}g P
+                    </p>
+                  </div>
+                  <strong>¥{{ meal.price.toFixed(1) }}</strong>
+                </article>
               </div>
-              <el-slider v-model="form.target_calories" :min="1200" :max="4000" :step="50" :show-tooltip="false" @change="checkFeasibility" />
-            </div>
+            </section>
+          </div>
 
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>{{ $t('meal_plan.protein') }}</span>
-                <span class="val">{{ form.target_protein }} g</span>
-              </div>
-              <el-slider v-model="form.target_protein" :min="30" :max="250" :step="5" :show-tooltip="false" @change="checkFeasibility" />
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>{{ $t('meal_plan.carbs') }}</span>
-                <span class="val">{{ form.target_carbs }} g</span>
-              </div>
-              <el-slider v-model="form.target_carbs" :min="20" :max="500" :step="10" :show-tooltip="false" />
-            </div>
-
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>{{ $t('meal_plan.fat') }}</span>
-                <span class="val">{{ form.target_fat }} g</span>
-              </div>
-              <el-slider v-model="form.target_fat" :min="10" :max="150" :step="5" :show-tooltip="false" />
-            </div>
-
-            <el-divider />
-            
-            <div class="slider-group">
-              <div class="slider-label">
-                <span>{{ $t('meal_plan.budget') }}</span>
-                <span class="val">¥{{ form.max_budget }}</span>
-              </div>
-              <el-slider v-model="form.max_budget" :min="20" :max="200" :step="5" :show-tooltip="false" @change="checkFeasibility" />
-            </div>
-
-            <!-- 可行性警告 -->
-            <el-alert
-              v-if="feasibilityWarning"
-              :type="feasibilityWarning.type"
-              :title="feasibilityWarning.title"
-              :description="feasibilityWarning.description"
-              show-icon
-              :closable="false"
-              class="feasibility-alert"
-            />
-
-            <el-button 
-              type="primary" 
-              class="generate-btn" 
-              :loading="loading"
-              @click="generatePlan"
-            >
-              <el-icon style="margin-right: 8px"><MagicStick /></el-icon>
-              {{ $t('meal_plan.generate_btn') }}
-            </el-button>
-            </el-form> <!-- Close form here -->
-            </el-tab-pane>
-
-            <el-tab-pane :label="$t('meal_plan.ai_assistant')" name="ai">
-              <div class="ai-intro">
-                <p>{{ $t('meal_plan.ai_intro') }}</p>
-                <div class="ai-examples">
-                  <el-tag size="small" @click="useExample('I want a high protein diet for muscle gain, budget 100.')">Muscle Gain</el-tag>
-                  <el-tag size="small" @click="useExample('Vegetarian diet for weight loss, around 1500 cals.')">Vegetarian</el-tag>
-                </div>
-              </div>
-              
-              <el-input
-                v-model="aiMessage"
-                type="textarea"
-                :rows="6"
-                placeholder="Ex: I want to lose weight, I don't like carrots, and my budget is 50."
-                class="ai-input"
-              />
-              
-              <el-button 
-                type="primary" 
-                class="generate-btn ai-btn" 
-                :loading="loading"
-                @click="generatePlan"
-              >
-                <el-icon style="margin-right: 8px"><ChatLineRound /></el-icon>
-                {{ $t('meal_plan.ask_ai') }}
-              </el-button>
-            </el-tab-pane>
-          </el-tabs>
+          <div class="summary-row">
+            <span>{{ $t('meal_plan.total_cost') }}</span>
+            <strong>¥{{ finalPlan.nutrition.total_price.toFixed(1) }}</strong>
+          </div>
         </el-card>
-      </el-col>
-
-      <!-- Right: Results -->
-      <el-col :span="24" :lg="16">
-        <transition name="fade" mode="out-in">
-          <!-- Empty State -->
-          <div v-if="!mealPlan" class="empty-state">
-            <div class="illustration">🍽️</div>
-            <h3>{{ $t('meal_plan.ready_cook') }}</h3>
-            <p>{{ $t('meal_plan.ready_desc') }}</p>
-          </div>
-
-          <!-- Results -->
-          <div v-else class="results-container">
-            <!-- Nutrition Summary -->
-             <div class="summary-grid">
-               <div class="summary-card">
-                 <div class="lbl">{{ $t('meal_plan.calories') }}</div>
-                 <div class="val">{{ mealPlan.nutrition.total_calories.toFixed(0) }}</div>
-                 <el-progress 
-                    :percentage="Math.min(mealPlan.nutrition.calories_achievement, 100)" 
-                    :show-text="false" 
-                    :color="getColor(mealPlan.nutrition.calories_achievement)"
-                    :stroke-width="6"
-                 />
-               </div>
-               <div class="summary-card">
-                 <div class="lbl">{{ $t('meal_plan.protein') }}</div>
-                 <div class="val">{{ mealPlan.nutrition.total_protein.toFixed(0) }}g</div>
-                 <el-progress 
-                    :percentage="Math.min(mealPlan.nutrition.protein_achievement, 100)" 
-                    :show-text="false" 
-                    :color="getColor(mealPlan.nutrition.protein_achievement)"
-                    :stroke-width="6"
-                 />
-               </div>
-               <div class="summary-card">
-                 <div class="lbl">{{ $t('meal_plan.cost') }}</div>
-                 <div class="val">¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</div>
-                  <el-progress 
-                    :percentage="Math.min(mealPlan.nutrition.budget_usage, 100)" 
-                    :show-text="false" 
-                    :color="getBudgetColor(mealPlan.nutrition.budget_usage)"
-                    :stroke-width="6"
-                 />
-               </div>
-               <div class="summary-card highlight">
-                 <div class="lbl">{{ $t('meal_plan.ai_score') }}</div>
-                 <div class="val">{{ mealPlan.score.toFixed(1) }}</div>
-               </div>
-             </div>
-
-             <!-- Meal Cards -->
-             <div class="meals-list">
-               <div 
-                  v-for="meal in mealPlan.meals" 
-                  :key="meal.meal_type" 
-                  class="meal-card"
-               >
-                 <div class="meal-icon-side" :class="meal.meal_type">
-                   {{ getMealIcon(meal.meal_type) }}
-                 </div>
-                 
-                 <div class="meal-details">
-                   <div class="meal-type">{{ getMealName(meal.meal_type) }}</div>
-                   <h3 class="meal-name">{{ meal.recipe_name }}</h3>
-                   <div class="meal-tags">
-                     <span class="tag">{{ meal.calories.toFixed(0) }} kcal</span>
-                     <span class="tag">Prot: {{ meal.protein.toFixed(0) }}g</span>
-                     <span class="tag">¥{{ meal.price }}</span>
-                   </div>
-                 </div>
-
-                 <div class="meal-actions">
-                   <el-button circle plain @click="addToShopping(meal)">
-                     <el-icon><ShoppingCart /></el-icon>
-                   </el-button>
-                   <el-button circle plain @click="showDetails(meal)">
-                     <el-icon><More /></el-icon>
-                   </el-button>
-                 </div>
-               </div>
-             </div>
-          </div>
-        </transition>
-      </el-col>
-    </el-row>
-
-    <!-- Details Dialog -->
-    <el-dialog v-model="detailsVisible" :title="$t('meal_plan.meal_details')" width="400px" center>
-      <div v-if="selectedMeal" class="dialog-content">
-        <div class="dialog-icon">{{ getMealIcon(selectedMeal.meal_type) }}</div>
-        <h2>{{ selectedMeal.recipe_name }}</h2>
-        <div class="dialog-stats">
-          <div class="d-stat">
-            <span class="d-val">{{ selectedMeal.calories }}</span>
-            <span class="d-lbl">kcal</span>
-          </div>
-          <div class="d-stat">
-             <span class="d-val">{{ selectedMeal.protein }}g</span>
-             <span class="d-lbl">{{ $t('meal_plan.protein') }}</span>
-          </div>
-           <div class="d-stat">
-             <span class="d-val">{{ selectedMeal.fat }}g</span>
-             <span class="d-lbl">{{ $t('meal_plan.fat') }}</span>
-          </div>
-           <div class="d-stat">
-             <span class="d-val">{{ selectedMeal.carbs }}g</span>
-             <span class="d-lbl">{{ $t('meal_plan.carbs') }}</span>
-          </div>
-        </div>
-        <p class="dialog-desc">{{ $t('meal_plan.estimated_cost') }}: ¥{{ selectedMeal.price }}</p>
-      </div>
-       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="detailsVisible = false">{{ $t('common.close') }}</el-button>
-          <el-button type="primary" @click="addAndClose">
-            {{ $t('meal_plan.add_to_list') }}
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+      </aside>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { useShoppingStore } from '@/stores/shopping'
-import { mealPlanApi, feasibilityApi, type MealPlan, type MealItem } from '@/api'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
-import { Operation, MagicStick, ShoppingCart, More, ChatLineRound } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 
-const route = useRoute()
+import { mealChatApi, type ChatMessage, type MealPlan } from '@/api'
+import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
+
+const { t } = useI18n()
+const authStore = useAuthStore()
 const userStore = useUserStore()
-const shoppingStore = useShoppingStore()
+const { profile, profileComplete } = storeToRefs(userStore)
 
-// State
+const sessionId = ref<string | null>(null)
+const messages = ref<ChatMessage[]>([])
+const draft = ref('')
 const loading = ref(false)
-const mealPlan = ref<MealPlan | null>(null)
-const detailsVisible = ref(false)
-const selectedMeal = ref<MealItem | null>(null)
-const activeTab = ref('manual')
-const aiMessage = ref('')
-const feasibilityWarning = ref<{ type: 'warning' | 'error' | 'info'; title: string; description: string } | null>(null)
+const finalPlan = ref<MealPlan | null>(null)
+const messagesRef = ref<HTMLElement | null>(null)
 
-// Form
-const form = reactive({
-  health_goal: userStore.profile.goal || 'healthy',
-  target_calories: 2000, // Will sync with store on mount
-  target_protein: 100,
-  target_carbs: 250,
-  target_fat: 60,
-  max_budget: 50
-})
+const groupedMeals = computed(() => {
+  const order = ['breakfast', 'lunch', 'dinner']
+  const buckets = new Map<string, NonNullable<MealPlan['meals']>>()
 
-// Logic
-onMounted(() => {
-  // Sync with user store if available, or query params
-  const goalQuery = route.query.goal as string
-  if (goalQuery) form.health_goal = goalQuery as any
-  
-  // Apply logic to set initial values
-  applyPreset()
-})
+  if (!finalPlan.value) return []
 
-const presets = {
-  lose_weight: { target_calories: 1500, target_protein: 140, target_carbs: 100, target_fat: 50 },
-  gain_muscle: { target_calories: 2800, target_protein: 180, target_carbs: 350, target_fat: 80 },
-  maintain: { target_calories: 2200, target_protein: 130, target_carbs: 250, target_fat: 70 },
-  healthy: { target_calories: 2000, target_protein: 100, target_carbs: 220, target_fat: 60 }
-}
-
-function applyPreset() {
-  const p = presets[form.health_goal] || presets['healthy']
-  // If user store has specific calories, maybe prefer that? 
-  // For now let's stick to presets or what the user sees in Profile
-  if (userStore.targetCalories > 0) {
-     form.target_calories = userStore.targetCalories
-     form.target_protein = userStore.targetMacros.protein
-     form.target_carbs = userStore.targetMacros.carbs
-     form.target_fat = userStore.targetMacros.fat
-  } else {
-     Object.assign(form, p)
+  for (const meal of finalPlan.value.meals) {
+    const list = buckets.get(meal.meal_type) ?? []
+    list.push(meal)
+    buckets.set(meal.meal_type, list)
   }
-  // Check feasibility after preset is applied
-  checkFeasibility()
+
+  return order
+    .filter((key) => buckets.has(key))
+    .map((key) => ({ key, items: buckets.get(key) ?? [] }))
+})
+
+const goalLabel = computed(() => {
+  const goal = finalPlan.value?.target.health_goal ?? profile.value.goal
+  return t(`meal_plan.goals.${goal}`)
+})
+
+function mealLabel(type: string) {
+  return t(`recipes.${type}`)
 }
 
-// 检查参数可行性
-let feasibilityTimeout: ReturnType<typeof setTimeout> | null = null
-async function checkFeasibility() {
-  // 防抖：避免频繁请求
-  if (feasibilityTimeout) clearTimeout(feasibilityTimeout)
-  feasibilityTimeout = setTimeout(async () => {
-    try {
-      const { data } = await feasibilityApi.check({
-        budget: form.max_budget,
-        target_calories: form.target_calories,
-        target_protein: form.target_protein,
-        target_carbs: form.target_carbs,
-        target_fat: form.target_fat
-      })
-      
-      if (data.has_warning) {
-        // 根据可达性百分比决定警告级别
-        const lowestFeasibility = Math.min(
-          data.calories_feasibility,
-          data.protein_feasibility
-        )
-        
-        let warningType: 'warning' | 'error' | 'info' = 'info'
-        let title = ''
-        
-        if (lowestFeasibility < 50) {
-          warningType = 'error'
-          title = '目标可能无法达成'
-        } else if (lowestFeasibility < 80) {
-          warningType = 'warning'
-          title = '目标可能较难达成'
-        } else {
-          warningType = 'info'
-          title = '提示'
-        }
-        
-        feasibilityWarning.value = {
-          type: warningType,
-          title: title,
-          description: data.warning_message
-        }
-      } else {
-        feasibilityWarning.value = null
-      }
-    } catch (error) {
-      console.error('Feasibility check failed:', error)
-      // 静默失败，不影响用户操作
-      feasibilityWarning.value = null
-    }
-  }, 300)
+async function scrollToBottom() {
+  await nextTick()
+  if (messagesRef.value) {
+    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
+  }
 }
 
-
-const loadingText = ref('Connecting to your personal chef...')
-let loadingInterval: any = null
-
-const breathingMessages = [
-  'Analyzing your unique profile...',
-  'Checking nutritional database...',
-  'Balancing calories and macros...',
-  'Selecting fresh ingredients...',
-  'Crafting your perfect meal plan...'
-]
-
-function startLoading() {
+async function bootstrapSession() {
   loading.value = true
-  let i = 0
-  loadingText.value = breathingMessages[0]
-  loadingInterval = setInterval(() => {
-    i = (i + 1) % breathingMessages.length
-    loadingText.value = breathingMessages[i]
-  }, 2500)
-}
-
-function stopLoading() {
-  loading.value = false
-  if (loadingInterval) clearInterval(loadingInterval)
-}
-
-async function generatePlan() {
-  startLoading()
   try {
-    const isAI = activeTab.value === 'ai'
-    
-    if (isAI && !aiMessage.value.trim()) {
-      ElMessage.warning('Please enter your request.')
-      stopLoading()
-      return
+    if (authStore.isAuthenticated && !profile.value.username) {
+      await authStore.fetchUser()
     }
 
-    const { data } = await mealPlanApi.create({
-      health_goal: form.health_goal,
-      target_calories: form.target_calories,
-      target_protein: form.target_protein,
-      target_carbs: form.target_carbs,
-      target_fat: form.target_fat,
-      max_budget: form.max_budget
-    }, isAI, aiMessage.value)
-    
-    // Artificial delay to show off the animation if response is too fast
-    if (!isAI) {
-        setTimeout(() => {
-            mealPlan.value = data
-            stopLoading()
-            ElMessage.success('Menu generated successfully!')
-        }, 1500)
-    } else {
-        mealPlan.value = data
-        stopLoading()
-        ElMessage.success('Menu generated successfully!')
-    }
-
-  } catch (error: any) {
-    console.error('Meal Plan Generation Error:', error)
-    if (error.response) {
-      console.error('Response Data:', error.response.data)
-      console.error('Response Status:', error.response.status)
-      ElMessage.error(`Error: ${error.response.data?.detail || error.message}`)
-    } else if (error.request) {
-      console.error('No response received:', error.request)
-      ElMessage.error('Network Error: No response from server. Please check your connection.')
-    } else {
-      console.error('Error Message:', error.message)
-      ElMessage.error(`Client Error: ${error.message}`)
-    }
-    stopLoading()
+    const { data } = await mealChatApi.createSession()
+    sessionId.value = data.session_id
+    messages.value = data.messages
+    finalPlan.value = data.meal_plan
+    await scrollToBottom()
+  } catch (error) {
+    console.error(error)
+    ElMessage.error(t('meal_plan.session_failed'))
+  } finally {
+    loading.value = false
   }
 }
 
-// Helpers
-const getMealIcon = (type: string) => ({ breakfast: '🥯', lunch: '🍱', dinner: '🍲' }[type] || '🍽️')
-const getMealName = (type: string) => type.charAt(0).toUpperCase() + type.slice(1)
+async function sendMessage() {
+  if (!sessionId.value || !draft.value.trim() || loading.value) return
 
-const getColor = (pct: number) => {
-  if (pct >= 90 && pct <= 110) return '#4ade80' // success
-  if (pct >= 70 && pct <= 130) return '#facc15' // warning
-  return '#ef4444' // danger
-}
-const getBudgetColor = (pct: number) => pct <= 100 ? '#4ade80' : '#ef4444'
+  loading.value = true
+  const content = draft.value.trim()
+  draft.value = ''
+  messages.value = [...messages.value, { role: 'user', content }]
 
-// Actions
-function addToShopping(meal: MealItem) {
-  shoppingStore.addItem(meal.recipe_name, '1 serving', meal.meal_type)
-  ElMessage.success(`Added ${meal.recipe_name} to List`)
-}
-
-function showDetails(meal: MealItem) {
-  selectedMeal.value = meal
-  detailsVisible.value = true
-}
-
-function addAndClose() {
-  if (selectedMeal.value) {
-    addToShopping(selectedMeal.value)
-    detailsVisible.value = false
+  try {
+    await scrollToBottom()
+    const { data } = await mealChatApi.sendMessage(sessionId.value, content)
+    messages.value = data.messages
+    finalPlan.value = data.meal_plan
+    await scrollToBottom()
+  } catch (error) {
+    console.error(error)
+    messages.value = messages.value.slice(0, -1)
+    draft.value = content
+    ElMessage.error(t('meal_plan.message_failed'))
+  } finally {
+    loading.value = false
   }
 }
 
-function useExample(msg: string) {
-  aiMessage.value = msg
-}
-
+onMounted(async () => {
+  await bootstrapSession()
+})
 </script>
 
-
-
-
 <style scoped>
-/* Loading Overlay - Health Breathing Style */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(255, 255, 255, 0.92); /* White clean background */
-  backdrop-filter: blur(20px);
-  z-index: 9999;
+.meal-chat-page {
+  display: grid;
+  gap: 24px;
+}
+
+.hero-shell {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  justify-content: space-between;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.22), transparent 30%),
+    linear-gradient(140deg, #ffffff, #f4fbf5 55%, #eef6f1);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
 }
 
-.breathing-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 32px;
+.hero-copy {
+  max-width: 720px;
 }
 
-/* Breathing Core Animation */
-.breath-core {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.core-circle {
-  width: 60px;
-  height: 60px;
-  background: #4ade80; /* Health Green */
-  border-radius: 50%;
-  box-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
-  animation: breathe 4s ease-in-out infinite;
-  z-index: 10;
-}
-
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(74, 222, 128, 0.2);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: ripple 4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-}
-
-.ripple:nth-child(2) { animation-delay: 1s; }
-.ripple:nth-child(3) { animation-delay: 2s; }
-
-/* Status Text */
-.status-text {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #374151; /* Soft Gray */
-  letter-spacing: 0.5px;
-  text-align: center;
-  animation: fadeText 2s ease-in-out infinite alternate;
-}
-
-.status-sub {
-  font-size: 0.9rem;
-  color: #9ca3af;
-  margin-top: 8px;
-}
-
-/* Animations */
-@keyframes breathe {
-  0%, 100% { transform: scale(0.95); opacity: 0.9; }
-  50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 40px rgba(74, 222, 128, 0.6); }
-}
-
-@keyframes ripple {
-  0% { width: 60px; height: 60px; opacity: 0.8; }
-  100% { width: 200px; height: 200px; opacity: 0; }
-}
-
-@keyframes fadeText {
-  0% { opacity: 0.7; }
-  100% { opacity: 1; }
-}
-
-/* Transitions */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.term-title { margin-left: 10px; color: #666; font-size: 0.8rem; }
-
-.terminal-content {
-  height: 120px; /* Fixed height to prevent jump */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* Show latest logs */
-}
-
-.log-line {
-  color: #00ff9d; /* Matrix green */
-  margin-bottom: 4px;
-  font-family: 'Courier New', monospace;
-}
-
-.typing {
-  animation: blink 1s infinite;
-}
-
-@keyframes blink { 50% { opacity: 0; } }
-
-</style>
-
-<style scoped>
-/* Original Styles */
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  font-size: 2rem;
+.eyebrow {
+  margin-bottom: 8px;
+  color: var(--color-primary-dark);
+  font-size: 0.82rem;
   font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  margin: 0;
   color: var(--color-secondary);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.02;
 }
 
 .subtitle {
+  margin-top: 14px;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.hero-note {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  min-width: 220px;
+}
+
+.note-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.note-chip.muted,
+.eyebrow.muted {
+  background: rgba(148, 163, 184, 0.12);
   color: var(--color-text-secondary);
 }
 
-.config-card {
-  border: none;
-  background: white;
-  border-radius: var(--radius-lg);
-  margin-bottom: 24px;
-  position: relative; /* For loading overlay */
-  overflow: hidden;
+.chat-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
+  gap: 24px;
+  align-items: start;
 }
 
-.card-title {
+.chat-card,
+.status-card,
+.result-card {
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.section-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+}
+
+.section-head p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 58vh;
+  min-height: 420px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.message-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 80%;
+}
+
+.message-row.user {
+  align-self: flex-end;
+}
+
+.message-meta {
+  color: var(--color-text-light);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.bubble {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: #f7faf8;
+  color: var(--color-text-main);
+  line-height: 1.7;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.message-row.user .bubble {
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  color: #052e16;
+  border: none;
+}
+
+.pending-bubble {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 600;
-  color: var(--color-secondary);
 }
 
-.slider-group {
-  margin-bottom: 20px;
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary-dark);
+  opacity: 0.35;
+  animation: pulse 1.1s infinite ease-in-out;
 }
 
-.slider-label {
+.dot:nth-child(2) {
+  animation-delay: 0.12s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.24s;
+}
+
+.composer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.composer-actions p {
+  color: var(--color-text-light);
+  font-size: 0.84rem;
+}
+
+.result-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.status-card {
+  background: linear-gradient(160deg, #10251a, #173728);
+  color: #effff5;
+}
+
+.status-card h3 {
+  margin: 8px 0 10px;
+  font-size: 1.2rem;
+}
+
+.status-copy {
+  color: rgba(239, 255, 245, 0.78);
+  line-height: 1.6;
+}
+
+.price-pill {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.meal-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.meal-group {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fbf8;
+}
+
+.meal-group-head {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
-  color: var(--color-text-main);
-  margin-bottom: 4px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-.slider-label .val {
-  font-weight: 600;
-  color: var(--color-primary-dark);
-}
-
-.generate-btn {
-  width: 100%;
-  margin-top: 16px;
-  font-weight: 600;
-  padding: 20px;
-  border-radius: var(--radius-md);
-  font-size: 1rem;
-}
-
-/* 可行性警告样式 */
-.feasibility-alert {
-  margin-bottom: 16px;
-  border-radius: var(--radius-md);
-}
-
-.feasibility-alert :deep(.el-alert__title) {
-  font-weight: 600;
-}
-
-.feasibility-alert :deep(.el-alert__description) {
-  margin-top: 4px;
-  font-size: 0.85rem;
-}
-
-
-/* Results Area */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  background: white;
-  border-radius: var(--radius-lg);
-  color: var(--color-text-secondary);
-}
-
-.illustration {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.results-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-@media (max-width: 600px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.summary-card {
-  background: white;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  text-align: center;
-}
-
-.summary-card .lbl {
-  font-size: 0.8rem;
-  color: var(--color-text-light);
-  margin-bottom: 4px;
-}
-
-.summary-card .val {
-  font-size: 1.25rem;
-  font-weight: 700;
+.meal-label {
   color: var(--color-secondary);
-  margin-bottom: 8px;
+  font-weight: 700;
 }
 
-.summary-card.highlight {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  color: var(--color-primary-dark);
-}
-
-.summary-card.highlight .val {
-  color: var(--color-primary-dark);
-}
-
-/* Meal List */
-.meals-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.meal-card {
-  background: white;
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s;
-}
-
-.meal-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.meal-icon-side {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  border-radius: 12px;
-  background: #f8fafc;
-}
-
-.meal-icon-side.breakfast { background: #fff7ed; }
-.meal-icon-side.lunch { background: #f0f9ff; }
-.meal-icon-side.dinner { background: #fdf2f8; }
-
-.meal-details {
-  flex: 1;
-}
-
-.meal-type {
-  font-size: 0.8rem;
+.meal-count {
   color: var(--color-text-light);
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-size: 0.82rem;
+}
+
+.meal-list {
+  display: grid;
+  gap: 10px;
+}
+
+.meal-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffffff;
 }
 
 .meal-name {
-  font-size: 1.1rem;
-  color: var(--color-text-main);
-  margin: 4px 0 8px;
-}
-
-.meal-tags {
-  display: flex;
-  gap: 8px;
-}
-
-.tag {
-  background: #f1f5f9;
-  color: var(--color-text-secondary);
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.meal-actions {
-  display: flex;
-  gap: 8px;
-}
-
-/* Dialog */
-.dialog-content {
-  text-align: center;
-}
-
-.dialog-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-}
-
-.dialog-stats {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin: 24px 0;
-}
-
-.d-stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.d-val {
+  margin: 0;
   font-weight: 700;
-  font-size: 1.1rem;
   color: var(--color-secondary);
 }
 
-.d-lbl {
-  font-size: 0.8rem;
-  color: var(--color-text-light);
-}
-
-.ai-intro {
-  margin-bottom: 16px;
+.meal-metrics {
+  margin: 4px 0 0;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
-.ai-examples {
-  margin-top: 8px;
+.summary-row {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  color: var(--color-text-secondary);
 }
 
-.ai-examples .el-tag {
-  cursor: pointer;
+.summary-row strong {
+  color: var(--color-secondary);
+  font-size: 1.1rem;
 }
 
-.ai-input textarea {
-  font-family: inherit;
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.25;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
 }
 
-.ai-btn {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  border: none;
+@media (max-width: 960px) {
+  .hero-shell,
+  .chat-layout {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .hero-note {
+    align-items: flex-start;
+  }
+
+  .messages {
+    max-height: 48vh;
+    min-height: 360px;
+  }
 }
 
-.ai-btn:hover {
-  opacity: 0.9;
+@media (max-width: 640px) {
+  .message-row {
+    max-width: 100%;
+  }
+
+  .composer-actions,
+  .meal-group-head,
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .price-pill {
+    align-self: flex-start;
+  }
 }
 </style>
