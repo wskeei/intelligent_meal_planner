@@ -15,7 +15,8 @@ SYSTEM_PROMPT = """
   "preference_updates": {},
   "acknowledged_restrictions": false,
   "confidence": 0.0,
-  "missing_fields": []
+  "missing_fields": [],
+  "contradiction_fields": []
 }
 
 字段约束:
@@ -23,6 +24,7 @@ SYSTEM_PROMPT = """
 - preference_updates 只允许: health_goal, budget, disliked_foods, preferred_tags, restrictions_answered
 - confidence 为 0 到 1 的浮点数，表示你对本轮提取结果的把握
 - missing_fields 只允许填写当前仍缺失、且用户这轮没有明确提供的关键字段
+- contradiction_fields 只允许填写与当前提取、用户意图冲突的字段，且必须是结构化字段名
 """
 
 EMPTY_RESTRICTION_ANSWERS = {
@@ -56,6 +58,13 @@ ALLOWED_MISSING_FIELDS = PROFILE_FIELDS | {
     "budget",
     "disliked_foods",
     "preferred_tags",
+}
+ALLOWED_CONTRADICTION_FIELDS = {
+    "health_goal",
+    "budget",
+    "disliked_foods",
+    "preferred_tags",
+    "activity_level",
 }
 
 
@@ -151,6 +160,13 @@ class DeepSeekSlotExtractor:
         missing_fields = payload.get("missing_fields") or []
         payload["missing_fields"] = [
             field for field in missing_fields if field in ALLOWED_MISSING_FIELDS
+        ]
+
+        contradiction_fields = payload.get("contradiction_fields") or []
+        payload["contradiction_fields"] = [
+            field
+            for field in contradiction_fields
+            if field in ALLOWED_CONTRADICTION_FIELDS
         ]
         payload["profile_updates"] = profile_updates
         payload["preference_updates"] = preference_updates
