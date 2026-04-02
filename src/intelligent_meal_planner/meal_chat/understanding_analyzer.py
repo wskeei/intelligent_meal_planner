@@ -14,8 +14,16 @@ def analyze_understanding(
     extracted_missing_fields: list[str],
     contradiction_fields: list[str] | None = None,
 ) -> UnderstandingAnalysis:
+    actual_missing_fields = _find_missing_fields(memory)
     missing_fields = list(
-        dict.fromkeys(extracted_missing_fields + _find_missing_fields(memory))
+        dict.fromkeys(
+            [
+                field
+                for field in extracted_missing_fields
+                if field in actual_missing_fields
+            ]
+            + actual_missing_fields
+        )
     )
     contradiction_fields = contradiction_fields or []
     ready = (

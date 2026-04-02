@@ -48,7 +48,7 @@ class CrewMealChatRuntime:
         merged_memory = self._merge_memory(memory, profile_delta)
         analysis = analyze_understanding(
             memory=merged_memory,
-            confidence=float(profile_delta.get("confidence", 0.3)),
+            confidence=self._resolve_analysis_confidence(memory, profile_delta),
             extracted_missing_fields=profile_delta.get("missing_fields", []),
             contradiction_fields=profile_delta.get("contradiction_fields", []),
         )
@@ -129,8 +129,9 @@ class CrewMealChatRuntime:
         del intent
         profile_updates = {}
         preference_updates = {}
+        expected_slot = self._resolve_expected_slot(memory)
 
-        extracted = self._extract_with_ai(user_message)
+        extracted = self._extract_with_ai(user_message, expected_slot=expected_slot)
         if extracted is not None:
             profile_updates.update(extracted.profile_updates)
             preference_updates.update(extracted.preference_updates)
@@ -142,10 +143,26 @@ class CrewMealChatRuntime:
             profile_updates = self._normalize_profile_updates(profile_updates)
             preference_updates = self._normalize_preference_updates(preference_updates)
 
-        budget = self._extract_budget(user_message)
-        health_goal = self._extract_health_goal(user_message)
-        disliked_foods = self._extract_disliked_foods(user_message)
-        preferred_tags = self._extract_preferred_tags(user_message)
+        budget = (
+            self._extract_budget(user_message)
+            if expected_slot in (None, "budget")
+            else None
+        )
+        health_goal = (
+            self._extract_health_goal(user_message)
+            if expected_slot in (None, "health_goal")
+            else None
+        )
+        disliked_foods = (
+            self._extract_disliked_foods(user_message)
+            if expected_slot in (None, "disliked_foods", "restrictions")
+            else []
+        )
+        preferred_tags = (
+            self._extract_preferred_tags(user_message)
+            if expected_slot in (None, "preferred_tags", "taste")
+            else []
+        )
 
         if budget is not None and "budget" not in preference_updates:
             preference_updates["budget"] = budget
@@ -241,6 +258,8 @@ class CrewMealChatRuntime:
         merged = memory.model_copy(deep=True)
         merged.profile.update(profile_delta.get("profile_updates", {}))
         merged.preferences.update(profile_delta.get("preference_updates", {}))
+        merged.profile = self._normalize_profile_updates(merged.profile)
+        merged.preferences = self._normalize_preference_updates(merged.preferences)
         return merged
 
     def _build_dual_plan(self, memory: ConversationMemory) -> dict:
@@ -342,12 +361,12 @@ class CrewMealChatRuntime:
             keyword for keyword in PREFERRED_TAG_KEYWORDS if keyword in user_message
         ]
 
-    def _extract_with_ai(self, user_message: str):
+    def _extract_with_ai(self, user_message: str, expected_slot: str | None = None):
         if self.extractor is None:
             return None
 
         try:
-            return self.extractor.parse(user_message, expected_slot=None)
+            return self.extractor.parse(user_message, expected_slot=expected_slot)
         except Exception:
             return None
 
@@ -365,6 +384,30 @@ class CrewMealChatRuntime:
         if total_updates == 1:
             return 0.68
         return 0.3
+
+    def _resolve_expected_slot(self, memory: ConversationMemory) -> str | None:
+        if memory.open_questions:
+            return memory.open_questions[0]
+        return None
+
+    def _resolve_analysis_confidence(
+        self,
+        memory: ConversationMemory,
+        profile_delta: dict,
+    ) -> float:
+        current_confidence = float(profile_delta.get("confidence", 0.3))
+        has_updates = bool(
+            profile_delta.get("profile_updates")
+            or profile_delta.get("preference_updates")
+            or profile_delta.get("contradiction_fields")
+        )
+        if has_updates:
+            return current_confidence
+
+        previous_confidence = memory.known_facts.get("preference_confidence")
+        if isinstance(previous_confidence, (int, float)):
+            return max(current_confidence, float(previous_confidence))
+        return current_confidence
 
     def _normalize_profile_updates(self, profile_updates: dict) -> dict:
         normalized = dict(profile_updates)

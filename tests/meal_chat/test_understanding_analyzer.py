@@ -66,3 +66,33 @@ def test_analyzer_detects_contradiction_when_user_says_gain_muscle_but_eat_less(
 
     assert analysis.clarification_reason == "contradiction_detected"
     assert analysis.ready_for_negotiation is False
+
+
+def test_analyzer_ignores_extracted_missing_fields_that_are_already_known():
+    memory = ConversationMemory(
+        profile={
+            "gender": "male",
+            "age": 25,
+            "height": 170.0,
+            "weight": 65.0,
+            "activity_level": "moderate",
+        },
+        preferences={"health_goal": "lose_weight", "budget": 100.0},
+    )
+
+    analysis = analyze_understanding(
+        memory=memory,
+        confidence=0.9,
+        extracted_missing_fields=[
+            "gender",
+            "age",
+            "height",
+            "weight",
+            "activity_level",
+            "health_goal",
+            "budget",
+        ],
+    )
+
+    assert analysis.missing_fields == []
+    assert analysis.ready_for_negotiation is True

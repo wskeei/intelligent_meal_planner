@@ -13,6 +13,7 @@ from ..meal_chat.crew_runtime import CrewMealChatRuntime
 from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
 from ..meal_chat.local_trace import MealChatTraceWriter
 from ..meal_chat.orchestrator import MealChatOrchestrator
+from ..meal_chat.semantic_normalizer import normalize_goal
 from ..meal_chat.session_schema import ConversationMemory
 from .feasibility import feasibility_service
 from .schemas import (
@@ -311,7 +312,7 @@ class MealChatApplication:
                 "weight": user.weight,
                 "activity_level": user.activity_level,
             },
-            preferences={"health_goal": user.health_goal},
+            preferences={"health_goal": normalize_goal(user.health_goal) or "healthy"},
         )
         session = MealChatSession(
             id=str(uuid.uuid4())[:8],

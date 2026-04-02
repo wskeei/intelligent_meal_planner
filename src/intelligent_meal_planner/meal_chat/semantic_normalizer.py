@@ -8,6 +8,13 @@ GOAL_ALIASES = {
     "maintain": ("维持", "保持", "先稳住", "不想明显增减", "别掉秤"),
     "healthy": ("健康饮食", "吃干净点", "均衡一点"),
 }
+GOAL_VALUE_ALIASES = {
+    "lose_weight": "lose_weight",
+    "weight_loss": "lose_weight",
+    "gain_muscle": "gain_muscle",
+    "maintain": "maintain",
+    "healthy": "healthy",
+}
 
 TAG_ALIASES = {
     "清爽": "清淡",
@@ -30,6 +37,10 @@ def normalize_goal(text: str | None) -> str | None:
         return None
 
     normalized_text = str(text).strip()
+    direct_alias = GOAL_VALUE_ALIASES.get(normalized_text.lower())
+    if direct_alias is not None:
+        return direct_alias
+
     for goal, aliases in GOAL_ALIASES.items():
         if any(alias in normalized_text for alias in aliases):
             return goal

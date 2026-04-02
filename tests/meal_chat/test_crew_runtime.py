@@ -230,6 +230,30 @@ def test_profile_agent_extracts_goal_and_budget_from_natural_language():
     assert result["preference_updates"]["budget"] == 200.0
 
 
+def test_profile_agent_uses_open_question_as_expected_slot_for_age_reply():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            profile_updates={"age": 21},
+            confidence=0.95,
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.profile_agent(
+        user_message="21岁",
+        memory=ConversationMemory(
+            phase="discovering",
+            open_questions=["age"],
+            preferences={"health_goal": "lose_weight"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert extractor.calls[0]["expected_slot"] == "age"
+    assert result["profile_updates"]["age"] == 21
+    assert "budget" not in result["preference_updates"]
+
+
 def test_runtime_updates_memory_from_user_goal_and_budget_message():
     runtime = CrewMealChatRuntime(planning_tool=None)
     result = runtime.run_turn(
@@ -454,3 +478,66 @@ def test_runtime_detects_goal_contradiction_from_freeform_message():
     assert result.memory.analysis.clarification_reason == "contradiction_detected"
     assert result.memory.open_questions == ["health_goal"]
     assert "矛盾" in result.assistant_message
+
+
+def test_runtime_keeps_complete_memory_when_user_requests_planning_again():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            confidence=0.0,
+            missing_fields=[
+                "gender",
+                "age",
+                "height",
+                "weight",
+                "activity_level",
+                "health_goal",
+                "budget",
+            ],
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.run_turn(
+        user_message="请你开始配餐",
+        memory=ConversationMemory(
+            phase="planning",
+            profile={
+                "gender": "male",
+                "age": 21,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"health_goal": "lose_weight", "budget": 100.0},
+            known_facts={"preference_confidence": 1.0},
+        ),
+    )
+
+    assert result.phase == "planning"
+    assert result.memory.analysis is not None
+    assert result.memory.analysis.missing_fields == []
+
+
+def test_runtime_normalizes_legacy_weight_loss_goal_in_existing_memory():
+    runtime = CrewMealChatRuntime(planning_tool=None)
+
+    result = runtime.run_turn(
+        user_message="请你开始配餐",
+        memory=ConversationMemory(
+            phase="planning",
+            profile={
+                "gender": "male",
+                "age": 21,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"health_goal": "weight_loss", "budget": 100.0},
+            known_facts={"preference_confidence": 1.0},
+        ),
+    )
+
+    assert result.phase == "planning"
+    assert result.memory.preferences["health_goal"] == "lose_weight"
+    assert result.memory.target_ranges is not None
+    assert result.memory.target_ranges.strategy == "fat_loss"
