@@ -15,6 +15,10 @@ SYSTEM_PROMPT = """
   "preference_updates": {},
   "acknowledged_restrictions": false
 }
+
+字段约束:
+- profile_updates 只允许: gender, age, height, weight, activity_level
+- preference_updates 只允许: health_goal, budget, disliked_foods, preferred_tags, restrictions_answered
 """
 
 EMPTY_RESTRICTION_ANSWERS = {
@@ -25,6 +29,15 @@ EMPTY_RESTRICTION_ANSWERS = {
     "都能吃",
     "都可以",
     "不忌口",
+}
+
+PROFILE_FIELDS = {"gender", "age", "height", "weight", "activity_level"}
+PREFERENCE_FIELDS = {
+    "health_goal",
+    "budget",
+    "disliked_foods",
+    "preferred_tags",
+    "restrictions_answered",
 }
 
 
@@ -51,11 +64,15 @@ class DeepSeekSlotExtractor:
             temperature=0,
         )
 
-    def _apply_slot_fallback(self, payload: dict, user_message: str, expected_slot: str | None) -> tuple[dict, bool]:
+    def _apply_slot_fallback(
+        self, payload: dict, user_message: str, expected_slot: str | None
+    ) -> tuple[dict, bool]:
         text = re.sub(r"\s+", "", user_message)
         fallback_applied = False
 
-        if expected_slot == "restrictions" and any(token in text for token in EMPTY_RESTRICTION_ANSWERS):
+        if expected_slot == "restrictions" and any(
+            token in text for token in EMPTY_RESTRICTION_ANSWERS
+        ):
             payload.setdefault("preference_updates", {})
             payload["preference_updates"].setdefault("disliked_foods", [])
             payload["acknowledged_restrictions"] = True
@@ -63,12 +80,40 @@ class DeepSeekSlotExtractor:
 
         return payload, fallback_applied
 
+    def _normalize_payload(self, payload: dict, expected_slot: str | None) -> dict:
+        profile_updates = dict(payload.get("profile_updates") or {})
+        preference_updates = dict(payload.get("preference_updates") or {})
+
+        for field in tuple(profile_updates):
+            if field in PREFERENCE_FIELDS:
+                preference_updates.setdefault(field, profile_updates.pop(field))
+
+        for field in tuple(preference_updates):
+            if field in PROFILE_FIELDS:
+                profile_updates.setdefault(field, preference_updates.pop(field))
+
+        if expected_slot in PREFERENCE_FIELDS and expected_slot in profile_updates:
+            preference_updates.setdefault(
+                expected_slot, profile_updates.pop(expected_slot)
+            )
+        if expected_slot in PROFILE_FIELDS and expected_slot in preference_updates:
+            profile_updates.setdefault(
+                expected_slot, preference_updates.pop(expected_slot)
+            )
+
+        payload["profile_updates"] = profile_updates
+        payload["preference_updates"] = preference_updates
+        return payload
+
     def parse(self, user_message: str, expected_slot: str | None = None) -> ParsedTurn:
         response = self.client.invoke(_build_messages(user_message, expected_slot))
         raw = response.content.strip()
         json_match = re.search(r"\{.*\}", raw, re.S)
         payload = json.loads(json_match.group(0) if json_match else raw)
-        payload, fallback_applied = self._apply_slot_fallback(payload, user_message, expected_slot)
+        payload = self._normalize_payload(payload, expected_slot)
+        payload, fallback_applied = self._apply_slot_fallback(
+            payload, user_message, expected_slot
+        )
         payload["debug"] = {
             "expected_slot": expected_slot,
             "raw_response": raw,

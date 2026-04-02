@@ -126,7 +126,9 @@ def test_orchestrator_rejects_budget_when_guard_fails():
         budget_guard=FakeBudgetGuard(False),
         planner=FakePlanner(),
     )
-    user = _user(gender="male", age=24, height=175, weight=68, activity_level="moderate")
+    user = _user(
+        gender="male", age=24, height=175, weight=68, activity_level="moderate"
+    )
 
     response = orchestrator.advance(
         user,
@@ -172,3 +174,33 @@ def test_orchestrator_passes_expected_slot_before_parsing_reply():
             "expected_slot": "restrictions",
         }
     ]
+
+
+def test_orchestrator_advances_after_budget_answer_even_if_extractor_misclassifies_budget():
+    parsed = ParsedTurn(
+        profile_updates={"budget": "100元"},
+        preference_updates={},
+        acknowledged_restrictions=False,
+    )
+    orchestrator = MealChatOrchestrator(
+        extractor=FakeExtractor(parsed),
+        budget_guard=FakeBudgetGuard(True),
+        planner=FakePlanner(),
+    )
+    user = _user(
+        gender="male",
+        age=24,
+        height=175,
+        weight=68,
+        activity_level="moderate",
+        health_goal="lose_weight",
+    )
+    session = _session(status="collecting_preferences")
+
+    response = orchestrator.advance(user, session, "100元吧")
+
+    assert (
+        response["assistant_message"]
+        == "你有没有忌口、过敏或者明确不吃的食物？如果没有也可以直接告诉我。"
+    )
+    assert session.collected_slots["budget"] == "100元"

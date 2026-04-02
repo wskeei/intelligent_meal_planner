@@ -2,6 +2,13 @@ from .target_mapper import build_hidden_targets
 
 
 PROFILE_FIELDS = ["gender", "age", "height", "weight", "activity_level"]
+PREFERENCE_FIELDS = {
+    "health_goal",
+    "budget",
+    "disliked_foods",
+    "preferred_tags",
+    "restrictions_answered",
+}
 
 QUESTION_TEXT = {
     "gender": "为了更准确地了解你的身体情况，我先确认一下你的性别。",
@@ -15,7 +22,9 @@ QUESTION_TEXT = {
     "taste": "口味上你更偏向清淡、家常、重口一点，还是有什么特别想吃的方向？",
 }
 
-BUDGET_REJECTED_MESSAGE = "按你当前的需求，这个预算过低，需要适当提高预算后我再为你正式配餐。"
+BUDGET_REJECTED_MESSAGE = (
+    "按你当前的需求，这个预算过低，需要适当提高预算后我再为你正式配餐。"
+)
 PLAN_READY_MESSAGE = "我已经根据你的情况整理出一份预算内的一日三餐方案。"
 
 
@@ -50,12 +59,23 @@ class MealChatOrchestrator:
         expected_slot = self._next_question_key(user, current_slots)
         parsed = self.extractor.parse(user_message, expected_slot=expected_slot)
 
-        for field, value in parsed.profile_updates.items():
-            if value not in (None, ""):
-                setattr(user, field, value)
-
         slots = dict(session.collected_slots or {})
-        slots.update(parsed.preference_updates)
+        for field, value in parsed.profile_updates.items():
+            if value in (None, ""):
+                continue
+            if field in PROFILE_FIELDS:
+                setattr(user, field, value)
+            elif field in PREFERENCE_FIELDS:
+                slots[field] = value
+
+        for field, value in parsed.preference_updates.items():
+            if value in (None, ""):
+                continue
+            if field in PROFILE_FIELDS:
+                setattr(user, field, value)
+            else:
+                slots[field] = value
+
         if parsed.acknowledged_restrictions:
             slots["restrictions_answered"] = True
         session.collected_slots = slots
@@ -67,7 +87,11 @@ class MealChatOrchestrator:
             "parsed_turn": parsed.model_dump(mode="json"),
         }
         if question_key:
-            session.status = "collecting_profile" if question_key in PROFILE_FIELDS else "collecting_preferences"
+            session.status = (
+                "collecting_profile"
+                if question_key in PROFILE_FIELDS
+                else "collecting_preferences"
+            )
             return {
                 "status": session.status,
                 "assistant_message": QUESTION_TEXT[question_key],
