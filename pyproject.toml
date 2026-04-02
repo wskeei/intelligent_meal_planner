@@ -1,7 +1,7 @@
 [project]
 name = "intelligent-meal-planner"
 version = "0.1.0"
-description = "基于强化学习与多Agent协作的智能配餐系统"
+description = "基于强化学习与多 Agent 协作的智能配餐系统"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

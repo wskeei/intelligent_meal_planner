@@ -29,7 +29,7 @@
 
 ### 前置要求
 
-- 安装 [uv](https://docs.astral.sh/uv/) 包管理器
+- 安装 [uv](https://docs.astral.sh/uv/)
 - Node.js 18+
 - Windows 10/11 或 Linux/macOS
 
@@ -54,6 +54,7 @@ uv sync
 DEEPSEEK_API_KEY=your_key_here
 DEEPSEEK_API_BASE=https://api.deepseek.com/v1
 DEEPSEEK_MODEL=deepseek-chat
+MEAL_CHAT_TRACE_DIR=logs/meal_chat
 ```
 
 ### 4. 启动后端
@@ -84,13 +85,26 @@ start_project.bat
 
 它会自动检查依赖、选择可用后端端口，并分别启动前后端窗口。
 
+## Meal Chat Trace Logs
+
+后端对话式配餐会把每个会话的调试轨迹写入：
+
+`logs/meal_chat/YYYY-MM-DD/<session_id>.jsonl`
+
+每行都是一条 JSON 记录，包含：
+
+- 会话开始事件
+- 成功处理的轮次事件
+- 失败轮次事件与异常文本
+- 提取器调试元数据，例如 `expected_slot`、模型原始响应以及是否命中 fallback
+
 ## 运行时说明
 
 - `/meal-plan`：对话式配餐入口
 - `/profile`：服务端档案编辑页，聊天中补齐的资料会同步回这里
 - `/history`：查看已完成会话中的正式配餐结果
 
-旧的单轮 CrewAI 运行入口已经退役，`main.py agent` 只保留兼容提示，不再参与实际配餐链路。
+旧的单轮 CrewAI 运行入口已经退化，`main.py agent` 只保留兼容提示，不再参与实际配餐链路。
 
 ## 项目结构
 
@@ -103,7 +117,7 @@ intelligent_meal_planner/
 │   ├── meal_chat/
 │   ├── rl/
 │   ├── tools/
-│   └── agents/        # 已退役，仅保留兼容占位
+│   └── agents/        # 已退化，仅保留兼容占位
 ├── tests/
 ├── docs/
 ├── pyproject.toml

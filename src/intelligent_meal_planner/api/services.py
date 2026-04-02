@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import MealChatMessage, MealChatSession, User
 from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
+from ..meal_chat.local_trace import MealChatTraceWriter
 from ..meal_chat.orchestrator import MealChatOrchestrator
 from .feasibility import feasibility_service
 from .schemas import MealItem, MealPlanResponse, NutritionSummary, RecipeBase, RecipeFilter, UserPreferences
@@ -243,6 +244,7 @@ class StrictBudgetPlanner:
 class MealChatApplication:
     def __init__(self):
         self._orchestrator: Optional[MealChatOrchestrator] = None
+        self.trace_writer = MealChatTraceWriter()
 
     @property
     def orchestrator(self) -> MealChatOrchestrator:
@@ -288,10 +290,18 @@ class MealChatApplication:
                 session_id=session.id,
                 role="assistant",
                 content="我会先了解你的身体情况、当前目标、预算和口味偏好，再帮你整理一份预算内的一日三餐方案。",
-                stage="collecting",
+                stage="collecting_profile",
             )
         )
         db.commit()
+        self.trace_writer.write(
+            session_id=session.id,
+            event="session_started",
+            payload={
+                "user_id": user.id,
+                "status": session.status,
+            },
+        )
         db.refresh(session)
         return self._serialize_session(db, session)
 
@@ -314,27 +324,55 @@ class MealChatApplication:
         if session is None:
             raise ValueError("session_not_found")
 
-        db.add(MealChatMessage(session_id=session.id, role="user", content=content, stage=session.status))
-        result = self.orchestrator.advance(user, session, content)
-        session.status = result["status"]
-        if result["hidden_targets"] is not None:
-            session.hidden_targets = result["hidden_targets"]
-        if result["meal_plan"] is not None:
-            session.final_plan = result["meal_plan"]
+        stage_before = session.status
 
-        db.add(user)
-        db.add(session)
-        db.add(
-            MealChatMessage(
-                session_id=session.id,
-                role="assistant",
-                content=result["assistant_message"],
-                stage=session.status,
+        try:
+            db.add(MealChatMessage(session_id=session.id, role="user", content=content, stage=stage_before))
+            result = self.orchestrator.advance(user, session, content)
+            session.status = result["status"]
+            if result["hidden_targets"] is not None:
+                session.hidden_targets = result["hidden_targets"]
+            if result["meal_plan"] is not None:
+                session.final_plan = result["meal_plan"]
+
+            db.add(user)
+            db.add(session)
+            db.add(
+                MealChatMessage(
+                    session_id=session.id,
+                    role="assistant",
+                    content=result["assistant_message"],
+                    stage=session.status,
+                )
             )
-        )
-        db.commit()
-        db.refresh(session)
-        return self._serialize_session(db, session)
+            db.commit()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="turn_processed",
+                payload={
+                    "user_id": user.id,
+                    "status": result["status"],
+                    "stage_before": stage_before,
+                    "user_message": content,
+                    "assistant_message": result["assistant_message"],
+                    "trace": result.get("trace", {}),
+                },
+            )
+            db.refresh(session)
+            return self._serialize_session(db, session)
+        except Exception as exc:
+            db.rollback()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="turn_failed",
+                payload={
+                    "user_id": user.id,
+                    "stage_before": stage_before,
+                    "user_message": content,
+                    "error": repr(exc),
+                },
+            )
+            raise
 
     def get_completed_plans(self, db: Session, user_id: int, limit: int) -> List[Dict[str, Any]]:
         rows = (

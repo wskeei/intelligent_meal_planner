@@ -12,6 +12,21 @@ class FakeExtractor:
         return self.parsed_turn
 
 
+class RecordingExtractor:
+    def __init__(self, parsed_turn):
+        self.parsed_turn = parsed_turn
+        self.calls = []
+
+    def parse(self, user_message, expected_slot=None):
+        self.calls.append(
+            {
+                "user_message": user_message,
+                "expected_slot": expected_slot,
+            }
+        )
+        return self.parsed_turn
+
+
 class FakeBudgetGuard:
     def __init__(self, feasible=True):
         self.feasible = feasible
@@ -100,8 +115,8 @@ def test_orchestrator_rejects_budget_when_guard_fails():
         preference_updates={
             "budget": 30,
             "health_goal": "lose_weight",
-            "disliked_foods": ["香菜"],
-            "preferred_tags": ["清淡"],
+            "disliked_foods": ["棣欒彍"],
+            "preferred_tags": ["娓呮贰"],
             "restrictions_answered": True,
         },
         acknowledged_restrictions=True,
@@ -121,3 +136,39 @@ def test_orchestrator_rejects_budget_when_guard_fails():
 
     assert response["status"] == "budget_rejected"
     assert "预算过低" in response["assistant_message"]
+
+
+def test_orchestrator_passes_expected_slot_before_parsing_reply():
+    extractor = RecordingExtractor(
+        ParsedTurn(
+            profile_updates={},
+            preference_updates={},
+            acknowledged_restrictions=False,
+        )
+    )
+    orchestrator = MealChatOrchestrator(
+        extractor=extractor,
+        budget_guard=FakeBudgetGuard(True),
+        planner=FakePlanner(),
+    )
+    user = _user(
+        gender="male",
+        age=24,
+        height=175,
+        weight=68,
+        activity_level="moderate",
+        health_goal="lose_weight",
+    )
+    session = _session(
+        status="collecting_preferences",
+        collected_slots={"health_goal": "lose_weight", "budget": 100},
+    )
+
+    orchestrator.advance(user, session, "没有，都能吃")
+
+    assert extractor.calls == [
+        {
+            "user_message": "没有，都能吃",
+            "expected_slot": "restrictions",
+        }
+    ]
