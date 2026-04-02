@@ -4,6 +4,10 @@ from intelligent_meal_planner.meal_chat.session_schema import (
     NegotiationOption,
     TargetRanges,
 )
+from intelligent_meal_planner.meal_chat.understanding_schema import (
+    FollowUpPlan,
+    UnderstandingAnalysis,
+)
 from intelligent_meal_planner.meal_chat.types import ParsedTurn
 
 
@@ -16,6 +20,22 @@ def test_conversation_memory_can_store_analysis_and_follow_up_state():
             "clarification_reason": "low_confidence",
         },
         open_questions=["budget", "health_goal"],
+        understanding_analysis=UnderstandingAnalysis(
+            confidence=0.42,
+            missing_fields=["budget"],
+            contradiction_fields=["dislikes_conflicting"],
+            clarification_reason="low_confidence",
+        ),
+        follow_up_plan=FollowUpPlan(
+            questions=["budget"],
+            assistant_message="确认预算之后再继续",
+        ),
+        clarification_history=[
+            FollowUpPlan(
+                questions=["health_goal"],
+                assistant_message="先确认目标",
+            )
+        ],
     )
 
     payload = memory.model_dump(mode="json")
@@ -23,6 +43,9 @@ def test_conversation_memory_can_store_analysis_and_follow_up_state():
     assert payload["known_facts"]["preference_confidence"] == 0.42
     assert payload["known_facts"]["missing_fields"] == ["budget"]
     assert payload["open_questions"] == ["budget", "health_goal"]
+    assert payload["understanding_analysis"]["confidence"] == 0.42
+    assert payload["follow_up_plan"]["assistant_message"].startswith("确认预算")
+    assert payload["clarification_history"][0]["questions"] == ["health_goal"]
 
 
 class FakePlanningTool:
