@@ -9,11 +9,19 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from ..db.models import MealChatMessage, MealChatSession, User
-from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
+from ..meal_chat.crew_runtime import CrewMealChatRuntime
 from ..meal_chat.local_trace import MealChatTraceWriter
 from ..meal_chat.orchestrator import MealChatOrchestrator
+from ..meal_chat.session_schema import ConversationMemory
 from .feasibility import feasibility_service
-from .schemas import MealItem, MealPlanResponse, NutritionSummary, RecipeBase, RecipeFilter, UserPreferences
+from .schemas import (
+    MealItem,
+    MealPlanResponse,
+    NutritionSummary,
+    RecipeBase,
+    RecipeFilter,
+    UserPreferences,
+)
 
 
 class RecipeService:
@@ -34,7 +42,9 @@ class RecipeService:
                 continue
             if filter.category and recipe["category"] != filter.category:
                 continue
-            if filter.tags and not all(tag in recipe.get("tags", []) for tag in filter.tags):
+            if filter.tags and not all(
+                tag in recipe.get("tags", []) for tag in filter.tags
+            ):
                 continue
             results.append(RecipeBase(**recipe))
 
@@ -48,7 +58,11 @@ class RecipeService:
         return None
 
     def get_by_ids(self, ids: List[int]) -> List[RecipeBase]:
-        return [recipe for recipe in (self.get_by_id(recipe_id) for recipe_id in ids) if recipe]
+        return [
+            recipe
+            for recipe in (self.get_by_id(recipe_id) for recipe_id in ids)
+            if recipe
+        ]
 
     def get_categories(self) -> List[str]:
         return list(set(recipe["category"] for recipe in self.recipes))
@@ -86,7 +100,9 @@ class MealPlanService:
         except FileNotFoundError:
             return self._generate_random_plan(preferences)
 
-    def _build_response(self, data: dict, preferences: UserPreferences) -> MealPlanResponse:
+    def _build_response(
+        self, data: dict, preferences: UserPreferences
+    ) -> MealPlanResponse:
         meal_plan = data.get("meal_plan", {})
         metrics = data.get("metrics", {})
 
@@ -138,7 +154,11 @@ class MealPlanService:
         total_calories = total_protein = total_carbs = total_fat = total_price = 0.0
 
         for meal_type in ["breakfast", "lunch", "dinner"]:
-            candidates = [recipe for recipe in self.recipe_service.recipes if meal_type in recipe.get("meal_type", [])]
+            candidates = [
+                recipe
+                for recipe in self.recipe_service.recipes
+                if meal_type in recipe.get("meal_type", [])
+            ]
             if not candidates:
                 continue
             recipe = random.choice(candidates)
@@ -249,14 +269,14 @@ class MealChatApplication:
     @property
     def orchestrator(self) -> MealChatOrchestrator:
         if self._orchestrator is None:
-            self._orchestrator = MealChatOrchestrator(
-                extractor=DeepSeekSlotExtractor(),
-                budget_guard=BudgetGuardService(),
-                planner=StrictBudgetPlanner(),
-            )
+            planner = StrictBudgetPlanner()
+            runtime = CrewMealChatRuntime(planning_tool=planner)
+            self._orchestrator = MealChatOrchestrator(runtime=runtime, planner=planner)
         return self._orchestrator
 
-    def _serialize_session(self, db: Session, session: MealChatSession) -> Dict[str, Any]:
+    def _serialize_session(
+        self, db: Session, session: MealChatSession
+    ) -> Dict[str, Any]:
         messages = (
             db.query(MealChatMessage)
             .filter(MealChatMessage.session_id == session.id)
@@ -278,19 +298,30 @@ class MealChatApplication:
         }
 
     def start_session(self, db: Session, user: User) -> Dict[str, Any]:
+        memory = ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": user.gender,
+                "age": user.age,
+                "height": user.height,
+                "weight": user.weight,
+                "activity_level": user.activity_level,
+            },
+            preferences={"health_goal": user.health_goal},
+        )
         session = MealChatSession(
             id=str(uuid.uuid4())[:8],
             user_id=user.id,
-            status="collecting_profile",
-            collected_slots={},
+            status="discovering",
+            collected_slots=memory.model_dump(mode="json"),
         )
         db.add(session)
         db.add(
             MealChatMessage(
                 session_id=session.id,
                 role="assistant",
-                content="我会先了解你的身体情况、当前目标、预算和口味偏好，再帮你整理一份预算内的一日三餐方案。",
-                stage="collecting_profile",
+                content="我会先了解你的目标、预算和口味偏好，再帮你整理一份预算内的一日三餐方案。",
+                stage="discovering",
             )
         )
         db.commit()
@@ -305,20 +336,28 @@ class MealChatApplication:
         db.refresh(session)
         return self._serialize_session(db, session)
 
-    def get_session(self, db: Session, user: User, session_id: str) -> Optional[Dict[str, Any]]:
+    def get_session(
+        self, db: Session, user: User, session_id: str
+    ) -> Optional[Dict[str, Any]]:
         session = (
             db.query(MealChatSession)
-            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .filter(
+                MealChatSession.id == session_id, MealChatSession.user_id == user.id
+            )
             .first()
         )
         if not session:
             return None
         return self._serialize_session(db, session)
 
-    def handle_message(self, db: Session, user: User, session_id: str, content: str) -> Dict[str, Any]:
+    def handle_message(
+        self, db: Session, user: User, session_id: str, content: str
+    ) -> Dict[str, Any]:
         session = (
             db.query(MealChatSession)
-            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .filter(
+                MealChatSession.id == session_id, MealChatSession.user_id == user.id
+            )
             .first()
         )
         if session is None:
@@ -327,11 +366,16 @@ class MealChatApplication:
         stage_before = session.status
 
         try:
-            db.add(MealChatMessage(session_id=session.id, role="user", content=content, stage=stage_before))
+            db.add(
+                MealChatMessage(
+                    session_id=session.id,
+                    role="user",
+                    content=content,
+                    stage=stage_before,
+                )
+            )
             result = self.orchestrator.advance(user, session, content)
             session.status = result["status"]
-            if result["hidden_targets"] is not None:
-                session.hidden_targets = result["hidden_targets"]
             if result["meal_plan"] is not None:
                 session.final_plan = result["meal_plan"]
 
@@ -374,10 +418,15 @@ class MealChatApplication:
             )
             raise
 
-    def get_completed_plans(self, db: Session, user_id: int, limit: int) -> List[Dict[str, Any]]:
+    def get_completed_plans(
+        self, db: Session, user_id: int, limit: int
+    ) -> List[Dict[str, Any]]:
         rows = (
             db.query(MealChatSession)
-            .filter(MealChatSession.user_id == user_id, MealChatSession.status == "completed")
+            .filter(
+                MealChatSession.user_id == user_id,
+                MealChatSession.status.in_(["completed", "finalized"]),
+            )
             .order_by(MealChatSession.updated_at.desc())
             .limit(limit)
             .all()

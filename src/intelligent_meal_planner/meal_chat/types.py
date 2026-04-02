@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from .session_schema import ConversationMemory, NegotiationOption
+
 
 class ExtractionDebug(BaseModel):
     expected_slot: Optional[str] = None
@@ -15,3 +17,11 @@ class ParsedTurn(BaseModel):
     preference_updates: dict = Field(default_factory=dict)
     acknowledged_restrictions: bool = False
     debug: ExtractionDebug = Field(default_factory=ExtractionDebug)
+
+
+class CrewTurnResult(BaseModel):
+    phase: str
+    assistant_message: str
+    memory: ConversationMemory
+    negotiation_options: list[NegotiationOption] = Field(default_factory=list)
+    meal_plan: dict | None = None

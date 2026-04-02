@@ -10,6 +10,7 @@ from enum import Enum
 
 class HealthGoal(str, Enum):
     """健康目标枚举"""
+
     LOSE_WEIGHT = "lose_weight"
     GAIN_MUSCLE = "gain_muscle"
     MAINTAIN = "maintain"
@@ -18,8 +19,10 @@ class HealthGoal(str, Enum):
 
 # ============ 用户相关 ============
 
+
 class UserPreferences(BaseModel):
     """用户偏好设置"""
+
     health_goal: HealthGoal = HealthGoal.HEALTHY
     target_calories: int = Field(default=2000, ge=1200, le=4000)
     target_protein: int = Field(default=100, ge=30, le=300)
@@ -32,12 +35,14 @@ class UserPreferences(BaseModel):
 
 class UserCreate(BaseModel):
     """创建用户请求"""
+
     username: str = Field(..., min_length=2, max_length=50)
     preferences: Optional[UserPreferences] = None
 
 
 class UserResponse(BaseModel):
     """用户响应"""
+
     id: int
     username: str
     preferences: UserPreferences
@@ -46,8 +51,10 @@ class UserResponse(BaseModel):
 
 # ============ 菜品相关 ============
 
+
 class RecipeBase(BaseModel):
     """菜品基础信息"""
+
     id: int
     name: str
     category: str
@@ -69,12 +76,14 @@ class RecipeBase(BaseModel):
 
 class RecipeListResponse(BaseModel):
     """菜品列表响应"""
+
     total: int
     items: List[RecipeBase]
 
 
 class RecipeFilter(BaseModel):
     """菜品筛选条件"""
+
     meal_type: Optional[str] = None
     min_price: Optional[float] = None
     max_price: Optional[float] = None
@@ -86,8 +95,10 @@ class RecipeFilter(BaseModel):
 
 # ============ 配餐相关 ============
 
+
 class MealItem(BaseModel):
     """单餐菜品"""
+
     meal_type: str  # breakfast, lunch, dinner
     recipe_id: int
     recipe_name: str
@@ -100,6 +111,7 @@ class MealItem(BaseModel):
 
 class NutritionSummary(BaseModel):
     """营养汇总"""
+
     total_calories: float
     total_protein: float
     total_carbs: float
@@ -112,6 +124,7 @@ class NutritionSummary(BaseModel):
 
 class MealPlanRequest(BaseModel):
     """配餐请求"""
+
     user_id: Optional[int] = None
     preferences: Optional[UserPreferences] = None
     use_agent: bool = Field(default=False, description="是否使用 Agent 对话模式")
@@ -120,6 +133,7 @@ class MealPlanRequest(BaseModel):
 
 class MealPlanResponse(BaseModel):
     """配餐响应"""
+
     id: str
     created_at: datetime
     meals: List[MealItem]
@@ -130,14 +144,17 @@ class MealPlanResponse(BaseModel):
 
 class MealPlanHistory(BaseModel):
     """配餐历史"""
+
     total: int
     items: List[MealPlanResponse]
 
 
 # ============ 通用响应 ============
 
+
 class APIResponse(BaseModel):
     """通用 API 响应"""
+
     success: bool
     message: str
     data: Optional[dict] = None
@@ -145,6 +162,7 @@ class APIResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """错误响应"""
+
     success: bool = False
     error_code: str
     message: str
@@ -165,4 +183,4 @@ class MealChatSessionResponse(BaseModel):
     session_id: str
     status: str
     messages: List[ChatMessage]
-    meal_plan: Optional[MealPlanResponse] = None
+    meal_plan: Optional[dict] = None

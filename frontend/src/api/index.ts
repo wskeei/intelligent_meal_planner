@@ -79,6 +79,8 @@ export interface ChatMessage {
   created_at?: string
 }
 
+export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'finalized'
+
 export interface NegotiatedMealPlanAlternative {
   option_key: string
   title: string
@@ -93,7 +95,7 @@ export interface NegotiatedMealPlan {
 
 export interface MealChatSession {
   session_id: string
-  status: 'discovering' | 'negotiating' | 'planning' | 'finalized'
+  status: MealChatPhase
   messages: ChatMessage[]
   meal_plan: MealPlan | NegotiatedMealPlan | null
 }

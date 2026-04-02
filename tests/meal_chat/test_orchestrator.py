@@ -1,88 +1,38 @@
 from types import SimpleNamespace
 
 from intelligent_meal_planner.meal_chat.orchestrator import MealChatOrchestrator
-from intelligent_meal_planner.meal_chat.types import ParsedTurn
+from intelligent_meal_planner.meal_chat.session_schema import ConversationMemory
+from intelligent_meal_planner.meal_chat.types import CrewTurnResult
 
 
-class FakeExtractor:
-    def __init__(self, parsed_turn):
-        self.parsed_turn = parsed_turn
-
-    def parse(self, *_args, **_kwargs):
-        return self.parsed_turn
-
-
-class RecordingExtractor:
-    def __init__(self, parsed_turn):
-        self.parsed_turn = parsed_turn
+class FakeCrewRuntime:
+    def __init__(self, result):
+        self.result = result
         self.calls = []
 
-    def parse(self, user_message, expected_slot=None):
+    def run_turn(self, user_message, memory):
         self.calls.append(
             {
                 "user_message": user_message,
-                "expected_slot": expected_slot,
+                "memory": memory,
             }
         )
-        return self.parsed_turn
-
-
-class FakeBudgetGuard:
-    def __init__(self, feasible=True):
-        self.feasible = feasible
-
-    def check(self, *_args, **_kwargs):
-        return self.feasible
-
-
-class RecordingBudgetGuard:
-    def __init__(self, feasible=True):
-        self.feasible = feasible
-        self.calls = []
-
-    def check(self, **kwargs):
-        self.calls.append(kwargs)
-        return self.feasible
+        return self.result
 
 
 class FakePlanner:
     def generate(self, *_args, **_kwargs):
-        return {
-            "id": "plan001",
-            "created_at": "2026-04-01T10:00:00",
-            "meals": [],
-            "nutrition": {
-                "total_calories": 1800,
-                "total_protein": 120,
-                "total_carbs": 180,
-                "total_fat": 55,
-                "total_price": 58,
-                "calories_achievement": 100,
-                "protein_achievement": 100,
-                "budget_usage": 96.7,
-            },
-            "target": {
-                "health_goal": "lose_weight",
-                "target_calories": 1800,
-                "target_protein": 120,
-                "target_carbs": 180,
-                "target_fat": 55,
-                "max_budget": 60,
-                "disliked_foods": [],
-                "preferred_tags": [],
-            },
-            "score": 12.5,
-        }
+        return {}
 
 
 def _user(**overrides):
     base = {
         "id": 1,
-        "gender": None,
-        "age": None,
-        "height": None,
-        "weight": None,
-        "activity_level": None,
+        "gender": "male",
+        "age": 24,
+        "height": 175,
+        "weight": 68,
+        "activity_level": "moderate",
         "health_goal": "healthy",
     }
     base.update(overrides)
@@ -91,7 +41,7 @@ def _user(**overrides):
 
 def _session(**overrides):
     base = {
-        "status": "collecting_profile",
+        "status": "discovering",
         "collected_slots": {},
         "hidden_targets": None,
         "final_plan": None,
@@ -100,154 +50,48 @@ def _session(**overrides):
     return SimpleNamespace(**base)
 
 
-def test_orchestrator_asks_for_missing_profile_before_anything_else():
-    orchestrator = MealChatOrchestrator(
-        extractor=FakeExtractor(
-            ParsedTurn(
-                profile_updates={},
-                preference_updates={},
-                acknowledged_restrictions=False,
-            )
-        ),
-        budget_guard=FakeBudgetGuard(True),
-        planner=FakePlanner(),
-    )
-
-    response = orchestrator.advance(_user(), _session(), "你好")
-
-    assert response["status"] == "collecting_profile"
-    assert "性别" in response["assistant_message"]
-
-
-def test_orchestrator_rejects_budget_when_guard_fails():
-    parsed = ParsedTurn(
-        profile_updates={},
-        preference_updates={
-            "budget": 30,
-            "health_goal": "lose_weight",
-            "disliked_foods": ["棣欒彍"],
-            "preferred_tags": ["娓呮贰"],
-            "restrictions_answered": True,
-        },
-        acknowledged_restrictions=True,
-    )
-    orchestrator = MealChatOrchestrator(
-        extractor=FakeExtractor(parsed),
-        budget_guard=FakeBudgetGuard(False),
-        planner=FakePlanner(),
-    )
-    user = _user(
-        gender="male", age=24, height=175, weight=68, activity_level="moderate"
-    )
-
-    response = orchestrator.advance(
-        user,
-        _session(status="collecting_preferences"),
-        "预算 30 元，清淡一点，不吃香菜",
-    )
-
-    assert response["status"] == "budget_rejected"
-    assert "预算过低" in response["assistant_message"]
-
-
-def test_orchestrator_passes_expected_slot_before_parsing_reply():
-    extractor = RecordingExtractor(
-        ParsedTurn(
-            profile_updates={},
-            preference_updates={},
-            acknowledged_restrictions=False,
+def test_orchestrator_allows_budget_revision_after_negotiation():
+    runtime = FakeCrewRuntime(
+        result=CrewTurnResult(
+            phase="planning",
+            assistant_message="预算调到 200 元后，我可以继续给你两套方案。",
+            memory=ConversationMemory(
+                phase="planning",
+                preferences={"budget": 200.0},
+            ),
+            meal_plan=None,
         )
     )
-    orchestrator = MealChatOrchestrator(
-        extractor=extractor,
-        budget_guard=FakeBudgetGuard(True),
-        planner=FakePlanner(),
-    )
-    user = _user(
-        gender="male",
-        age=24,
-        height=175,
-        weight=68,
-        activity_level="moderate",
-        health_goal="lose_weight",
-    )
+    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
     session = _session(
-        status="collecting_preferences",
-        collected_slots={"health_goal": "lose_weight", "budget": 100},
+        status="negotiating",
+        collected_slots={"budget": 100.0},
     )
 
-    orchestrator.advance(user, session, "没有，都能吃")
+    response = orchestrator.advance(_user(), session, "预算设置 200 元")
 
-    assert extractor.calls == [
-        {
-            "user_message": "没有，都能吃",
-            "expected_slot": "restrictions",
-        }
-    ]
+    assert response["status"] == "planning"
+    assert "200 元" in response["assistant_message"]
+    assert session.collected_slots["preferences"]["budget"] == 200.0
+    assert runtime.calls[0]["memory"].phase == "discovering"
 
 
-def test_orchestrator_advances_after_budget_answer_even_if_extractor_misclassifies_budget():
-    parsed = ParsedTurn(
-        profile_updates={"budget": "100元"},
-        preference_updates={},
-        acknowledged_restrictions=False,
+def test_orchestrator_returns_negotiation_trace_from_runtime():
+    runtime = FakeCrewRuntime(
+        result=CrewTurnResult(
+            phase="negotiating",
+            assistant_message="当前预算偏紧，我先给你两个方向。",
+            memory=ConversationMemory(
+                phase="negotiating",
+                preferences={"budget": 100.0},
+            ),
+            negotiation_options=[],
+        )
     )
-    orchestrator = MealChatOrchestrator(
-        extractor=FakeExtractor(parsed),
-        budget_guard=FakeBudgetGuard(True),
-        planner=FakePlanner(),
-    )
-    user = _user(
-        gender="male",
-        age=24,
-        height=175,
-        weight=68,
-        activity_level="moderate",
-        health_goal="lose_weight",
-    )
-    session = _session(status="collecting_preferences")
+    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
 
-    response = orchestrator.advance(user, session, "100元吧")
+    response = orchestrator.advance(_user(), _session(), "预算 100 元")
 
-    assert (
-        response["assistant_message"]
-        == "你有没有忌口、过敏或者明确不吃的食物？如果没有也可以直接告诉我。"
-    )
-    assert session.collected_slots["budget"] == 100.0
-
-
-def test_orchestrator_coerces_existing_string_budget_before_budget_check():
-    budget_guard = RecordingBudgetGuard(True)
-    orchestrator = MealChatOrchestrator(
-        extractor=FakeExtractor(
-            ParsedTurn(
-                profile_updates={},
-                preference_updates={"preferred_tags": ["清淡"]},
-                acknowledged_restrictions=False,
-            )
-        ),
-        budget_guard=budget_guard,
-        planner=FakePlanner(),
-    )
-    user = _user(
-        gender="male",
-        age=24,
-        height=175,
-        weight=68,
-        activity_level="moderate",
-        health_goal="lose_weight",
-    )
-    session = _session(
-        status="collecting_preferences",
-        collected_slots={
-            "health_goal": "lose_weight",
-            "budget": "100元",
-            "restrictions_answered": True,
-        },
-    )
-
-    response = orchestrator.advance(user, session, "清淡的")
-
-    assert response["status"] == "completed"
-    assert session.collected_slots["budget"] == 100.0
-    assert budget_guard.calls[0]["budget"] == 100.0
+    assert response["status"] == "negotiating"
+    assert response["trace"]["phase"] == "negotiating"
+    assert response["trace"]["memory"]["preferences"]["budget"] == 100.0

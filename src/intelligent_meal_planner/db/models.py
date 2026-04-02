@@ -49,7 +49,7 @@ class MealChatSession(Base):
 
     id = Column(String, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    status = Column(String, nullable=False, default="collecting_profile")
+    status = Column(String, nullable=False, default="discovering")
     collected_slots = Column(JSON, nullable=False, default=dict)
     hidden_targets = Column(JSON, nullable=True)
     final_plan = Column(JSON, nullable=True)

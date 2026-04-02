@@ -60,9 +60,9 @@
             type="textarea"
             :rows="3"
             resize="none"
+            :disabled="!isConversationActive"
             :placeholder="$t('meal_plan.chat_placeholder')"
             @keydown.enter.exact.prevent="sendMessage"
-            :disabled="!isConversationActive"
           />
           <div class="composer-actions">
             <p>{{ $t('meal_plan.draft_hint') }}</p>
@@ -152,10 +152,9 @@ import { useI18n } from 'vue-i18n'
 import {
   mealChatApi,
   type ChatMessage,
-  type MealPlan,
   type MealChatSession,
-  type NegotiatedMealPlan,
-  type NegotiatedMealPlanAlternative
+  type MealPlan,
+  type NegotiatedMealPlan
 } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
@@ -167,30 +166,30 @@ const { profile, profileComplete } = storeToRefs(userStore)
 
 const sessionId = ref<string | null>(null)
 const currentSession = ref<MealChatSession | null>(null)
-const messages = ref<ChatMessage[]>([])
+const optimisticMessages = ref<ChatMessage[] | null>(null)
 const draft = ref('')
 const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 
-function isNegotiatedMealPlan(
-  plan: MealPlan | NegotiatedMealPlan | null
-): plan is NegotiatedMealPlan {
-  return Boolean(plan && 'primary' in plan && Array.isArray((plan as NegotiatedMealPlan).alternatives))
+const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
+
+function isNegotiatedMealPlan(mealPlan: MealPlan | NegotiatedMealPlan): mealPlan is NegotiatedMealPlan {
+  return 'alternatives' in mealPlan
 }
 
 const finalPlan = computed<MealPlan | null>(() => {
-  const payload = currentSession.value?.meal_plan ?? null
-  if (!payload) return null
-  return isNegotiatedMealPlan(payload) ? payload.primary : payload
+  const mealPlan = currentSession.value?.meal_plan
+  if (!mealPlan) return null
+  return isNegotiatedMealPlan(mealPlan) ? mealPlan.primary : mealPlan
 })
 
-const planAlternatives = computed<NegotiatedMealPlanAlternative[]>(() => {
-  const payload = currentSession.value?.meal_plan ?? null
-  return isNegotiatedMealPlan(payload) ? payload.alternatives : []
+const planAlternatives = computed(() => {
+  const mealPlan = currentSession.value?.meal_plan
+  return mealPlan && isNegotiatedMealPlan(mealPlan) ? mealPlan.alternatives : []
 })
 
-const isConversationActive = computed(
-  () => Boolean(currentSession.value && currentSession.value.status !== 'finalized')
+const isConversationActive = computed(() =>
+  Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
 )
 
 const groupedMeals = computed(() => {
@@ -234,9 +233,9 @@ async function bootstrapSession() {
     }
 
     const { data } = await mealChatApi.createSession()
-    currentSession.value = data
     sessionId.value = data.session_id
-    messages.value = data.messages
+    currentSession.value = data
+    optimisticMessages.value = null
     await scrollToBottom()
   } catch (error) {
     console.error(error)
@@ -252,17 +251,17 @@ async function sendMessage() {
   loading.value = true
   const content = draft.value.trim()
   draft.value = ''
-  messages.value = [...messages.value, { role: 'user', content }]
+  optimisticMessages.value = [...messages.value, { role: 'user', content }]
 
   try {
     await scrollToBottom()
     const { data } = await mealChatApi.sendMessage(sessionId.value, content)
     currentSession.value = data
-    messages.value = data.messages
+    optimisticMessages.value = null
     await scrollToBottom()
   } catch (error) {
     console.error(error)
-    messages.value = messages.value.slice(0, -1)
+    optimisticMessages.value = null
     draft.value = content
     ElMessage.error(t('meal_plan.message_failed'))
   } finally {
@@ -530,6 +529,10 @@ onMounted(async () => {
   padding: 12px 14px;
   border-radius: 14px;
   background: #ffffff;
+}
+
+.alternative-item {
+  align-items: flex-start;
 }
 
 .meal-name {
