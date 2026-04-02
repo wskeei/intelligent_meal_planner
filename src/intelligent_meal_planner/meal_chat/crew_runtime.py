@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import re
+
 from .feasibility_negotiator import build_negotiation_result
 from .session_schema import ConversationMemory, TargetRanges
 from .target_ranges import build_target_ranges
 from .types import CrewTurnResult
+
+BUDGET_VALUE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)\s*元?")
+GOAL_KEYWORDS = {
+    "lose_weight": ("减肥", "减脂", "瘦身"),
+    "gain_muscle": ("增肌", "长肌肉"),
+    "maintain": ("维持", "保持", "不增不减"),
+    "healthy": ("健康饮食", "健康一点", "均衡"),
+}
+PREFERRED_TAG_KEYWORDS = ("清淡", "家常", "重口", "高蛋白")
+DISLIKED_FOODS_PATTERN = re.compile(r"(?:不吃|不要|别要)([^，。,.；;\s]+)")
 
 
 class CrewMealChatRuntime:
@@ -67,9 +79,25 @@ class CrewMealChatRuntime:
     def profile_agent(
         self, user_message: str, memory: ConversationMemory, intent: dict
     ) -> dict:
+        del memory, intent
+        preference_updates = {}
+        budget = self._extract_budget(user_message)
+        health_goal = self._extract_health_goal(user_message)
+        disliked_foods = self._extract_disliked_foods(user_message)
+        preferred_tags = self._extract_preferred_tags(user_message)
+
+        if budget is not None:
+            preference_updates["budget"] = budget
+        if health_goal is not None:
+            preference_updates["health_goal"] = health_goal
+        if disliked_foods:
+            preference_updates["disliked_foods"] = disliked_foods
+        if preferred_tags:
+            preference_updates["preferred_tags"] = preferred_tags
+
         return {
             "profile_updates": {},
-            "preference_updates": {},
+            "preference_updates": preference_updates,
         }
 
     def strategy_agent(self, memory: ConversationMemory) -> dict:
@@ -204,3 +232,28 @@ class CrewMealChatRuntime:
             "target_carbs": int(target_carbs),
             "target_fat": int(target_fat),
         }
+
+    def _extract_budget(self, user_message: str) -> float | None:
+        match = BUDGET_VALUE_PATTERN.search(user_message.replace(",", ""))
+        if not match:
+            return None
+        return float(match.group(1))
+
+    def _extract_health_goal(self, user_message: str) -> str | None:
+        for goal, keywords in GOAL_KEYWORDS.items():
+            if any(keyword in user_message for keyword in keywords):
+                return goal
+        return None
+
+    def _extract_disliked_foods(self, user_message: str) -> list[str]:
+        foods = []
+        for match in DISLIKED_FOODS_PATTERN.finditer(user_message):
+            food = match.group(1).strip()
+            if food and food not in foods:
+                foods.append(food)
+        return foods
+
+    def _extract_preferred_tags(self, user_message: str) -> list[str]:
+        return [
+            keyword for keyword in PREFERRED_TAG_KEYWORDS if keyword in user_message
+        ]

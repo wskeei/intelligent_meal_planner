@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from ..api.feasibility import estimate_budget_band
 from .session_schema import NegotiationOption, TargetRanges
 
 
@@ -14,10 +13,17 @@ class NegotiationResult(BaseModel):
     options: list[NegotiationOption] = Field(default_factory=list)
 
 
+def _estimate_budget_band(budget: float, protein_min: int) -> tuple[float, float]:
+    protein_pressure = max(0, protein_min - 70)
+    recommended_budget_min = max(float(budget), 80.0 + protein_pressure * 1.2)
+    recommended_budget_comfort = recommended_budget_min + 30.0
+    return recommended_budget_min, recommended_budget_comfort
+
+
 def build_negotiation_result(
     budget: float, target_ranges: TargetRanges
 ) -> NegotiationResult:
-    recommended_budget_min, recommended_budget_comfort = estimate_budget_band(
+    recommended_budget_min, recommended_budget_comfort = _estimate_budget_band(
         budget=budget,
         protein_min=target_ranges.protein_min,
     )

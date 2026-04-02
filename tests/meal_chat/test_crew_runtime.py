@@ -127,3 +127,40 @@ def test_runtime_requests_two_rl_plan_variants_when_negotiation_prefers_dual_opt
     assert len(result["alternatives"]) == 2
     assert result["alternatives"][0]["option_key"] == "budget_cut"
     assert result["alternatives"][1]["option_key"] == "protein_priority"
+
+
+def test_profile_agent_extracts_goal_and_budget_from_natural_language():
+    runtime = CrewMealChatRuntime(planning_tool=None)
+    result = runtime.profile_agent(
+        user_message="我想减肥，预算200元以内",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "lose_weight"
+    assert result["preference_updates"]["budget"] == 200.0
+
+
+def test_runtime_updates_memory_from_user_goal_and_budget_message():
+    runtime = CrewMealChatRuntime(planning_tool=None)
+    result = runtime.run_turn(
+        user_message="我想减肥，预算200元以内",
+        memory=ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"health_goal": "healthy"},
+        ),
+    )
+
+    assert result.memory.preferences["health_goal"] == "lose_weight"
+    assert result.memory.preferences["budget"] == 200.0
+    assert result.phase == "planning"
