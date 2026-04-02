@@ -164,6 +164,7 @@ import { ref, reactive, watch, onMounted } from 'vue'
 import { Filter, Search } from '@element-plus/icons-vue'
 import axios from 'axios'
 import _ from 'lodash' // Assuming lodash might be useful, or implement simple debounce
+import { API_BASE_URL } from '@/api/config'
 
 // Setup State
 const recipes = ref<any[]>([])
@@ -196,7 +197,7 @@ const fetchRecipes = async () => {
       params.meal_type = filters.meal_type[0] 
     }
 
-    const { data } = await axios.get('http://localhost:8000/api/recipes', { params })
+    const { data } = await axios.get(`${API_BASE_URL}/recipes`, { params })
     recipes.value = data.items
   } catch (error) {
     console.error(error)

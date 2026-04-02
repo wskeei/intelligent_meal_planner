@@ -29,7 +29,7 @@ npm run build
 默认通过 `VITE_API_BASE_URL` 访问后端，未配置时使用：
 
 ```env
-VITE_API_BASE_URL=http://127.0.0.1:8000/api
+VITE_API_BASE_URL=http://127.0.0.1:9000/api
 ```
 
 ## 页面说明

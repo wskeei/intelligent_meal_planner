@@ -15,20 +15,19 @@
    uv run python main.py agent
 """
 
-import sys
 import subprocess
-from pathlib import Path
+import sys
 
 
 def start_api():
     """启动 FastAPI 后端服务"""
     print("启动 FastAPI 后端服务...")
-    print("   访问地址: http://localhost:8000")
-    print("   API 文档: http://localhost:8000/docs")
+    print("   访问地址: http://localhost:9000")
+    print("   API 文档: http://localhost:9000/docs")
     subprocess.run([
         sys.executable, "-m", "uvicorn",
         "src.intelligent_meal_planner.api.main:app",
-        "--reload", "--host", "0.0.0.0", "--port", "8000"
+        "--reload", "--host", "0.0.0.0", "--port", "9000"
     ])
 
 

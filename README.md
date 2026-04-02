@@ -62,7 +62,7 @@ DEEPSEEK_MODEL=deepseek-chat
 uv run python main.py api
 ```
 
-后端地址：`http://127.0.0.1:8000`
+后端地址：`http://127.0.0.1:9000`
 
 ### 5. 启动前端
 
@@ -73,6 +73,16 @@ npm run dev
 ```
 
 前端地址：`http://localhost:5173`
+
+### Windows 一键启动
+
+如果你在 Windows 上，也可以直接使用项目内置脚本：
+
+```bat
+start_project.bat
+```
+
+它会自动检查依赖、选择可用后端端口，并分别启动前后端窗口。
 
 ## 运行时说明
 
@@ -105,7 +115,7 @@ intelligent_meal_planner/
 ### 后端测试
 
 ```bash
-uv run pytest
+uv run python -m pytest
 ```
 
 ### 前端构建
