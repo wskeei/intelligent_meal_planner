@@ -106,3 +106,16 @@ pnpm-debug.log*
 # Frontend Build
 frontend/dist/
 frontend/node_modules/
+frontend/.vite/
+frontend/*.tsbuildinfo
+
+# Project runtime data
+sql_app.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local datasets and generated artifacts
+new_data_temp/
+training_results.png
