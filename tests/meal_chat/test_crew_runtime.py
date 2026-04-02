@@ -47,6 +47,8 @@ def test_runtime_routes_budget_question_to_negotiation_answer():
     runtime.profile_agent = lambda *_args, **_kwargs: {
         "profile_updates": {},
         "preference_updates": {},
+        "confidence": 0.9,
+        "missing_fields": [],
     }
     runtime.strategy_agent = lambda *_args, **_kwargs: {
         "target_ranges": None,
@@ -59,7 +61,17 @@ def test_runtime_routes_budget_question_to_negotiation_answer():
 
     result = runtime.run_turn(
         user_message="最低需要多少预算？",
-        memory=ConversationMemory(phase="negotiating"),
+        memory=ConversationMemory(
+            phase="negotiating",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"budget": 160.0, "health_goal": "lose_weight"},
+        ),
     )
 
     assert result.phase == "negotiating"
@@ -75,6 +87,8 @@ def test_runtime_requests_plan_when_information_is_sufficient():
     runtime.profile_agent = lambda *_args, **_kwargs: {
         "profile_updates": {},
         "preference_updates": {"budget": 200.0},
+        "confidence": 0.9,
+        "missing_fields": [],
     }
     runtime.strategy_agent = lambda *_args, **_kwargs: {
         "target_ranges": {
@@ -102,7 +116,17 @@ def test_runtime_requests_plan_when_information_is_sufficient():
 
     result = runtime.run_turn(
         user_message="那直接给我方案吧",
-        memory=ConversationMemory(phase="discovering"),
+        memory=ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"health_goal": "lose_weight"},
+        ),
     )
 
     assert result.phase == "finalized"
@@ -289,3 +313,67 @@ def test_profile_agent_normalizes_ai_output_into_canonical_schema():
     assert result["preference_updates"]["budget"] == 150.0
     assert result["preference_updates"]["disliked_foods"] == ["香菜"]
     assert result["preference_updates"]["preferred_tags"] == ["清淡"]
+
+
+def test_runtime_tracks_missing_fields_and_asks_nutritionist_follow_up():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            preference_updates={"health_goal": "lose_weight"},
+            confidence=0.88,
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.run_turn(
+        user_message="最近想把体脂降一点",
+        memory=ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={},
+        ),
+    )
+
+    assert result.phase == "discovering"
+    assert result.memory.open_questions == ["budget"]
+    assert result.memory.known_facts["preference_confidence"] == 0.88
+    assert result.memory.known_facts["missing_fields"] == ["budget"]
+    assert "预算" in result.assistant_message
+
+
+def test_runtime_prefers_follow_up_when_confidence_is_low_even_with_budget_and_goal():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            preference_updates={
+                "health_goal": "lose_weight",
+                "budget": 180.0,
+            },
+            confidence=0.35,
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.run_turn(
+        user_message="差不多就行，帮我弄瘦一点，花费别太离谱",
+        memory=ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={},
+        ),
+    )
+
+    assert result.phase == "discovering"
+    assert result.memory.known_facts["preference_confidence"] == 0.35
+    assert result.memory.open_questions
+    assert "我先确认一下" in result.assistant_message

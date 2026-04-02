@@ -51,3 +51,20 @@ def test_parse_marks_empty_taste_reply_as_answered():
     parsed = extractor.parse("都行", expected_slot="taste")
 
     assert parsed.preference_updates["preferred_tags"] == []
+
+
+def test_parse_keeps_confidence_and_missing_fields():
+    extractor = DeepSeekSlotExtractor.__new__(DeepSeekSlotExtractor)
+
+    class FakeClient:
+        def invoke(self, _messages):
+            return SimpleNamespace(
+                content='{"profile_updates": {}, "preference_updates": {"health_goal": "lose_weight"}, "acknowledged_restrictions": false, "confidence": 0.72, "missing_fields": ["budget", "unknown_field"]}'
+            )
+
+    extractor.client = FakeClient()
+
+    parsed = extractor.parse("想减脂", expected_slot=None)
+
+    assert parsed.confidence == 0.72
+    assert parsed.missing_fields == ["budget"]

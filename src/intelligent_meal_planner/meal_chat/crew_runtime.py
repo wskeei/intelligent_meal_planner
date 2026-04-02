@@ -20,6 +20,18 @@ GOAL_KEYWORDS = {
 }
 PREFERRED_TAG_KEYWORDS = ("清淡", "家常", "重口", "高蛋白")
 DISLIKED_FOODS_PATTERN = re.compile(r"(?:不吃|不要|别要)([^，。,.；;\s]+)")
+REQUIRED_PROFILE_FIELDS = ("gender", "age", "height", "weight", "activity_level")
+REQUIRED_PREFERENCE_FIELDS = ("health_goal", "budget")
+QUESTION_PROMPTS = {
+    "gender": "先确认一下你的性别，这样我好把基础代谢估得更准。",
+    "age": "你今年大概多少岁？我会据此调整热量范围。",
+    "height": "你的身高大概多少厘米？",
+    "weight": "你现在体重大概多少公斤？",
+    "activity_level": "你平时活动量怎么样，久坐、轻度活动，还是经常训练？",
+    "health_goal": "这次你更偏向减脂、增肌，还是先维持状态？",
+    "budget": "你一天的预算大概想控制在多少？",
+}
+LOW_CONFIDENCE_THRESHOLD = 0.55
 
 
 class CrewMealChatRuntime:
@@ -35,6 +47,19 @@ class CrewMealChatRuntime:
             intent=intent,
         )
         merged_memory = self._merge_memory(memory, profile_delta)
+        assessment = self._assess_memory(merged_memory, profile_delta)
+        merged_memory.open_questions = assessment["open_questions"]
+        merged_memory.known_facts["preference_confidence"] = assessment["confidence"]
+        merged_memory.known_facts["missing_fields"] = assessment["missing_fields"]
+
+        if assessment["needs_follow_up"]:
+            merged_memory.phase = "discovering"
+            merged_memory.negotiation_options = []
+            return CrewTurnResult(
+                phase="discovering",
+                assistant_message=assessment["assistant_message"],
+                memory=merged_memory,
+            )
 
         strategy = self.strategy_agent(memory=merged_memory)
         if strategy.get("target_ranges"):
@@ -119,6 +144,12 @@ class CrewMealChatRuntime:
         return {
             "profile_updates": profile_updates,
             "preference_updates": preference_updates,
+            "confidence": self._determine_confidence(
+                extracted,
+                profile_updates=profile_updates,
+                preference_updates=preference_updates,
+            ),
+            "missing_fields": list(getattr(extracted, "missing_fields", []) or []),
         }
 
     def strategy_agent(self, memory: ConversationMemory) -> dict:
@@ -295,6 +326,100 @@ class CrewMealChatRuntime:
             return self.extractor.parse(user_message, expected_slot=None)
         except Exception:
             return None
+
+    def _determine_confidence(
+        self,
+        extracted,
+        profile_updates: dict,
+        preference_updates: dict,
+    ) -> float:
+        if extracted is not None and extracted.confidence is not None:
+            return float(extracted.confidence)
+        total_updates = len(profile_updates) + len(preference_updates)
+        if total_updates >= 2:
+            return 0.82
+        if total_updates == 1:
+            return 0.68
+        return 0.3
+
+    def _assess_memory(self, memory: ConversationMemory, profile_delta: dict) -> dict:
+        missing_fields = list(dict.fromkeys(
+            profile_delta.get("missing_fields", []) + self._find_missing_fields(memory)
+        ))
+        confidence = float(profile_delta.get("confidence", 0.3))
+        confirmation_fields = []
+        if confidence < LOW_CONFIDENCE_THRESHOLD:
+            confirmation_fields = self._build_confirmation_fields(memory)
+
+        open_questions = missing_fields or confirmation_fields
+        needs_follow_up = bool(missing_fields or confidence < LOW_CONFIDENCE_THRESHOLD)
+
+        return {
+            "confidence": round(confidence, 2),
+            "missing_fields": missing_fields,
+            "open_questions": open_questions,
+            "needs_follow_up": needs_follow_up,
+            "assistant_message": self._build_follow_up_message(
+                memory,
+                missing_fields=missing_fields,
+                confidence=confidence,
+                confirmation_fields=confirmation_fields,
+            ),
+        }
+
+    def _find_missing_fields(self, memory: ConversationMemory) -> list[str]:
+        missing_fields = [
+            field
+            for field in REQUIRED_PROFILE_FIELDS
+            if memory.profile.get(field) in (None, "")
+        ]
+        missing_fields.extend(
+            field
+            for field in REQUIRED_PREFERENCE_FIELDS
+            if memory.preferences.get(field) in (None, "")
+        )
+        return missing_fields
+
+    def _build_confirmation_fields(self, memory: ConversationMemory) -> list[str]:
+        fields = []
+        if memory.preferences.get("health_goal") not in (None, ""):
+            fields.append("health_goal")
+        if memory.preferences.get("budget") not in (None, ""):
+            fields.append("budget")
+        return fields or ["health_goal", "budget"]
+
+    def _build_follow_up_message(
+        self,
+        memory: ConversationMemory,
+        missing_fields: list[str],
+        confidence: float,
+        confirmation_fields: list[str],
+    ) -> str:
+        if missing_fields:
+            prompts = [QUESTION_PROMPTS[field] for field in missing_fields[:2]]
+            return "我先补齐两个关键点，这样给你的方案才会更准。 " + " ".join(prompts)
+
+        if confidence < LOW_CONFIDENCE_THRESHOLD:
+            details = []
+            if "health_goal" in confirmation_fields and memory.preferences.get(
+                "health_goal"
+            ):
+                details.append(f"目标先按“{self._render_goal(memory.preferences['health_goal'])}”理解")
+            if "budget" in confirmation_fields and memory.preferences.get("budget"):
+                details.append(f"预算先按 {float(memory.preferences['budget']):.0f} 元理解")
+            if details:
+                return "我先确认一下，" + "，".join(details) + "，对吗？"
+            return "我先确认一下你的目标和预算，这样我后面的分析会更稳。"
+
+        return "我还需要再确认一点关键信息，才能继续往下分析。"
+
+    def _render_goal(self, goal: str) -> str:
+        return {
+            "lose_weight": "减脂",
+            "gain_muscle": "增肌",
+            "maintain": "维持",
+            "healthy": "健康饮食",
+        }.get(goal, goal)
 
     def _normalize_profile_updates(self, profile_updates: dict) -> dict:
         normalized = dict(profile_updates)

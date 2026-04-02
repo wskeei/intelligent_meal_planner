@@ -16,6 +16,8 @@ class ParsedTurn(BaseModel):
     profile_updates: dict = Field(default_factory=dict)
     preference_updates: dict = Field(default_factory=dict)
     acknowledged_restrictions: bool = False
+    confidence: float | None = None
+    missing_fields: list[str] = Field(default_factory=list)
     debug: ExtractionDebug = Field(default_factory=ExtractionDebug)
 
 

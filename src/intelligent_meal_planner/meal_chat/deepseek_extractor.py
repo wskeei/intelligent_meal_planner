@@ -13,12 +13,16 @@ SYSTEM_PROMPT = """
 {
   "profile_updates": {},
   "preference_updates": {},
-  "acknowledged_restrictions": false
+  "acknowledged_restrictions": false,
+  "confidence": 0.0,
+  "missing_fields": []
 }
 
 字段约束:
 - profile_updates 只允许: gender, age, height, weight, activity_level
 - preference_updates 只允许: health_goal, budget, disliked_foods, preferred_tags, restrictions_answered
+- confidence 为 0 到 1 的浮点数，表示你对本轮提取结果的把握
+- missing_fields 只允许填写当前仍缺失、且用户这轮没有明确提供的关键字段
 """
 
 EMPTY_RESTRICTION_ANSWERS = {
@@ -46,6 +50,12 @@ PREFERENCE_FIELDS = {
     "disliked_foods",
     "preferred_tags",
     "restrictions_answered",
+}
+ALLOWED_MISSING_FIELDS = PROFILE_FIELDS | {
+    "health_goal",
+    "budget",
+    "disliked_foods",
+    "preferred_tags",
 }
 
 
@@ -132,6 +142,16 @@ class DeepSeekSlotExtractor:
         if "budget" in profile_updates:
             profile_updates["budget"] = _coerce_budget_value(profile_updates["budget"])
 
+        confidence = payload.get("confidence")
+        if isinstance(confidence, (int, float)):
+            payload["confidence"] = max(0.0, min(1.0, float(confidence)))
+        else:
+            payload["confidence"] = None
+
+        missing_fields = payload.get("missing_fields") or []
+        payload["missing_fields"] = [
+            field for field in missing_fields if field in ALLOWED_MISSING_FIELDS
+        ]
         payload["profile_updates"] = profile_updates
         payload["preference_updates"] = preference_updates
         return payload
