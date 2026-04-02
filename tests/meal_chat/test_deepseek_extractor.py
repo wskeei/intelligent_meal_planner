@@ -68,3 +68,25 @@ def test_parse_keeps_confidence_and_missing_fields():
 
     assert parsed.confidence == 0.72
     assert parsed.missing_fields == ["budget"]
+
+
+def test_parse_normalizes_confidence_missing_and_contradictions():
+    extractor = DeepSeekSlotExtractor.__new__(DeepSeekSlotExtractor)
+
+    class FakeClient:
+        def invoke(self, _messages):
+            return SimpleNamespace(
+                content=(
+                    '{"profile_updates": {}, "preference_updates": {"health_goal": "减脂"}, '
+                    '"acknowledged_restrictions": false, "confidence": 0.66, '
+                    '"missing_fields": ["budget"], "contradiction_fields": ["health_goal"]}'
+                )
+            )
+
+    extractor.client = FakeClient()
+
+    parsed = extractor.parse("最近想减脂，但预算还没想好", expected_slot=None)
+
+    assert parsed.confidence == 0.66
+    assert parsed.missing_fields == ["budget"]
+    assert parsed.contradiction_fields == ["health_goal"]

@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from intelligent_meal_planner.meal_chat.understanding_schema import (
-    FollowUpPlan,
-    UnderstandingAnalysis,
-)
+from .understanding_schema import FollowUpPlan, UnderstandingAnalysis
 
 
 class TargetRanges(BaseModel):
@@ -34,7 +31,7 @@ class ConversationMemory(BaseModel):
     preferences: dict = Field(default_factory=dict)
     known_facts: dict = Field(default_factory=dict)
     open_questions: list[str] = Field(default_factory=list)
-    understanding_analysis: UnderstandingAnalysis | None = None
+    analysis: UnderstandingAnalysis | None = None
     follow_up_plan: FollowUpPlan | None = None
     target_ranges: TargetRanges | None = None
     negotiation_options: list[NegotiationOption] = Field(default_factory=list)

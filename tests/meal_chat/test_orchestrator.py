@@ -95,3 +95,33 @@ def test_orchestrator_returns_negotiation_trace_from_runtime():
     assert response["status"] == "negotiating"
     assert response["trace"]["phase"] == "negotiating"
     assert response["trace"]["memory"]["preferences"]["budget"] == 100.0
+
+
+def test_orchestrator_persists_clarification_trace_metadata():
+    runtime = FakeCrewRuntime(
+        result=CrewTurnResult(
+            phase="discovering",
+            assistant_message="我先确认一下预算，这样后面的方案会更准。",
+            memory=ConversationMemory(
+                phase="discovering",
+                preferences={"health_goal": "lose_weight"},
+                known_facts={
+                    "preference_confidence": 0.61,
+                    "missing_fields": ["budget"],
+                    "clarification_reason": "missing_required_fields",
+                },
+                open_questions=["budget"],
+            ),
+        )
+    )
+    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
+
+    response = orchestrator.advance(_user(), _session(), "最近想减脂")
+
+    assert response["status"] == "discovering"
+    assert response["trace"]["open_questions"] == ["budget"]
+    assert (
+        response["trace"]["known_facts"]["clarification_reason"]
+        == "missing_required_fields"
+    )
+    assert response["trace"]["memory"]["open_questions"] == ["budget"]

@@ -30,5 +30,7 @@ class MealChatOrchestrator:
                     option.model_dump(mode="json")
                     for option in result.negotiation_options
                 ],
+                "open_questions": result.memory.open_questions,
+                "known_facts": result.memory.known_facts,
             },
         }
