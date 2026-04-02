@@ -28,7 +28,9 @@ def init_db() -> None:
     try:
         from .routers.auth import get_password_hash
 
-        root_user = session.query(models.User).filter(models.User.username == "root").first()
+        root_user = (
+            session.query(models.User).filter(models.User.username == "root").first()
+        )
         if not root_user:
             logger.info("Creating default user 'root'")
             root_user = models.User(
@@ -71,8 +73,12 @@ def init_db() -> None:
                                 instructions=recipe.get("instructions", []),
                             )
                         )
-                    except Exception as exc:  # pragma: no cover - defensive logging only
-                        logger.error("Skipping malformed recipe %s: %s", recipe.get("id"), exc)
+                    except (
+                        Exception
+                    ) as exc:  # pragma: no cover - defensive logging only
+                        logger.error(
+                            "Skipping malformed recipe %s: %s", recipe.get("id"), exc
+                        )
                 session.commit()
     finally:
         session.close()
@@ -107,7 +113,13 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
-    logger.info("%s %s - %s - %.3fs", request.method, request.url.path, response.status_code, process_time)
+    logger.info(
+        "%s %s - %s - %.3fs",
+        request.method,
+        request.url.path,
+        response.status_code,
+        process_time,
+    )
     return response
 
 

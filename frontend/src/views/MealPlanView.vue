@@ -60,12 +60,13 @@
             type="textarea"
             :rows="3"
             resize="none"
+            :disabled="!isConversationActive"
             :placeholder="$t('meal_plan.chat_placeholder')"
             @keydown.enter.exact.prevent="sendMessage"
           />
           <div class="composer-actions">
             <p>{{ $t('meal_plan.draft_hint') }}</p>
-            <el-button type="primary" :loading="loading" @click="sendMessage">
+            <el-button type="primary" :loading="loading" :disabled="!isConversationActive" @click="sendMessage">
               {{ $t('meal_plan.send') }}
             </el-button>
           </div>
@@ -118,6 +119,31 @@
             <strong>¥{{ finalPlan.nutrition.total_price.toFixed(1) }}</strong>
           </div>
         </el-card>
+
+        <el-card v-if="planAlternatives.length" class="result-card" shadow="hover">
+          <template #header>
+            <div class="section-head compact">
+              <div>
+                <h2>协商备选方案</h2>
+                <p>根据预算与偏好给出多条可继续推进的方向。</p>
+              </div>
+            </div>
+          </template>
+
+          <div class="meal-list">
+            <article
+              v-for="option in planAlternatives"
+              :key="option.option_key"
+              class="meal-item alternative-item"
+            >
+              <div>
+                <p class="meal-name">{{ option.title }}</p>
+                <p class="meal-metrics">{{ option.rationale }}</p>
+              </div>
+              <strong>¥{{ option.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
+            </article>
+          </div>
+        </el-card>
       </aside>
     </section>
   </div>
@@ -129,7 +155,13 @@ import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
-import { mealChatApi, type ChatMessage, type MealPlan } from '@/api'
+import {
+  mealChatApi,
+  type ChatMessage,
+  type MealChatSession,
+  type MealPlan,
+  type NegotiatedMealPlan
+} from '@/api'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 
@@ -139,11 +171,32 @@ const userStore = useUserStore()
 const { profile, profileComplete } = storeToRefs(userStore)
 
 const sessionId = ref<string | null>(null)
-const messages = ref<ChatMessage[]>([])
+const currentSession = ref<MealChatSession | null>(null)
+const optimisticMessages = ref<ChatMessage[] | null>(null)
 const draft = ref('')
 const loading = ref(false)
-const finalPlan = ref<MealPlan | null>(null)
 const messagesRef = ref<HTMLElement | null>(null)
+
+const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
+
+function isNegotiatedMealPlan(mealPlan: MealPlan | NegotiatedMealPlan): mealPlan is NegotiatedMealPlan {
+  return 'alternatives' in mealPlan
+}
+
+const finalPlan = computed<MealPlan | null>(() => {
+  const mealPlan = currentSession.value?.meal_plan
+  if (!mealPlan) return null
+  return isNegotiatedMealPlan(mealPlan) ? mealPlan.primary : mealPlan
+})
+
+const planAlternatives = computed(() => {
+  const mealPlan = currentSession.value?.meal_plan
+  return mealPlan && isNegotiatedMealPlan(mealPlan) ? mealPlan.alternatives : []
+})
+
+const isConversationActive = computed(() =>
+  Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
+)
 
 const groupedMeals = computed(() => {
   const order = ['breakfast', 'lunch', 'dinner']
@@ -187,8 +240,8 @@ async function bootstrapSession() {
 
     const { data } = await mealChatApi.createSession()
     sessionId.value = data.session_id
-    messages.value = data.messages
-    finalPlan.value = data.meal_plan
+    currentSession.value = data
+    optimisticMessages.value = null
     await scrollToBottom()
   } catch (error) {
     console.error(error)
@@ -199,22 +252,22 @@ async function bootstrapSession() {
 }
 
 async function sendMessage() {
-  if (!sessionId.value || !draft.value.trim() || loading.value) return
+  if (!sessionId.value || !draft.value.trim() || loading.value || !isConversationActive.value) return
 
   loading.value = true
   const content = draft.value.trim()
   draft.value = ''
-  messages.value = [...messages.value, { role: 'user', content }]
+  optimisticMessages.value = [...messages.value, { role: 'user', content }]
 
   try {
     await scrollToBottom()
     const { data } = await mealChatApi.sendMessage(sessionId.value, content)
-    messages.value = data.messages
-    finalPlan.value = data.meal_plan
+    currentSession.value = data
+    optimisticMessages.value = null
     await scrollToBottom()
   } catch (error) {
     console.error(error)
-    messages.value = messages.value.slice(0, -1)
+    optimisticMessages.value = null
     draft.value = content
     ElMessage.error(t('meal_plan.message_failed'))
   } finally {
@@ -482,6 +535,10 @@ onMounted(async () => {
   padding: 12px 14px;
   border-radius: 14px;
   background: #ffffff;
+}
+
+.alternative-item {
+  align-items: flex-start;
 }
 
 .meal-name {

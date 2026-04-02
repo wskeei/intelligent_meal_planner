@@ -56,8 +56,7 @@ class CrewMealChatRuntime:
             token in user_message for token in ("多少", "最低", "至少", "?")
         )
         needs_plan = any(
-            token in text
-            for token in ("方案", "计划", "meal plan", "plan")
+            token in text for token in ("方案", "计划", "meal plan", "plan")
         )
         if asks_budget:
             return {"intent": "budget_question", "needs_plan": False}
@@ -129,7 +128,9 @@ class CrewMealChatRuntime:
             ),
         }
 
-    def _merge_memory(self, memory: ConversationMemory, profile_delta: dict) -> ConversationMemory:
+    def _merge_memory(
+        self, memory: ConversationMemory, profile_delta: dict
+    ) -> ConversationMemory:
         merged = memory.model_copy(deep=True)
         merged.profile.update(profile_delta.get("profile_updates", {}))
         merged.preferences.update(profile_delta.get("preference_updates", {}))
@@ -192,7 +193,9 @@ class CrewMealChatRuntime:
             target_protein = round(
                 (target_ranges.protein_min + target_ranges.protein_max) / 2
             )
-            target_carbs = round((target_ranges.carbs_min + target_ranges.carbs_max) / 2)
+            target_carbs = round(
+                (target_ranges.carbs_min + target_ranges.carbs_max) / 2
+            )
             target_fat = round((target_ranges.fat_min + target_ranges.fat_max) / 2)
 
         return {

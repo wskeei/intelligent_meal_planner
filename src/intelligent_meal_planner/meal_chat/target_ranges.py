@@ -50,7 +50,9 @@ def build_target_ranges(profile: dict, goal: str) -> TargetRanges:
     fat_min = _clamp(calories_min * fat_ratio[0] / 9, 30, 120)
     fat_max = max(fat_min, _clamp(calories_max * fat_ratio[1] / 9, 30, 120))
     carbs_min = _clamp((calories_min - protein_max * 4 - fat_max * 9) / 4, 50, 400)
-    carbs_max = max(carbs_min, _clamp((calories_max - protein_min * 4 - fat_min * 9) / 4, 50, 400))
+    carbs_max = max(
+        carbs_min, _clamp((calories_max - protein_min * 4 - fat_min * 9) / 4, 50, 400)
+    )
 
     return TargetRanges(
         calories_min=calories_min,

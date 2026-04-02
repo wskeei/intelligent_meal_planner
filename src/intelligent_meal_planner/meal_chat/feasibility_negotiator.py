@@ -52,7 +52,9 @@ def build_negotiation_result(
                 key="protein_priority",
                 title="高蛋白优先",
                 rationale="优先保蛋白，价格更贴近预算上限。",
-                budget=max(budget, min(recommended_budget_min, recommended_budget_comfort)),
+                budget=max(
+                    budget, min(recommended_budget_min, recommended_budget_comfort)
+                ),
                 preferred_tags=["high_protein"],
             ),
         ],

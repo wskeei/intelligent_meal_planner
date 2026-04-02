@@ -1,4 +1,6 @@
-def test_create_session_returns_first_assistant_message(client, auth_header, monkeypatch):
+def test_create_session_returns_first_assistant_message(
+    client, auth_header, monkeypatch
+):
     fake_response = {
         "session_id": "session001",
         "status": "discovering",

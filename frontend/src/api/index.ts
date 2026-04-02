@@ -79,11 +79,25 @@ export interface ChatMessage {
   created_at?: string
 }
 
+export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'finalized'
+
+export interface NegotiatedMealPlanAlternative {
+  option_key: string
+  title: string
+  rationale: string
+  meal_plan: MealPlan
+}
+
+export interface NegotiatedMealPlan {
+  primary: MealPlan
+  alternatives: NegotiatedMealPlanAlternative[]
+}
+
 export interface MealChatSession {
   session_id: string
-  status: 'collecting_profile' | 'collecting_preferences' | 'budget_rejected' | 'completed'
+  status: MealChatPhase
   messages: ChatMessage[]
-  meal_plan: MealPlan | null
+  meal_plan: MealPlan | NegotiatedMealPlan | null
 }
 
 export interface UserProfilePatch {

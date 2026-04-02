@@ -11,7 +11,7 @@ from ...db.database import get_db
 from ...db.models import User
 
 # Configuration
-SECRET_KEY = "your-secret-key-keep-it-secret" # In production, use env var
+SECRET_KEY = "your-secret-key-keep-it-secret"  # In production, use env var
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 3000
 
@@ -20,10 +20,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
 
 router = APIRouter(prefix="/auth", tags=["认证"])
 
+
 # --- Schemas ---
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class UserCreate(BaseModel):
     username: str
@@ -60,12 +62,15 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+
 # --- Helpers ---
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password):
     return pwd_context.hash(password)
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -77,7 +82,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -95,18 +103,20 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
+
 # --- Endpoints ---
+
 
 @router.post("/register", response_model=UserOut)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Username already registered")
-    
+
     db_email = db.query(User).filter(User.email == user.email).first()
     if db_email:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     hashed_password = get_password_hash(user.password)
     new_user = User(
         username=user.username,
@@ -117,15 +127,18 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         height=user.height,
         weight=user.weight,
         activity_level=user.activity_level,
-        health_goal=user.health_goal
+        health_goal=user.health_goal,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
 
+
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+):
     # Note: OAuth2PasswordRequestForm expects 'username' and 'password' fields
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
@@ -139,6 +152,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @router.get("/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(get_current_user)):
