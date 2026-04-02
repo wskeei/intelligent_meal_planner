@@ -4,9 +4,25 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 from sb3_contrib import MaskablePPO
 
 from ..rl.environment import MealPlanningEnv
+from ..rl.dqn import MaskableDQNAgent
+
+
+def resolve_model_path(project_root: Path) -> Path:
+    models_dir = project_root / "models"
+    candidates = (
+        models_dir / "best_model.zip",
+        models_dir / "ppo_meal_v2_final.zip",
+        models_dir / "dqn_meal_best.pt",
+        models_dir / "dqn_meal_final.pt",
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 class RLModelTool:
@@ -21,18 +37,27 @@ class RLModelTool:
 
         if model_path is None:
             project_root = Path(__file__).parent.parent.parent.parent
-            model_path = project_root / "models" / "best_model.zip"
+            model_path = resolve_model_path(project_root)
 
         self.model_path = Path(model_path)
         if not self.model_path.exists():
             raise FileNotFoundError(f"模型文件不存在: {self.model_path}")
 
-        self.model: Optional[MaskablePPO] = None
+        self.backend = self._detect_backend(self.model_path)
+        self.model: Optional[MaskablePPO | MaskableDQNAgent] = None
         self.env: Optional[MealPlanningEnv] = None
 
     def _load_model(self) -> None:
         if self.model is None:
-            self.model = MaskablePPO.load(self.model_path)
+            if self.backend == "ppo":
+                self.model = MaskablePPO.load(self.model_path)
+            else:
+                self.model = MaskableDQNAgent.from_pretrained(str(self.model_path))
+
+    def _detect_backend(self, model_path: Path) -> str:
+        if model_path.suffix == ".pt":
+            return "dqn"
+        return "ppo"
 
     def _run(
         self,
@@ -90,15 +115,25 @@ class RLModelTool:
         while not done and current_steps < max_steps_safety:
             current_steps += 1
 
-            action_masks = self.env.action_masks()
+            action_masks = np.asarray(self.env.action_masks(), dtype=bool)
             if not action_masks.any():
                 return {}, self._build_metrics(final_reward=reward), "budget_infeasible"
 
-            action, _states = self.model.predict(
-                obs,
-                action_masks=action_masks,
-                deterministic=True,
-            )
+            if self.backend == "ppo":
+                action, _states = self.model.predict(
+                    obs,
+                    action_masks=action_masks,
+                    deterministic=True,
+                )
+            else:
+                agent = self.model
+                trimmed_mask = action_masks[: agent.action_dim]
+                action = agent.select_action(
+                    obs,
+                    trimmed_mask,
+                    step=getattr(agent, "train_step", 0),
+                    deterministic=True,
+                )
 
             obs, reward, terminated, truncated, info = self.env.step(action)
             done = terminated or truncated
@@ -123,12 +158,16 @@ class RLModelTool:
             "total_fat": self.env.total_fat,
             "total_cost": self.env.total_cost,
             "final_reward": final_reward,
-            "calories_achievement": (self.env.total_calories / self.env.target_calories) * 100,
-            "protein_achievement": (self.env.total_protein / self.env.target_protein) * 100,
+            "calories_achievement": (self.env.total_calories / self.env.target_calories)
+            * 100,
+            "protein_achievement": (self.env.total_protein / self.env.target_protein)
+            * 100,
             "budget_usage": (self.env.total_cost / self.env.budget_limit) * 100,
         }
 
-    def generate_multiple_plans(self, num_plans: int = 3, **kwargs) -> List[Dict[str, Any]]:
+    def generate_multiple_plans(
+        self, num_plans: int = 3, **kwargs
+    ) -> List[Dict[str, Any]]:
         plans = []
         for _ in range(num_plans):
             result = json.loads(self._run(**kwargs))
