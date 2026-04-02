@@ -16,6 +16,10 @@ TAG_ALIASES = {
     "蛋白高一点": "高蛋白",
     "家常": "家常",
 }
+CONTRADICTION_RULES = {
+    "gain_muscle": ("吃少一点", "热量压低", "别吃太多"),
+    "lose_weight": ("多长点肉", "增肌期", "吃猛一点"),
+}
 
 _BUDGET_VALUE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)")
 _CHINESE_AMOUNT_PATTERN = re.compile(r"[零一二两三四五六七八九十百千万]+")
@@ -119,6 +123,18 @@ def normalize_preference_lists(disliked_foods, preferred_tags) -> dict:
         "disliked_foods": disliked,
         "preferred_tags": tags,
     }
+
+
+def detect_contradiction_fields(
+    user_message: str, health_goal: str | None
+) -> list[str]:
+    if not user_message or not health_goal:
+        return []
+
+    contradiction_tokens = CONTRADICTION_RULES.get(health_goal, ())
+    if any(token in user_message for token in contradiction_tokens):
+        return ["health_goal"]
+    return []
 
 
 def _split_values(value) -> list[str]:

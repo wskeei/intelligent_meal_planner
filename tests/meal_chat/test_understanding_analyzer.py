@@ -49,3 +49,20 @@ def test_analyze_understanding_blocks_planning_when_confidence_is_low():
 
     assert analysis.ready_for_negotiation is False
     assert analysis.clarification_reason == "low_confidence"
+
+
+def test_analyzer_detects_contradiction_when_user_says_gain_muscle_but_eat_less():
+    memory = ConversationMemory(
+        preferences={"health_goal": "gain_muscle"},
+        known_facts={"raw_user_message": "想增肌，但最好吃少一点"},
+    )
+
+    analysis = analyze_understanding(
+        memory=memory,
+        confidence=0.77,
+        extracted_missing_fields=[],
+        contradiction_fields=["health_goal"],
+    )
+
+    assert analysis.clarification_reason == "contradiction_detected"
+    assert analysis.ready_for_negotiation is False

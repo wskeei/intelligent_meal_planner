@@ -15,6 +15,7 @@ def test_normalize_goal_understands_colloquial_goal_phrases():
     assert normalize_goal("最近想把体脂往下压一点") == "lose_weight"
     assert normalize_goal("练壮一点，蛋白得跟上") == "gain_muscle"
     assert normalize_goal("先稳住别掉秤") == "maintain"
+    assert normalize_goal("吃少一点，把体脂压下去") == "lose_weight"
 
 
 def test_normalize_preference_lists_deduplicates_and_canonicalizes():

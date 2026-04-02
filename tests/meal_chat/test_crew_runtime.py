@@ -4,25 +4,50 @@ from intelligent_meal_planner.meal_chat.session_schema import (
     NegotiationOption,
     TargetRanges,
 )
+from intelligent_meal_planner.meal_chat.understanding_schema import (
+    FollowUpPlan,
+    UnderstandingAnalysis,
+)
 from intelligent_meal_planner.meal_chat.types import ParsedTurn
 
 
 def test_conversation_memory_can_store_analysis_and_follow_up_state():
     memory = ConversationMemory(
         phase="discovering",
+        analysis=UnderstandingAnalysis(
+            confidence=0.42,
+            missing_fields=["budget"],
+            contradiction_fields=[],
+            clarification_reason="low_confidence",
+            ready_for_negotiation=False,
+        ),
+        follow_up_plan=FollowUpPlan(
+            questions=["budget", "health_goal"],
+            assistant_message="我先确认一下预算和目标。",
+        ),
         known_facts={
             "preference_confidence": 0.42,
             "missing_fields": ["budget"],
             "clarification_reason": "low_confidence",
         },
         open_questions=["budget", "health_goal"],
+        clarification_history=[
+            FollowUpPlan(
+                questions=["budget"],
+                assistant_message="你一天预算想控制在多少？",
+            )
+        ],
     )
 
     payload = memory.model_dump(mode="json")
 
+    assert payload["analysis"]["confidence"] == 0.42
+    assert payload["analysis"]["missing_fields"] == ["budget"]
+    assert payload["follow_up_plan"]["questions"] == ["budget", "health_goal"]
     assert payload["known_facts"]["preference_confidence"] == 0.42
     assert payload["known_facts"]["missing_fields"] == ["budget"]
     assert payload["open_questions"] == ["budget", "health_goal"]
+    assert payload["clarification_history"][0]["questions"] == ["budget"]
 
 
 class FakePlanningTool:
@@ -338,6 +363,7 @@ def test_runtime_tracks_missing_fields_and_asks_nutritionist_follow_up():
         parsed_turn=ParsedTurn(
             preference_updates={"health_goal": "lose_weight"},
             confidence=0.88,
+            missing_fields=["budget"],
         )
     )
     runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
@@ -361,6 +387,14 @@ def test_runtime_tracks_missing_fields_and_asks_nutritionist_follow_up():
     assert result.memory.open_questions == ["budget"]
     assert result.memory.known_facts["preference_confidence"] == 0.88
     assert result.memory.known_facts["missing_fields"] == ["budget"]
+    assert (
+        result.memory.known_facts["clarification_reason"] == "missing_required_fields"
+    )
+    assert result.memory.analysis is not None
+    assert result.memory.analysis.missing_fields == ["budget"]
+    assert result.memory.follow_up_plan is not None
+    assert result.memory.follow_up_plan.questions == ["budget"]
+    assert result.memory.clarification_history
     assert "预算" in result.assistant_message
 
 
@@ -395,3 +429,28 @@ def test_runtime_prefers_follow_up_when_confidence_is_low_even_with_budget_and_g
     assert result.memory.known_facts["preference_confidence"] == 0.35
     assert result.memory.open_questions
     assert "我先确认一下" in result.assistant_message
+
+
+def test_runtime_detects_goal_contradiction_from_freeform_message():
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=None)
+
+    result = runtime.run_turn(
+        user_message="想增肌，但最好吃少一点",
+        memory=ConversationMemory(
+            phase="discovering",
+            profile={
+                "gender": "male",
+                "age": 25,
+                "height": 170.0,
+                "weight": 65.0,
+                "activity_level": "moderate",
+            },
+            preferences={"budget": 180.0},
+        ),
+    )
+
+    assert result.phase == "discovering"
+    assert result.memory.analysis is not None
+    assert result.memory.analysis.clarification_reason == "contradiction_detected"
+    assert result.memory.open_questions == ["health_goal"]
+    assert "矛盾" in result.assistant_message

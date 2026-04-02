@@ -50,6 +50,35 @@ def test_send_message_accepts_negotiating_status(client, auth_header, monkeypatc
     assert response.json()["status"] == "negotiating"
 
 
+def test_send_message_accepts_discovering_clarification_status(
+    client, auth_header, monkeypatch
+):
+    fake_response = {
+        "session_id": "session001",
+        "status": "discovering",
+        "messages": [
+            {
+                "role": "assistant",
+                "content": "我先确认一下预算，这样后面的方案会更准。",
+            }
+        ],
+        "meal_plan": None,
+    }
+    monkeypatch.setattr(
+        "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
+        lambda db, user, session_id, content: fake_response,
+    )
+
+    response = client.post(
+        "/api/meal-chat/sessions/session001/messages",
+        headers=auth_header,
+        json={"content": "最近想减脂"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "discovering"
+
+
 def test_send_message_accepts_dual_plan_payload(client, auth_header, monkeypatch):
     fake_response = {
         "session_id": "session001",

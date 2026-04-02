@@ -44,7 +44,9 @@ def analyze_understanding(
 
 def _find_missing_fields(memory: ConversationMemory) -> list[str]:
     missing_fields = [
-        field for field in REQUIRED_PROFILE_FIELDS if memory.profile.get(field) in (None, "")
+        field
+        for field in REQUIRED_PROFILE_FIELDS
+        if memory.profile.get(field) in (None, "")
     ]
     missing_fields.extend(
         field
