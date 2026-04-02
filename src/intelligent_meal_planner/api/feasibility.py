@@ -25,6 +25,13 @@ class FeasibilityResult(BaseModel):
     warning_message: str = ""
 
 
+def estimate_budget_band(budget: float, protein_min: int) -> Tuple[float, float]:
+    protein_pressure = max(0, protein_min - 70)
+    recommended_budget_min = max(float(budget), 80.0 + protein_pressure * 1.2)
+    recommended_budget_comfort = recommended_budget_min + 30.0
+    return recommended_budget_min, recommended_budget_comfort
+
+
 class FeasibilityService:
     """可行性计算服务"""
     
