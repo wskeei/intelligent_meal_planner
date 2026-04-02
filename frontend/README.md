@@ -29,7 +29,20 @@ npm run build
 默认通过 `VITE_API_BASE_URL` 访问后端，未配置时使用：
 
 ```env
-VITE_API_BASE_URL=http://127.0.0.1:9000/api
+VITE_API_BASE_URL=/api
+```
+
+本地开发默认通过 Vite 代理把 `/api` 转发到：
+
+```env
+VITE_API_PROXY_TARGET=http://127.0.0.1:9000
+```
+
+如果是从 Windows 直接复制到 Linux，先重新安装前端依赖，避免 `.bin` 可执行权限丢失：
+
+```bash
+rm -rf node_modules
+npm install
 ```
 
 ## 页面说明

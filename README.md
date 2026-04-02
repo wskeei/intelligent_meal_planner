@@ -57,6 +57,16 @@ DEEPSEEK_MODEL=deepseek-chat
 MEAL_CHAT_TRACE_DIR=logs/meal_chat
 ```
 
+可选运行参数：
+
+```env
+MEAL_PLANNER_API_HOST=0.0.0.0
+MEAL_PLANNER_API_PORT=9000
+MEAL_PLANNER_API_RELOAD=1
+VITE_API_BASE_URL=
+VITE_API_PROXY_TARGET=
+```
+
 ### 4. 启动后端
 
 ```bash
@@ -74,6 +84,31 @@ npm run dev
 ```
 
 前端地址：`http://localhost:5173`
+
+### Linux 一键启动
+
+Linux 下推荐使用项目内置 shell 脚本：
+
+```bash
+chmod +x start_project.sh scripts/start_backend.sh scripts/start_frontend.sh
+./start_project.sh
+```
+
+脚本会自动：
+
+- 检查 `uv` 和 `npm`
+- 在缺失时执行 `uv sync`
+- 在缺失时执行 `frontend/npm install`
+- 自动探测可用后端端口
+- 后台启动前后端，并把日志写到 `backend.log` / `frontend.log`
+
+首次从 Windows 目录直接迁移到 Linux 时，建议先重新安装前端依赖，避免 `node_modules/.bin/*` 缺少可执行位：
+
+```bash
+rm -rf frontend/node_modules
+cd frontend
+npm install
+```
 
 ### Windows 一键启动
 

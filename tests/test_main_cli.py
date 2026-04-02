@@ -10,11 +10,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def _run_main_snippet(snippet: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "gbk"
+    env["PYTHONUTF8"] = "0"
     return subprocess.run(
         [sys.executable, "-c", snippet],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
+        encoding="gbk",
         env=env,
     )
 
