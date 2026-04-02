@@ -46,7 +46,9 @@ class MealChatOrchestrator:
         return None
 
     def advance(self, user, session, user_message: str):
-        parsed = self.extractor.parse(user_message)
+        current_slots = dict(session.collected_slots or {})
+        expected_slot = self._next_question_key(user, current_slots)
+        parsed = self.extractor.parse(user_message, expected_slot=expected_slot)
 
         for field, value in parsed.profile_updates.items():
             if value not in (None, ""):
@@ -59,6 +61,11 @@ class MealChatOrchestrator:
         session.collected_slots = slots
 
         question_key = self._next_question_key(user, slots)
+        trace = {
+            "expected_slot": expected_slot,
+            "next_question_key": question_key,
+            "parsed_turn": parsed.model_dump(mode="json"),
+        }
         if question_key:
             session.status = "collecting_profile" if question_key in PROFILE_FIELDS else "collecting_preferences"
             return {
@@ -66,6 +73,7 @@ class MealChatOrchestrator:
                 "assistant_message": QUESTION_TEXT[question_key],
                 "hidden_targets": None,
                 "meal_plan": None,
+                "trace": trace,
             }
 
         goal = slots.get("health_goal") or getattr(user, "health_goal", "healthy")
@@ -95,6 +103,7 @@ class MealChatOrchestrator:
                 "assistant_message": BUDGET_REJECTED_MESSAGE,
                 "hidden_targets": None,
                 "meal_plan": None,
+                "trace": trace,
             }
 
         try:
@@ -112,6 +121,7 @@ class MealChatOrchestrator:
                 "assistant_message": BUDGET_REJECTED_MESSAGE,
                 "hidden_targets": None,
                 "meal_plan": None,
+                "trace": trace,
             }
         session.status = "completed"
         session.final_plan = meal_plan
@@ -120,4 +130,5 @@ class MealChatOrchestrator:
             "assistant_message": PLAN_READY_MESSAGE,
             "hidden_targets": targets,
             "meal_plan": meal_plan,
+            "trace": trace,
         }
