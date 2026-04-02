@@ -23,8 +23,9 @@ DISLIKED_FOODS_PATTERN = re.compile(r"(?:不吃|不要|别要)([^，。,.；;\s]
 
 
 class CrewMealChatRuntime:
-    def __init__(self, planning_tool):
+    def __init__(self, planning_tool, extractor=None):
         self.planning_tool = planning_tool
+        self.extractor = extractor
 
     def run_turn(self, user_message: str, memory: ConversationMemory) -> CrewTurnResult:
         intent = self.intent_agent(user_message=user_message, memory=memory)
@@ -84,23 +85,39 @@ class CrewMealChatRuntime:
         self, user_message: str, memory: ConversationMemory, intent: dict
     ) -> dict:
         del memory, intent
+        profile_updates = {}
         preference_updates = {}
+
+        extracted = self._extract_with_ai(user_message)
+        if extracted is not None:
+            profile_updates.update(extracted.profile_updates)
+            preference_updates.update(extracted.preference_updates)
+            if (
+                extracted.acknowledged_restrictions
+                and "disliked_foods" not in preference_updates
+            ):
+                preference_updates["disliked_foods"] = []
+            profile_updates = self._normalize_profile_updates(profile_updates)
+            preference_updates = self._normalize_preference_updates(
+                preference_updates
+            )
+
         budget = self._extract_budget(user_message)
         health_goal = self._extract_health_goal(user_message)
         disliked_foods = self._extract_disliked_foods(user_message)
         preferred_tags = self._extract_preferred_tags(user_message)
 
-        if budget is not None:
+        if budget is not None and "budget" not in preference_updates:
             preference_updates["budget"] = budget
-        if health_goal is not None:
+        if health_goal is not None and "health_goal" not in preference_updates:
             preference_updates["health_goal"] = health_goal
-        if disliked_foods:
+        if disliked_foods and "disliked_foods" not in preference_updates:
             preference_updates["disliked_foods"] = disliked_foods
-        if preferred_tags:
+        if preferred_tags and "preferred_tags" not in preference_updates:
             preference_updates["preferred_tags"] = preferred_tags
 
         return {
-            "profile_updates": {},
+            "profile_updates": profile_updates,
             "preference_updates": preference_updates,
         }
 
@@ -269,6 +286,79 @@ class CrewMealChatRuntime:
         return [
             keyword for keyword in PREFERRED_TAG_KEYWORDS if keyword in user_message
         ]
+
+    def _extract_with_ai(self, user_message: str):
+        if self.extractor is None:
+            return None
+
+        try:
+            return self.extractor.parse(user_message, expected_slot=None)
+        except Exception:
+            return None
+
+    def _normalize_profile_updates(self, profile_updates: dict) -> dict:
+        normalized = dict(profile_updates)
+        if "height" in normalized:
+            normalized["height"] = self._coerce_float(normalized["height"])
+        if "weight" in normalized:
+            normalized["weight"] = self._coerce_float(normalized["weight"])
+        if "age" in normalized:
+            normalized["age"] = self._coerce_int(normalized["age"])
+        return normalized
+
+    def _normalize_preference_updates(self, preference_updates: dict) -> dict:
+        normalized = dict(preference_updates)
+
+        if "health_goal" in normalized:
+            goal = self._extract_health_goal(str(normalized["health_goal"]))
+            if goal is not None:
+                normalized["health_goal"] = goal
+
+        if "budget" in normalized:
+            budget = self._coerce_budget(normalized["budget"])
+            if budget is not None:
+                normalized["budget"] = budget
+
+        if "disliked_foods" in normalized:
+            normalized["disliked_foods"] = self._coerce_string_list(
+                normalized["disliked_foods"]
+            )
+
+        if "preferred_tags" in normalized:
+            preferred_tags = self._coerce_string_list(normalized["preferred_tags"])
+            normalized["preferred_tags"] = [
+                tag for tag in preferred_tags if tag in PREFERRED_TAG_KEYWORDS
+            ]
+
+        return normalized
+
+    def _coerce_budget(self, value) -> float | None:
+        if isinstance(value, (int, float)):
+            return float(value)
+        return self._extract_budget(str(value))
+
+    def _coerce_float(self, value):
+        if isinstance(value, (int, float)):
+            return float(value)
+        match = re.search(r"\d+(?:\.\d+)?", str(value))
+        return float(match.group(0)) if match else value
+
+    def _coerce_int(self, value):
+        if isinstance(value, int):
+            return value
+        match = re.search(r"\d+", str(value))
+        return int(match.group(0)) if match else value
+
+    def _coerce_string_list(self, value) -> list[str]:
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            return [
+                item.strip()
+                for item in re.split(r"[，,、/；;\s]+", value)
+                if item.strip()
+            ]
+        return []
 
     def _parse_chinese_number(self, text: str) -> int:
         digits = {

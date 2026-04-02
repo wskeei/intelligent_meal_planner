@@ -4,6 +4,7 @@ from intelligent_meal_planner.meal_chat.session_schema import (
     NegotiationOption,
     TargetRanges,
 )
+from intelligent_meal_planner.meal_chat.types import ParsedTurn
 
 
 class FakePlanningTool:
@@ -17,6 +18,24 @@ class FakePlanningTool:
             "meals": [],
             "nutrition": {"total_price": kwargs["budget"]},
         }
+
+
+class FakeExtractor:
+    def __init__(self, parsed_turn=None, error=None):
+        self.parsed_turn = parsed_turn
+        self.error = error
+        self.calls = []
+
+    def parse(self, user_message, expected_slot=None):
+        self.calls.append(
+            {
+                "user_message": user_message,
+                "expected_slot": expected_slot,
+            }
+        )
+        if self.error is not None:
+            raise self.error
+        return self.parsed_turn
 
 
 def test_runtime_routes_budget_question_to_negotiation_answer():
@@ -196,3 +215,77 @@ def test_profile_agent_supports_chinese_numerals_and_muscle_gain_phrasing():
 
     assert result["preference_updates"]["health_goal"] == "gain_muscle"
     assert result["preference_updates"]["budget"] == 150.0
+
+
+def test_profile_agent_prefers_ai_extractor_for_freeform_user_message():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            preference_updates={
+                "health_goal": "lose_weight",
+                "budget": 180.0,
+                "disliked_foods": ["海鲜"],
+                "preferred_tags": ["清淡", "高蛋白"],
+            }
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.profile_agent(
+        user_message="最近应酬多，想把体脂往下压一点，花费别太夸张，海鲜别安排，做清爽点但蛋白要够。",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "lose_weight"
+    assert result["preference_updates"]["budget"] == 180.0
+    assert result["preference_updates"]["disliked_foods"] == ["海鲜"]
+    assert result["preference_updates"]["preferred_tags"] == ["清淡", "高蛋白"]
+    assert extractor.calls[0]["expected_slot"] is None
+
+
+def test_profile_agent_falls_back_to_heuristics_when_ai_extractor_fails():
+    extractor = FakeExtractor(error=RuntimeError("llm unavailable"))
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.profile_agent(
+        user_message="我想瘦一点，控制在两百以内，不吃香菜，口味清淡",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "lose_weight"
+    assert result["preference_updates"]["budget"] == 200.0
+
+
+def test_profile_agent_normalizes_ai_output_into_canonical_schema():
+    extractor = FakeExtractor(
+        parsed_turn=ParsedTurn(
+            preference_updates={
+                "health_goal": "练壮一点",
+                "budget": "一百五十元以内",
+                "disliked_foods": "香菜",
+                "preferred_tags": "清淡",
+            }
+        )
+    )
+    runtime = CrewMealChatRuntime(planning_tool=None, extractor=extractor)
+
+    result = runtime.profile_agent(
+        user_message="随便你理解",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "gain_muscle"
+    assert result["preference_updates"]["budget"] == 150.0
+    assert result["preference_updates"]["disliked_foods"] == ["香菜"]
+    assert result["preference_updates"]["preferred_tags"] == ["清淡"]

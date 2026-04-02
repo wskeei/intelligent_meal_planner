@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import MealChatMessage, MealChatSession, User
 from ..meal_chat.crew_runtime import CrewMealChatRuntime
+from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
 from ..meal_chat.local_trace import MealChatTraceWriter
 from ..meal_chat.orchestrator import MealChatOrchestrator
 from ..meal_chat.session_schema import ConversationMemory
@@ -270,7 +271,10 @@ class MealChatApplication:
     def orchestrator(self) -> MealChatOrchestrator:
         if self._orchestrator is None:
             planner = StrictBudgetPlanner()
-            runtime = CrewMealChatRuntime(planning_tool=planner)
+            runtime = CrewMealChatRuntime(
+                planning_tool=planner,
+                extractor=DeepSeekSlotExtractor(),
+            )
             self._orchestrator = MealChatOrchestrator(runtime=runtime, planner=planner)
         return self._orchestrator
 
