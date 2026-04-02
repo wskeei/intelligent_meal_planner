@@ -1,3 +1,5 @@
+import re
+
 from .target_mapper import build_hidden_targets
 
 
@@ -9,6 +11,7 @@ PREFERENCE_FIELDS = {
     "preferred_tags",
     "restrictions_answered",
 }
+BUDGET_VALUE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)")
 
 QUESTION_TEXT = {
     "gender": "为了更准确地了解你的身体情况，我先确认一下你的性别。",
@@ -54,13 +57,31 @@ class MealChatOrchestrator:
             return "taste"
         return None
 
+    def _normalize_slot_value(self, field, value):
+        if field != "budget":
+            return value
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            match = BUDGET_VALUE_PATTERN.search(value.replace(",", ""))
+            if match:
+                return float(match.group(1))
+        return value
+
+    def _normalize_slots(self, slots):
+        normalized = dict(slots or {})
+        for field, value in tuple(normalized.items()):
+            normalized[field] = self._normalize_slot_value(field, value)
+        return normalized
+
     def advance(self, user, session, user_message: str):
-        current_slots = dict(session.collected_slots or {})
+        current_slots = self._normalize_slots(session.collected_slots or {})
         expected_slot = self._next_question_key(user, current_slots)
         parsed = self.extractor.parse(user_message, expected_slot=expected_slot)
 
-        slots = dict(session.collected_slots or {})
+        slots = dict(current_slots)
         for field, value in parsed.profile_updates.items():
+            value = self._normalize_slot_value(field, value)
             if value in (None, ""):
                 continue
             if field in PROFILE_FIELDS:
@@ -69,6 +90,7 @@ class MealChatOrchestrator:
                 slots[field] = value
 
         for field, value in parsed.preference_updates.items():
+            value = self._normalize_slot_value(field, value)
             if value in (None, ""):
                 continue
             if field in PROFILE_FIELDS:

@@ -35,6 +35,16 @@ class FakeBudgetGuard:
         return self.feasible
 
 
+class RecordingBudgetGuard:
+    def __init__(self, feasible=True):
+        self.feasible = feasible
+        self.calls = []
+
+    def check(self, **kwargs):
+        self.calls.append(kwargs)
+        return self.feasible
+
+
 class FakePlanner:
     def generate(self, *_args, **_kwargs):
         return {
@@ -203,4 +213,41 @@ def test_orchestrator_advances_after_budget_answer_even_if_extractor_misclassifi
         response["assistant_message"]
         == "你有没有忌口、过敏或者明确不吃的食物？如果没有也可以直接告诉我。"
     )
-    assert session.collected_slots["budget"] == "100元"
+    assert session.collected_slots["budget"] == 100.0
+
+
+def test_orchestrator_coerces_existing_string_budget_before_budget_check():
+    budget_guard = RecordingBudgetGuard(True)
+    orchestrator = MealChatOrchestrator(
+        extractor=FakeExtractor(
+            ParsedTurn(
+                profile_updates={},
+                preference_updates={"preferred_tags": ["清淡"]},
+                acknowledged_restrictions=False,
+            )
+        ),
+        budget_guard=budget_guard,
+        planner=FakePlanner(),
+    )
+    user = _user(
+        gender="male",
+        age=24,
+        height=175,
+        weight=68,
+        activity_level="moderate",
+        health_goal="lose_weight",
+    )
+    session = _session(
+        status="collecting_preferences",
+        collected_slots={
+            "health_goal": "lose_weight",
+            "budget": "100元",
+            "restrictions_answered": True,
+        },
+    )
+
+    response = orchestrator.advance(user, session, "清淡的")
+
+    assert response["status"] == "completed"
+    assert session.collected_slots["budget"] == 100.0
+    assert budget_guard.calls[0]["budget"] == 100.0

@@ -30,6 +30,14 @@ EMPTY_RESTRICTION_ANSWERS = {
     "都可以",
     "不忌口",
 }
+EMPTY_TASTE_ANSWERS = {
+    "都行",
+    "都可以",
+    "随便",
+    "都能接受",
+    "没所谓",
+}
+BUDGET_VALUE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)")
 
 PROFILE_FIELDS = {"gender", "age", "height", "weight", "activity_level"}
 PREFERENCE_FIELDS = {
@@ -39,6 +47,16 @@ PREFERENCE_FIELDS = {
     "preferred_tags",
     "restrictions_answered",
 }
+
+
+def _coerce_budget_value(value):
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        match = BUDGET_VALUE_PATTERN.search(value.replace(",", ""))
+        if match:
+            return float(match.group(1))
+    return value
 
 
 def _build_messages(user_message: str, expected_slot: str | None):
@@ -77,6 +95,12 @@ class DeepSeekSlotExtractor:
             payload["preference_updates"].setdefault("disliked_foods", [])
             payload["acknowledged_restrictions"] = True
             fallback_applied = True
+        if expected_slot == "taste" and any(
+            token in text for token in EMPTY_TASTE_ANSWERS
+        ):
+            payload.setdefault("preference_updates", {})
+            payload["preference_updates"].setdefault("preferred_tags", [])
+            fallback_applied = True
 
         return payload, fallback_applied
 
@@ -100,6 +124,13 @@ class DeepSeekSlotExtractor:
             profile_updates.setdefault(
                 expected_slot, preference_updates.pop(expected_slot)
             )
+
+        if "budget" in preference_updates:
+            preference_updates["budget"] = _coerce_budget_value(
+                preference_updates["budget"]
+            )
+        if "budget" in profile_updates:
+            profile_updates["budget"] = _coerce_budget_value(profile_updates["budget"])
 
         payload["profile_updates"] = profile_updates
         payload["preference_updates"] = preference_updates
