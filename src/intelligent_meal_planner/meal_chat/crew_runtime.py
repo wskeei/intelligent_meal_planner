@@ -8,11 +8,15 @@ from .target_ranges import build_target_ranges
 from .types import CrewTurnResult
 
 BUDGET_VALUE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)\s*元?")
+CHINESE_BUDGET_PATTERN = re.compile(
+    r"(?:预算|控制在|控制到|别超过|不超过|不高于|低于|最多|上限)[^零一二两三四五六七八九十百千万]*([零一二两三四五六七八九十百千万]+)"
+)
+CHINESE_BUDGET_SUFFIX_PATTERN = re.compile(r"([零一二两三四五六七八九十百千万]+)(?:元|块|以内|以下|左右)")
 GOAL_KEYWORDS = {
-    "lose_weight": ("减肥", "减脂", "瘦身"),
-    "gain_muscle": ("增肌", "长肌肉"),
-    "maintain": ("维持", "保持", "不增不减"),
-    "healthy": ("健康饮食", "健康一点", "均衡"),
+    "lose_weight": ("减肥", "减脂", "瘦身", "瘦一点", "瘦点", "控制体重"),
+    "gain_muscle": ("增肌", "长肌肉", "练壮一点", "练壮点", "壮一点"),
+    "maintain": ("维持", "保持", "不增不减", "正常吃"),
+    "healthy": ("健康饮食", "健康一点", "均衡", "吃健康点", "吃干净点"),
 }
 PREFERRED_TAG_KEYWORDS = ("清淡", "家常", "重口", "高蛋白")
 DISLIKED_FOODS_PATTERN = re.compile(r"(?:不吃|不要|别要)([^，。,.；;\s]+)")
@@ -235,9 +239,17 @@ class CrewMealChatRuntime:
 
     def _extract_budget(self, user_message: str) -> float | None:
         match = BUDGET_VALUE_PATTERN.search(user_message.replace(",", ""))
-        if not match:
+        if match:
+            return float(match.group(1))
+
+        normalized = user_message.replace("俩", "两")
+        chinese_match = CHINESE_BUDGET_PATTERN.search(normalized)
+        if not chinese_match:
+            chinese_match = CHINESE_BUDGET_SUFFIX_PATTERN.search(normalized)
+        if not chinese_match:
             return None
-        return float(match.group(1))
+
+        return float(self._parse_chinese_number(chinese_match.group(1)))
 
     def _extract_health_goal(self, user_message: str) -> str | None:
         for goal, keywords in GOAL_KEYWORDS.items():
@@ -257,3 +269,61 @@ class CrewMealChatRuntime:
         return [
             keyword for keyword in PREFERRED_TAG_KEYWORDS if keyword in user_message
         ]
+
+    def _parse_chinese_number(self, text: str) -> int:
+        digits = {
+            "零": 0,
+            "一": 1,
+            "二": 2,
+            "两": 2,
+            "三": 3,
+            "四": 4,
+            "五": 5,
+            "六": 6,
+            "七": 7,
+            "八": 8,
+            "九": 9,
+        }
+        units = {
+            "十": 10,
+            "百": 100,
+            "千": 1000,
+            "万": 10000,
+        }
+
+        normalized = text
+        if (
+            "百" in normalized
+            and "十" not in normalized
+            and normalized[-1] in digits
+        ):
+            normalized = f"{normalized}十"
+        if normalized.startswith("十"):
+            normalized = f"一{normalized}"
+
+        total = 0
+        section = 0
+        number = 0
+
+        for char in normalized:
+            if char in digits:
+                number = digits[char]
+                continue
+
+            unit = units.get(char)
+            if unit is None:
+                continue
+
+            if unit == 10000:
+                section = (section + number) * unit
+                total += section
+                section = 0
+                number = 0
+                continue
+
+            if number == 0:
+                number = 1
+            section += number * unit
+            number = 0
+
+        return total + section + number

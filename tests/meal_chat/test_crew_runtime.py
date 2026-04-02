@@ -164,3 +164,35 @@ def test_runtime_updates_memory_from_user_goal_and_budget_message():
     assert result.memory.preferences["health_goal"] == "lose_weight"
     assert result.memory.preferences["budget"] == 200.0
     assert result.phase == "planning"
+
+
+def test_profile_agent_extracts_more_natural_budget_goal_and_preferences():
+    runtime = CrewMealChatRuntime(planning_tool=None)
+    result = runtime.profile_agent(
+        user_message="我想瘦一点，控制在两百以内，不吃香菜，口味清淡",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "lose_weight"
+    assert result["preference_updates"]["budget"] == 200.0
+    assert result["preference_updates"]["disliked_foods"] == ["香菜"]
+    assert result["preference_updates"]["preferred_tags"] == ["清淡"]
+
+
+def test_profile_agent_supports_chinese_numerals_and_muscle_gain_phrasing():
+    runtime = CrewMealChatRuntime(planning_tool=None)
+    result = runtime.profile_agent(
+        user_message="最近想练壮一点，预算别超过一百五",
+        memory=ConversationMemory(
+            phase="discovering",
+            preferences={"health_goal": "healthy"},
+        ),
+        intent={"intent": "general_chat", "needs_plan": False},
+    )
+
+    assert result["preference_updates"]["health_goal"] == "gain_muscle"
+    assert result["preference_updates"]["budget"] == 150.0
