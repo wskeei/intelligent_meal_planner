@@ -18,6 +18,7 @@ class ParsedTurn(BaseModel):
     acknowledged_restrictions: bool = False
     confidence: float | None = None
     missing_fields: list[str] = Field(default_factory=list)
+    contradiction_fields: list[str] = Field(default_factory=list)
     debug: ExtractionDebug = Field(default_factory=ExtractionDebug)
 
 

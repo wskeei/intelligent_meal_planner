@@ -7,6 +7,24 @@ from intelligent_meal_planner.meal_chat.session_schema import (
 from intelligent_meal_planner.meal_chat.types import ParsedTurn
 
 
+def test_conversation_memory_can_store_analysis_and_follow_up_state():
+    memory = ConversationMemory(
+        phase="discovering",
+        known_facts={
+            "preference_confidence": 0.42,
+            "missing_fields": ["budget"],
+            "clarification_reason": "low_confidence",
+        },
+        open_questions=["budget", "health_goal"],
+    )
+
+    payload = memory.model_dump(mode="json")
+
+    assert payload["known_facts"]["preference_confidence"] == 0.42
+    assert payload["known_facts"]["missing_fields"] == ["budget"]
+    assert payload["open_questions"] == ["budget", "health_goal"]
+
+
 class FakePlanningTool:
     def __init__(self):
         self.calls = []
