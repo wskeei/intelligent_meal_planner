@@ -104,16 +104,29 @@ class CrewMealChatRuntime:
         }
 
     def planning_agent(self, memory: ConversationMemory, user_message: str) -> dict:
+        del user_message
         if self.planning_tool is None:
             return {
                 "phase": "planning",
                 "assistant_message": "我已经准备好开始配餐。",
                 "meal_plan": None,
             }
+        if memory.negotiation_options:
+            return {
+                "phase": "finalized",
+                "assistant_message": "我给你整理了两套方案。",
+                "meal_plan": self._build_dual_plan(memory),
+            }
         return {
             "phase": "finalized",
             "assistant_message": "我给你整理好了一份方案。",
-            "meal_plan": self.planning_tool.generate(),
+            "meal_plan": self.planning_tool.generate(
+                goal=memory.preferences.get("health_goal", "healthy"),
+                budget=float(memory.preferences.get("budget", 0)),
+                disliked_foods=memory.preferences.get("disliked_foods", []),
+                preferred_tags=memory.preferences.get("preferred_tags", []),
+                hidden_targets=self._ranges_to_hidden_targets(memory.target_ranges),
+            ),
         }
 
     def _merge_memory(self, memory: ConversationMemory, profile_delta: dict) -> ConversationMemory:
@@ -121,3 +134,70 @@ class CrewMealChatRuntime:
         merged.profile.update(profile_delta.get("profile_updates", {}))
         merged.preferences.update(profile_delta.get("preference_updates", {}))
         return merged
+
+    def _build_dual_plan(self, memory: ConversationMemory) -> dict:
+        alternatives = []
+        for option in memory.negotiation_options:
+            plan = self.planning_tool.generate(
+                goal=memory.preferences.get("health_goal", "healthy"),
+                budget=option.budget,
+                disliked_foods=memory.preferences.get("disliked_foods", []),
+                preferred_tags=option.preferred_tags
+                or memory.preferences.get("preferred_tags", []),
+                hidden_targets=self._ranges_to_hidden_targets(
+                    memory.target_ranges,
+                    option.key,
+                ),
+            )
+            alternatives.append(
+                {
+                    "option_key": option.key,
+                    "title": option.title,
+                    "rationale": option.rationale,
+                    "meal_plan": plan,
+                }
+            )
+        return {
+            "primary": alternatives[0]["meal_plan"] if alternatives else None,
+            "alternatives": alternatives,
+        }
+
+    def _ranges_to_hidden_targets(
+        self,
+        target_ranges: TargetRanges | None,
+        option_key: str | None = None,
+    ) -> dict:
+        if target_ranges is None:
+            return {
+                "target_calories": 1800,
+                "target_protein": 100,
+                "target_carbs": 180,
+                "target_fat": 55,
+            }
+
+        if option_key == "budget_cut":
+            target_calories = target_ranges.calories_min
+            target_protein = target_ranges.protein_min
+            target_carbs = target_ranges.carbs_min
+            target_fat = target_ranges.fat_min
+        elif option_key == "protein_priority":
+            target_calories = target_ranges.calories_max
+            target_protein = target_ranges.protein_max
+            target_carbs = target_ranges.carbs_min
+            target_fat = target_ranges.fat_min
+        else:
+            target_calories = round(
+                (target_ranges.calories_min + target_ranges.calories_max) / 2
+            )
+            target_protein = round(
+                (target_ranges.protein_min + target_ranges.protein_max) / 2
+            )
+            target_carbs = round((target_ranges.carbs_min + target_ranges.carbs_max) / 2)
+            target_fat = round((target_ranges.fat_min + target_ranges.fat_max) / 2)
+
+        return {
+            "target_calories": int(target_calories),
+            "target_protein": int(target_protein),
+            "target_carbs": int(target_carbs),
+            "target_fat": int(target_fat),
+        }

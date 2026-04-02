@@ -1,5 +1,22 @@
 from intelligent_meal_planner.meal_chat.crew_runtime import CrewMealChatRuntime
-from intelligent_meal_planner.meal_chat.session_schema import ConversationMemory
+from intelligent_meal_planner.meal_chat.session_schema import (
+    ConversationMemory,
+    NegotiationOption,
+    TargetRanges,
+)
+
+
+class FakePlanningTool:
+    def __init__(self):
+        self.calls = []
+
+    def generate(self, **kwargs):
+        self.calls.append(kwargs)
+        return {
+            "id": f"plan{len(self.calls)}",
+            "meals": [],
+            "nutrition": {"total_price": kwargs["budget"]},
+        }
 
 
 def test_runtime_routes_budget_question_to_negotiation_answer():
@@ -71,3 +88,42 @@ def test_runtime_requests_plan_when_information_is_sufficient():
 
     assert result.phase == "finalized"
     assert result.meal_plan is not None
+
+
+def test_runtime_requests_two_rl_plan_variants_when_negotiation_prefers_dual_options():
+    runtime = CrewMealChatRuntime(planning_tool=FakePlanningTool())
+    memory = ConversationMemory(
+        phase="planning",
+        target_ranges=TargetRanges(
+            calories_min=1700,
+            calories_max=1900,
+            protein_min=100,
+            protein_max=130,
+            carbs_min=140,
+            carbs_max=220,
+            fat_min=40,
+            fat_max=65,
+            strategy="fat_loss",
+        ),
+        preferences={"budget": 120.0},
+        negotiation_options=[
+            NegotiationOption(
+                key="budget_cut",
+                title="保守减脂",
+                rationale="...",
+                budget=120.0,
+            ),
+            NegotiationOption(
+                key="protein_priority",
+                title="高蛋白优先",
+                rationale="...",
+                budget=150.0,
+            ),
+        ],
+    )
+
+    result = runtime._build_dual_plan(memory)
+
+    assert len(result["alternatives"]) == 2
+    assert result["alternatives"][0]["option_key"] == "budget_cut"
+    assert result["alternatives"][1]["option_key"] == "protein_priority"

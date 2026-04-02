@@ -165,4 +165,4 @@ class MealChatSessionResponse(BaseModel):
     session_id: str
     status: str
     messages: List[ChatMessage]
-    meal_plan: Optional[MealPlanResponse] = None
+    meal_plan: Optional[dict] = None
