@@ -31,3 +31,4 @@ class ConversationMemory(BaseModel):
     open_questions: list[str] = Field(default_factory=list)
     target_ranges: TargetRanges | None = None
     negotiation_options: list[NegotiationOption] = Field(default_factory=list)
+    clarification_history: list[dict] = Field(default_factory=list)
