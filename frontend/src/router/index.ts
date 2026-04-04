@@ -53,7 +53,14 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const auth = useAuthStore()
   if (!to.meta.public && !auth.isAuthenticated) {
-    next('/login')
+    next({
+      path: '/login',
+      query: {
+        redirect: to.fullPath
+      }
+    })
+  } else if (to.meta.public && auth.isAuthenticated) {
+    next('/')
   } else {
     next()
   }

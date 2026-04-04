@@ -1,34 +1,39 @@
 <template>
   <div class="auth-page">
     <el-card class="auth-card">
-      <h2 style="text-align: center; margin-bottom: 24px">{{ $t('auth.welcome_back') }}</h2>
-      
+      <p class="eyebrow">{{ $t('auth.product_name') }}</p>
+      <h1>{{ $t('auth.welcome_back') }}</h1>
+      <p class="subtitle">{{ $t('auth.login_intro') }}</p>
+
       <el-form label-position="top" @submit.prevent>
+        <el-alert
+          v-if="errorMessage"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          :closable="false"
+          class="inline-alert"
+        />
+
         <el-form-item :label="$t('auth.username')">
           <el-input v-model="username" :placeholder="$t('auth.username')" size="large" />
         </el-form-item>
-        
+
         <el-form-item :label="$t('auth.password')">
-          <el-input 
-            v-model="password" 
-            type="password" 
-            :placeholder="$t('auth.password')" 
-            size="large" 
+          <el-input
+            v-model="password"
+            type="password"
+            :placeholder="$t('auth.password')"
+            size="large"
             show-password
             @keyup.enter="handleLogin"
           />
         </el-form-item>
-        
-        <el-button 
-          type="primary" 
-          size="large" 
-          class="full-width" 
-          :loading="loading"
-          @click="handleLogin"
-        >
+
+        <el-button type="primary" size="large" class="full-width" :loading="loading" @click="handleLogin">
           {{ $t('auth.login_btn') }}
         </el-button>
-        
+
         <div class="auth-links">
           {{ $t('auth.no_account') }} <router-link to="/register">{{ $t('auth.register_link') }}</router-link>
         </div>
@@ -38,29 +43,45 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
+import { useAuthStore } from '@/stores/auth'
+
+const { t } = useI18n()
+const route = useRoute()
 const auth = useAuthStore()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+const errorMessage = ref('')
 
-const handleLogin = async () => {
+const redirectTarget = computed(() =>
+  typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+)
+
+async function handleLogin() {
   if (!username.value || !password.value) {
-    ElMessage.warning('Please fill in required fields')
+    errorMessage.value = t('auth.login_missing')
+    ElMessage.warning(errorMessage.value)
     return
   }
-  
+
+  errorMessage.value = ''
   loading.value = true
-  const success = await auth.login(username.value, password.value)
+  const success = await auth.login(username.value, password.value, {
+    redirectTo: redirectTarget.value
+  })
   loading.value = false
-  
+
   if (success) {
-    ElMessage.success('Login successful')
+    errorMessage.value = ''
+    ElMessage.success(t('auth.login_success'))
   } else {
-    ElMessage.error('Invalid credentials')
+    errorMessage.value = t('auth.login_inline_error')
+    ElMessage.error(t('auth.login_failed'))
   }
 }
 </script>
@@ -70,18 +91,43 @@ const handleLogin = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh;
+  min-height: calc(100vh - 160px);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: 20px;
-  border-radius: var(--radius-lg);
+  max-width: 440px;
+  padding: 24px;
+  border-radius: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--color-primary-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: 2rem;
+}
+
+.subtitle {
+  margin: 12px 0 24px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .full-width {
   width: 100%;
+}
+
+.inline-alert {
+  margin-bottom: 16px;
 }
 
 .auth-links {

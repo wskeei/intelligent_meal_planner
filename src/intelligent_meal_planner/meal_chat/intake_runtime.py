@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .copy import planning_ready
 from .crew_runtime import CrewMealChatRuntime
 from .question_strategy import build_follow_up_plan
 from .target_ranges import build_target_ranges
@@ -56,7 +57,7 @@ class IntakeRuntime(CrewMealChatRuntime):
             )
         return IntakeTurnResult(
             phase="planning_ready",
-            assistant_message="信息已经齐了，我现在组织多智能体为你生成方案。",
+            assistant_message=planning_ready(self._session_locale(updated)),
             memory=updated,
             ready_for_crew=True,
             crew_payload=updated.model_dump(mode="json"),

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ...db.database import get_db
 from ...db.models import User
+from ...meal_chat.copy import normalize_locale
 from ..schemas import MealChatMessageRequest, MealChatSessionResponse
 from ..services import meal_chat_app
 from .auth import get_current_user
@@ -10,12 +11,21 @@ from .auth import get_current_user
 router = APIRouter(prefix="/meal-chat", tags=["对话式配餐"])
 
 
+def _request_locale(request: Request) -> str:
+    return normalize_locale(request.headers.get("Accept-Language"))
+
+
 @router.post("/sessions", response_model=MealChatSessionResponse)
 async def create_session(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return meal_chat_app.start_session(db, current_user)
+    return meal_chat_app.start_session(
+        db,
+        current_user,
+        locale=_request_locale(request),
+    )
 
 
 @router.get("/sessions/{session_id}", response_model=MealChatSessionResponse)
@@ -34,7 +44,14 @@ async def get_session(
 async def send_message(
     session_id: str,
     payload: MealChatMessageRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return meal_chat_app.handle_message(db, current_user, session_id, payload.content)
+    return meal_chat_app.handle_message(
+        db,
+        current_user,
+        session_id,
+        payload.content,
+        locale=_request_locale(request),
+    )

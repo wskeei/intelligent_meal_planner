@@ -1,17 +1,16 @@
 <template>
   <div class="shopping-page">
-    <div class="page-header">
+    <header class="page-header">
       <h1>{{ $t('shopping.title') }}</h1>
       <p class="subtitle">{{ $t('shopping.subtitle') }}</p>
-    </div>
+    </header>
 
     <div class="shopping-container">
-      <!-- Add New Item -->
-      <el-card class="add-card" shadow="sm">
+      <el-card class="add-card" shadow="never">
         <div class="input-group">
-          <el-input 
-            v-model="newItemName" 
-            :placeholder="$t('shopping.add_placeholder')" 
+          <el-input
+            v-model="newItemName"
+            :placeholder="$t('shopping.add_placeholder')"
             size="large"
             @keyup.enter="handleAddItem"
           >
@@ -25,36 +24,40 @@
         </div>
       </el-card>
 
-      <!-- List -->
-      <div v-if="items.length > 0" class="list-area">
+      <div v-if="items.length" class="list-area">
         <div class="options-bar">
           <span>{{ $t('shopping.items_count', { total: items.length, checked: checkedCount }) }}</span>
           <div class="actions">
-            <el-button link type="danger" @click="shoppingStore.clearChecked" v-if="checkedCount > 0">
+            <el-button v-if="checkedCount > 0" text type="danger" @click="shoppingStore.clearChecked">
               {{ $t('shopping.clear_bought') }}
             </el-button>
-            <el-button link type="danger" @click="shoppingStore.clearAll">
+            <el-button text type="danger" @click="shoppingStore.clearAll">
               {{ $t('shopping.clear_all') }}
             </el-button>
           </div>
         </div>
 
         <transition-group name="list" tag="div" class="item-list">
-          <div 
-            v-for="item in items" 
-            :key="item.id" 
-            class="shopping-item" 
+          <div
+            v-for="item in items"
+            :key="item.id"
+            class="shopping-item"
             :class="{ 'is-checked': item.checked }"
           >
-            <div class="checkbox" @click="toggleItem(item.id)">
-               <div class="check-circle">
-                 <el-icon v-if="item.checked"><Check /></el-icon>
-               </div>
-            </div>
-            
+            <button class="check-button" type="button" @click="toggleItem(item.id)">
+              <span class="check-circle">
+                <el-icon v-if="item.checked"><Check /></el-icon>
+              </span>
+            </button>
+
             <div class="item-content">
-              <span class="item-name">{{ item.name }}</span>
-              <span class="item-amount" v-if="item.amount && item.amount !== '1'">x {{ item.amount }}</span>
+              <div class="item-copy">
+                <span class="item-name">{{ item.name }}</span>
+                <span v-if="item.amount" class="item-amount">{{ item.amount }}</span>
+              </div>
+              <span class="source-pill" :class="item.source">
+                {{ item.source === 'meal-plan' ? $t('shopping.from_plan') : $t('shopping.manual_item') }}
+              </span>
             </div>
 
             <el-button class="delete-btn" circle text @click="removeItem(item.id)">
@@ -64,96 +67,175 @@
         </transition-group>
       </div>
 
-      <!-- Empty State -->
-      <div v-else class="empty-state">
-        <el-icon :size="64" color="#e2e8f0"><ShoppingCart /></el-icon>
-        <h3>{{ $t('shopping.empty_title') }}</h3>
-        <p>{{ $t('shopping.empty_desc') }}</p>
-      </div>
+      <AppEmptyState
+        v-else
+        :icon="ShoppingCart"
+        :eyebrow="$t('shopping.empty_eyebrow')"
+        :title="$t('shopping.empty_title')"
+        :description="$t('shopping.empty_desc')"
+      >
+        <template #actions>
+          <el-button type="primary" @click="$router.push('/meal-plan')">
+            {{ $t('shopping.go_plan') }}
+          </el-button>
+        </template>
+      </AppEmptyState>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useShoppingStore } from '@/stores/shopping'
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { Plus, Check, Delete, ShoppingCart } from '@element-plus/icons-vue'
+import { Check, Delete, Plus, ShoppingCart } from '@element-plus/icons-vue'
+
+import AppEmptyState from '@/components/common/AppEmptyState.vue'
+import { useShoppingStore } from '@/stores/shopping'
 
 const shoppingStore = useShoppingStore()
 const { items } = storeToRefs(shoppingStore)
 
 const newItemName = ref('')
 
-const checkedCount = computed(() => items.value.filter(i => i.checked).length)
+const checkedCount = computed(() => items.value.filter((item) => item.checked).length)
 
-const handleAddItem = () => {
-  if (newItemName.value.trim()) {
-    shoppingStore.addItem(newItemName.value.trim())
-    newItemName.value = ''
-  }
+function handleAddItem() {
+  const name = newItemName.value.trim()
+  if (!name) return
+
+  shoppingStore.addItem(name)
+  newItemName.value = ''
 }
 
-const toggleItem = (id: string) => shoppingStore.toggleItem(id)
-const removeItem = (id: string) => shoppingStore.removeItem(id)
+function toggleItem(id: string) {
+  shoppingStore.toggleItem(id)
+}
+
+function removeItem(id: string) {
+  shoppingStore.removeItem(id)
+}
 </script>
 
 <style scoped>
-.page-header {
-  margin-bottom: 24px;
-  text-align: center;
+.shopping-page {
+  display: grid;
+  gap: 24px;
 }
 
 .page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
+  margin: 0;
   color: var(--color-secondary);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .shopping-container {
-  max-width: 600px;
-  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  max-width: 760px;
 }
 
 .add-card {
-  margin-bottom: 24px;
+  border-radius: 22px;
 }
 
-.input-group {
+.input-group,
+.options-bar,
+.actions,
+.shopping-item,
+.item-copy {
   display: flex;
   gap: 12px;
 }
 
-.options-bar {
-  display: flex;
-  justify-content: space-between;
+.input-group,
+.options-bar,
+.shopping-item {
   align-items: center;
+}
+
+.input-group {
+  flex-wrap: wrap;
+}
+
+.input-group :deep(.el-input) {
+  flex: 1;
+  min-width: 220px;
+}
+
+.options-bar {
+  justify-content: space-between;
+  flex-wrap: wrap;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 12px;
-  padding: 0 4px;
+}
+
+.item-list {
+  display: grid;
+  gap: 10px;
 }
 
 .shopping-item {
-  display: flex;
-  align-items: center;
-  background: white;
-  padding: 12px 16px;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.shopping-item:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .shopping-item.is-checked {
-  background: #f8fafc;
-  opacity: 0.8;
+  background: #f7faf8;
+}
+
+.check-button,
+.delete-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.check-button {
+  background: transparent;
+}
+
+.check-circle {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  color: white;
+}
+
+.shopping-item.is-checked .check-circle {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.item-content {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-copy {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.item-name {
+  font-weight: 700;
+  color: var(--color-secondary);
+  overflow-wrap: break-word;
 }
 
 .shopping-item.is-checked .item-name {
@@ -161,83 +243,60 @@ const removeItem = (id: string) => shoppingStore.removeItem(id)
   color: var(--color-text-light);
 }
 
-.checkbox {
-  cursor: pointer;
-  margin-right: 16px;
-}
-
-.check-circle {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #cbd5e1;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  transition: all 0.2s;
-}
-
-.shopping-item.is-checked .check-circle {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.item-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.item-name {
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
 .item-amount {
-  background: #e2e8f0;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  font-size: 0.88rem;
+}
+
+.source-pill {
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.source-pill.manual {
+  background: rgba(15, 23, 42, 0.07);
+  color: var(--color-text-secondary);
+}
+
+.source-pill.meal-plan {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--color-primary-dark);
 }
 
 .delete-btn {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.shopping-item:hover .delete-btn {
-  opacity: 1;
+  color: var(--color-text-secondary);
 }
 
 .delete-btn:hover {
-  color: var(--color-accent);
-  background: #fee2e2;
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.12);
 }
 
-.empty-state {
-  text-align: center;
-  padding: 60px 0;
-  color: var(--color-text-light);
-}
-
-.empty-state h3 {
-  margin-top: 16px;
-  color: var(--color-text-secondary);
-  font-size: 1.25rem;
-}
-
-/* List Transitions */
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.24s ease;
 }
 
 .list-enter-from,
 .list-leave-to {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateY(10px);
+}
+
+@media (max-width: 640px) {
+  .shopping-item {
+    align-items: flex-start;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions :deep(.el-button) {
+    min-height: 44px;
+  }
 }
 </style>

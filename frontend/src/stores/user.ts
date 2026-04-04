@@ -13,6 +13,16 @@ export interface UserProfile {
   goal: 'lose_weight' | 'gain_muscle' | 'maintain' | 'healthy'
 }
 
+export type RequiredProfileField = 'gender' | 'age' | 'height' | 'weight' | 'activityLevel'
+
+export const REQUIRED_PROFILE_FIELDS: RequiredProfileField[] = [
+  'gender',
+  'age',
+  'height',
+  'weight',
+  'activityLevel'
+]
+
 const emptyProfile = (): UserProfile => ({
   username: '',
   age: null,
@@ -26,15 +36,24 @@ const emptyProfile = (): UserProfile => ({
 export const useUserStore = defineStore('user', () => {
   const profile = ref<UserProfile>(emptyProfile())
 
-  const profileComplete = computed(() =>
-    Boolean(
-      profile.value.gender &&
-        profile.value.age &&
-        profile.value.height &&
-        profile.value.weight &&
-        profile.value.activityLevel
-    )
+  const missingProfileFields = computed<RequiredProfileField[]>(() =>
+    REQUIRED_PROFILE_FIELDS.filter((field) => {
+      const value = profile.value[field]
+      return value === null || value === undefined
+    })
   )
+
+  const profileCompletionTotal = computed(() => REQUIRED_PROFILE_FIELDS.length)
+
+  const profileCompletionCompleted = computed(
+    () => profileCompletionTotal.value - missingProfileFields.value.length
+  )
+
+  const profileCompletionPercent = computed(() =>
+    Math.round((profileCompletionCompleted.value / profileCompletionTotal.value) * 100)
+  )
+
+  const profileComplete = computed(() => missingProfileFields.value.length === 0)
 
   function hydrateFromAuthUser(user: any) {
     if (!user) return
@@ -70,6 +89,10 @@ export const useUserStore = defineStore('user', () => {
   return {
     profile,
     profileComplete,
+    missingProfileFields,
+    profileCompletionTotal,
+    profileCompletionCompleted,
+    profileCompletionPercent,
     hydrateFromAuthUser,
     saveProfile,
     resetProfile
