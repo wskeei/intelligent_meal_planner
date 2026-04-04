@@ -4,7 +4,11 @@ from sqlalchemy.orm import Session
 from ...db.database import get_db
 from ...db.models import User
 from ...meal_chat.copy import normalize_locale
-from ..schemas import MealChatMessageRequest, MealChatSessionResponse
+from ..schemas import (
+    MealChatMessageRequest,
+    MealChatPresentationRequest,
+    MealChatSessionResponse,
+)
 from ..services import meal_chat_app
 from .auth import get_current_user
 
@@ -54,4 +58,28 @@ async def send_message(
         session_id,
         payload.content,
         locale=_request_locale(request),
+    )
+
+
+@router.post("/sessions/{session_id}/generate", response_model=MealChatSessionResponse)
+async def generate_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return meal_chat_app.generate_session(db, current_user, session_id)
+
+
+@router.post("/sessions/{session_id}/presentation", response_model=MealChatSessionResponse)
+async def update_session_presentation(
+    session_id: str,
+    payload: MealChatPresentationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return meal_chat_app.update_session_presentation(
+        db,
+        current_user,
+        session_id,
+        payload.overlay_state,
     )

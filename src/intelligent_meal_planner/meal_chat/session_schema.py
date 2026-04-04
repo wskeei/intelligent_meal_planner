@@ -27,6 +27,7 @@ class NegotiationOption(BaseModel):
 
 class ConversationMemory(BaseModel):
     phase: str = "discovering"
+    overlay_state: str | None = "hidden"
     profile: dict = Field(default_factory=dict)
     preferences: dict = Field(default_factory=dict)
     known_facts: dict = Field(default_factory=dict)

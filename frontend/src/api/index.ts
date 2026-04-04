@@ -93,6 +93,17 @@ export interface CrewTraceEvent {
 
 export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'planning_ready' | 'finalized'
 
+export interface MealChatPresentation {
+  phase: MealChatPhase | string
+  overlay_state?: 'hidden' | 'result' | null
+  can_generate?: boolean
+  has_result_overlay?: boolean
+}
+
+export interface MealChatPresentationUpdate {
+  overlay_state: 'hidden' | 'result'
+}
+
 export interface MealChatFollowUpPlan {
   questions: string[]
   assistant_message: string
@@ -130,6 +141,7 @@ export interface MealChatSession {
   open_questions?: string[]
   follow_up_plan?: MealChatFollowUpPlan | null
   negotiation_options?: MealChatNegotiationOption[]
+  presentation?: MealChatPresentation | null
 }
 
 export interface UserProfilePatch {
@@ -186,6 +198,12 @@ export const mealPlanApi = {
 export const mealChatApi = {
   createSession: () => api.post<MealChatSession>('/meal-chat/sessions'),
   getSession: (sessionId: string) => api.get<MealChatSession>(`/meal-chat/sessions/${sessionId}`),
+  generateSession: (sessionId: string) =>
+    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/generate`),
+  updatePresentation: (sessionId: string, overlayState: 'hidden' | 'result') =>
+    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/presentation`, {
+      overlay_state: overlayState
+    }),
   sendMessage: (sessionId: string, content: string) =>
     api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/messages`, { content })
 }

@@ -315,12 +315,27 @@ class MealChatApplication:
                 if memory.follow_up_plan is not None
                 else None
             ),
+            "presentation": {
+                "phase": memory.phase,
+                "overlay_state": memory.overlay_state,
+                "can_generate": session.status == "planning_ready",
+                "has_result_overlay": memory.overlay_state == "result",
+            },
             "profile_snapshot": memory.profile,
             "preferences_snapshot": memory.preferences,
             "negotiation_options": [
                 option.model_dump(mode="json") for option in memory.negotiation_options
             ],
         }
+
+    def _load_session(
+        self, db: Session, user: User, session_id: str
+    ) -> MealChatSession | None:
+        return (
+            db.query(MealChatSession)
+            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .first()
+        )
 
     def start_session(self, db: Session, user: User, locale: str = "zh") -> Dict[str, Any]:
         resolved_locale = normalize_locale(locale)
@@ -366,13 +381,7 @@ class MealChatApplication:
     def get_session(
         self, db: Session, user: User, session_id: str
     ) -> Optional[Dict[str, Any]]:
-        session = (
-            db.query(MealChatSession)
-            .filter(
-                MealChatSession.id == session_id, MealChatSession.user_id == user.id
-            )
-            .first()
-        )
+        session = self._load_session(db, user, session_id)
         if not session:
             return None
         return self._serialize_session(db, session)
@@ -385,13 +394,7 @@ class MealChatApplication:
         content: str,
         locale: str = "zh",
     ) -> Dict[str, Any]:
-        session = (
-            db.query(MealChatSession)
-            .filter(
-                MealChatSession.id == session_id, MealChatSession.user_id == user.id
-            )
-            .first()
-        )
+        session = self._load_session(db, user, session_id)
         if session is None:
             raise ValueError("session_not_found")
 
@@ -455,6 +458,80 @@ class MealChatApplication:
                 },
             )
             raise
+
+    def generate_session(self, db: Session, user: User, session_id: str) -> Dict[str, Any]:
+        session = self._load_session(db, user, session_id)
+        if session is None:
+            raise ValueError("session_not_found")
+
+        if session.status == "finalized":
+            return self._serialize_session(db, session)
+        if session.status != "planning_ready":
+            raise ValueError("generation_not_ready")
+
+        try:
+            result = self.orchestrator.generate(user, session)
+            updated_memory = ConversationMemory.model_validate(session.collected_slots or {})
+            updated_memory.overlay_state = "result"
+            session.collected_slots = updated_memory.model_dump(mode="json")
+            session.status = result["status"]
+            if result["meal_plan"] is not None:
+                session.final_plan = result["meal_plan"]
+
+            db.add(session)
+            db.add(
+                MealChatMessage(
+                    session_id=session.id,
+                    role="assistant",
+                    content=result["assistant_message"],
+                    stage=session.status,
+                )
+            )
+            db.commit()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="generation_completed",
+                payload={
+                    "user_id": user.id,
+                    "status": result["status"],
+                    "assistant_message": result["assistant_message"],
+                    "trace": result.get("trace", {}),
+                },
+            )
+            db.refresh(session)
+            return self._serialize_session(db, session)
+        except Exception as exc:
+            db.rollback()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="generation_failed",
+                payload={
+                    "user_id": user.id,
+                    "status": session.status,
+                    "error": repr(exc),
+                },
+            )
+            raise
+
+    def update_session_presentation(
+        self,
+        db: Session,
+        user: User,
+        session_id: str,
+        overlay_state: str,
+    ) -> Dict[str, Any]:
+        session = self._load_session(db, user, session_id)
+        if session is None:
+            raise ValueError("session_not_found")
+
+        memory = ConversationMemory.model_validate(session.collected_slots or {})
+        memory.overlay_state = overlay_state
+        session.collected_slots = memory.model_dump(mode="json")
+
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+        return self._serialize_session(db, session)
 
     def get_completed_plans(
         self, db: Session, user_id: int, limit: int
