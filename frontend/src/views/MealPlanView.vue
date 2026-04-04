@@ -561,10 +561,10 @@ function persistSessionId(value: string | null) {
 }
 
 async function restoreSession() {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined') return 'not_restored' as const
 
   const savedSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY)
-  if (!savedSessionId) return false
+  if (!savedSessionId) return 'not_restored' as const
 
   try {
     const { data } = await mealChatApi.getSession(savedSessionId)
@@ -573,15 +573,15 @@ async function restoreSession() {
     optimisticMessages.value = null
     overlayMode.value = data.presentation?.overlay_state === 'result' ? 'result' : 'hidden'
     await scrollToBottom()
-    return true
+    return 'restored' as const
   } catch (error) {
     console.error(error)
     if (isUnauthorizedError(error)) {
       handleAuthFailure()
-      return false
+      return 'auth_failed' as const
     }
     persistSessionId(null)
-    return false
+    return 'not_restored' as const
   }
 }
 
@@ -613,8 +613,8 @@ async function bootstrapSession() {
     }
 
     if (!route.query.reuse_goal && !route.query.reuse_budget && !route.query.reuse_tags && !route.query.reuse_disliked) {
-      const restored = await restoreSession()
-      if (restored) return
+      const restoreResult = await restoreSession()
+      if (restoreResult === 'restored' || restoreResult === 'auth_failed') return
     }
 
     const { data } = await mealChatApi.createSession()
