@@ -173,7 +173,32 @@ def test_send_message_returns_visible_crew_events(client, auth_header, monkeypat
         "messages": [
             {"role": "assistant", "content": "多智能体协作已完成，我给你整理好了方案。"}
         ],
-        "meal_plan": {"id": "plan001", "meals": [], "nutrition": {}, "target": {}, "score": 10},
+        "meal_plan": {
+            "id": "plan001",
+            "created_at": "2026-04-04T10:00:00",
+            "meals": [],
+            "nutrition": {
+                "total_calories": 1800,
+                "total_protein": 120,
+                "total_carbs": 180,
+                "total_fat": 55,
+                "total_price": 120,
+                "calories_achievement": 100,
+                "protein_achievement": 100,
+                "budget_usage": 100,
+            },
+            "target": {
+                "health_goal": "gain_muscle",
+                "target_calories": 2000,
+                "target_protein": 130,
+                "target_carbs": 220,
+                "target_fat": 60,
+                "max_budget": 120,
+                "disliked_foods": [],
+                "preferred_tags": ["高蛋白"],
+            },
+            "score": 10,
+        },
         "crew_trace": [
             {"agent": "需求审查专员", "status": "completed", "message": "需求已确认"},
             {"agent": "DQN 配餐师", "status": "completed", "message": "DQN 配餐完成"},

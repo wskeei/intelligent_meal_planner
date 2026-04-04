@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from crewai import Agent, Crew, Task
 from pydantic import BaseModel
@@ -20,9 +20,31 @@ class CrewPlanningResult(BaseModel):
     negotiation_summary: dict | None = None
 
 
+class RequirementReview(BaseModel):
+    summary: str
+    constraints: dict
+
+
+class NutritionStrategy(BaseModel):
+    summary: str
+    target_ranges: dict
+
+
+class BudgetCoordination(BaseModel):
+    summary: str
+    budget: float
+    assessment: str
+
+
+class DQNMealPlanArtifact(BaseModel):
+    summary: str
+    meal_plan: dict
+    tool_name: str
+
+
 @dataclass
 class CrewBundle:
     crew: Crew
     agents: list[Agent]
     tasks: list[Task]
-    event_messages: dict[str, str] = field(default_factory=dict)
+    runtime_llm: object | None = None
