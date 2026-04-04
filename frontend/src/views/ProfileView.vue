@@ -30,9 +30,9 @@
           </el-form-item>
 
           <el-form-item :label="$t('auth.gender')">
-            <el-radio-group v-model="localProfile.gender">
-              <el-radio label="male">{{ $t('auth.male') }}</el-radio>
-              <el-radio label="female">{{ $t('auth.female') }}</el-radio>
+              <el-radio-group v-model="localProfile.gender">
+                <el-radio value="male">{{ $t('auth.male') }}</el-radio>
+                <el-radio value="female">{{ $t('auth.female') }}</el-radio>
             </el-radio-group>
             <p class="field-hint">{{ $t('profile.field_reasons.gender') }}</p>
           </el-form-item>
