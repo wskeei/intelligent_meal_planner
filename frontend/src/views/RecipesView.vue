@@ -20,10 +20,10 @@
           <el-form label-position="top" class="filters-form">
             <el-form-item :label="$t('recipes.meal_type')">
               <el-radio-group v-model="filters.meal_type" class="meal-type-group">
-                <el-radio-button label="">{{ $t('recipes.all_meals') }}</el-radio-button>
-                <el-radio-button label="breakfast">{{ $t('recipes.breakfast') }}</el-radio-button>
-                <el-radio-button label="lunch">{{ $t('recipes.lunch') }}</el-radio-button>
-                <el-radio-button label="dinner">{{ $t('recipes.dinner') }}</el-radio-button>
+                <el-radio-button value="">{{ $t('recipes.all_meals') }}</el-radio-button>
+                <el-radio-button value="breakfast">{{ $t('recipes.breakfast') }}</el-radio-button>
+                <el-radio-button value="lunch">{{ $t('recipes.lunch') }}</el-radio-button>
+                <el-radio-button value="dinner">{{ $t('recipes.dinner') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
 
