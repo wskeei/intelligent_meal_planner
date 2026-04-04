@@ -1,32 +1,26 @@
 @echo off
-REM 安装训练所需的依赖到 ai_lab 环境
-REM 运行方式: 双击此文件 或 在命令行中运行 install_deps.bat
+REM 安装 DQN 训练与运行所需的依赖到 ai_lab 环境
 
 echo ============================================================
-echo Installing dependencies for meal planner RL training
+echo Installing dependencies for the DQN meal planner stack
 echo ============================================================
 
-REM 激活 ai_lab 环境并安装依赖
 call conda activate ai_lab
 
 echo.
-echo [1/3] Installing stable-baselines3...
-pip install stable-baselines3[extra] -q
+echo [1/2] Installing PyTorch and core training dependencies...
+pip install torch tensorboard -q
 
 echo.
-echo [2/3] Installing sb3-contrib (for MaskablePPO)...
-pip install sb3-contrib -q
-
-echo.
-echo [3/3] Installing other dependencies...
-pip install tqdm rich -q
+echo [2/2] Installing project dependencies...
+pip install -e . -q
 
 echo.
 echo ============================================================
 echo Installation complete!
 echo.
-echo To start training, run:
+echo To start DQN training, run:
 echo   conda activate ai_lab
-echo   python scripts/train_optimized.py
+echo   python scripts/train_dqn_maskable.py --timesteps 500000
 echo ============================================================
 pause
