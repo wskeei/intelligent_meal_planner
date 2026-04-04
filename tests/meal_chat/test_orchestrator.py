@@ -33,7 +33,33 @@ class FakeCrewRunner:
         }
 
 
-def test_orchestrator_switches_to_crew_stage_once_intake_is_complete():
+def test_orchestrator_stops_at_planning_ready_before_running_crew():
+    class GuardCrewRunner:
+        def run(self, memory, user):
+            del memory
+            del user
+            raise AssertionError("crew runner should not execute during intake advance")
+
+    orchestrator = MealChatOrchestrator(
+        intake_runtime=FakeIntake(),
+        crew_runner=GuardCrewRunner(),
+    )
+    session = type(
+        "Session",
+        (),
+        {"status": "discovering", "collected_slots": {}, "final_plan": None},
+    )()
+
+    response = orchestrator.advance(user=None, session=session, user_message="预算120元，增肌")
+
+    assert response["status"] == "planning_ready"
+    assert response["meal_plan"] is None
+    assert response["trace"]["phase"] == "planning_ready"
+    assert session.status == "planning_ready"
+    assert session.collected_slots["phase"] == "planning_ready"
+
+
+def test_orchestrator_generate_runs_crew_once_session_is_ready():
     orchestrator = MealChatOrchestrator(
         intake_runtime=FakeIntake(),
         crew_runner=FakeCrewRunner(),
@@ -45,8 +71,10 @@ def test_orchestrator_switches_to_crew_stage_once_intake_is_complete():
     )()
     user = type("User", (), {"id": 1})()
 
-    response = orchestrator.advance(user, session, "预算120元，增肌，高蛋白")
+    advance_response = orchestrator.advance(user, session, "预算120元，增肌，高蛋白")
+    response = orchestrator.generate(user, session)
 
+    assert advance_response["status"] == "planning_ready"
     assert response["status"] == "finalized"
     assert response["trace"]["phase"] == "finalized"
     assert response["trace"]["crew_trace"][0]["agent"] == "需求审查专员"

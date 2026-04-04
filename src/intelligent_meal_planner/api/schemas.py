@@ -191,6 +191,13 @@ class MealChatMessageRequest(BaseModel):
     content: str = Field(..., min_length=1)
 
 
+class MealChatPresentation(BaseModel):
+    phase: str
+    overlay_state: str | None = None
+    can_generate: bool = False
+    has_result_overlay: bool = False
+
+
 class MealChatSessionResponse(BaseModel):
     session_id: str
     status: str
@@ -203,3 +210,4 @@ class MealChatSessionResponse(BaseModel):
     profile_snapshot: dict = Field(default_factory=dict)
     preferences_snapshot: dict = Field(default_factory=dict)
     negotiation_options: List[dict] = Field(default_factory=list)
+    presentation: MealChatPresentation | None = None

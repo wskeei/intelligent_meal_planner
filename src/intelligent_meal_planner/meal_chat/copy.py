@@ -114,8 +114,11 @@ def continue_analysis(locale: str) -> str:
 
 def planning_ready(locale: str) -> str:
     if locale == "en":
-        return "The key information is complete. I am now organizing the multi-agent planning step for you."
-    return "信息已经齐了，我现在组织多智能体为你生成方案。"
+        return (
+            "The key information is complete. "
+            "I am preparing the formal meal-generation step now."
+        )
+    return "信息已经齐了，我现在开始正式生成配餐。"
 
 
 def negotiation_missing_inputs(locale: str) -> str:

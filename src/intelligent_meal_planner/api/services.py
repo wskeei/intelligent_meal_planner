@@ -315,6 +315,12 @@ class MealChatApplication:
                 if memory.follow_up_plan is not None
                 else None
             ),
+            "presentation": {
+                "phase": memory.phase,
+                "overlay_state": memory.overlay_state,
+                "can_generate": session.status == "planning_ready",
+                "has_result_overlay": session.status == "finalized",
+            },
             "profile_snapshot": memory.profile,
             "preferences_snapshot": memory.preferences,
             "negotiation_options": [
