@@ -2,14 +2,21 @@
   <transition name="result-overlay">
     <section
       v-if="visible && mealPlan"
+      ref="rootRef"
       class="result-overlay-root"
       aria-modal="true"
       role="dialog"
+      aria-labelledby="meal-chat-result-title"
     >
       <div class="result-overlay-backdrop" />
-      <div class="result-overlay-shell">
+      <div ref="shellRef" class="result-overlay-shell" tabindex="-1">
         <header class="result-overlay-head">
-          <button class="back-link" type="button" @click="$emit('return-to-chat')">
+          <button
+            ref="returnButtonRef"
+            class="back-link"
+            type="button"
+            @click="$emit('return-to-chat')"
+          >
             {{ t('meal_plan.return_to_chat') }}
           </button>
           <div class="price-pill">¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</div>
@@ -18,7 +25,7 @@
         <main class="result-hero">
           <div class="result-hero-copy">
             <p class="eyebrow">{{ t('meal_plan.final_plan') }}</p>
-            <h1>{{ t('meal_plan.result_title') }}</h1>
+            <h1 id="meal-chat-result-title">{{ t('meal_plan.result_title') }}</h1>
             <p class="result-subtitle">{{ t('meal_plan.result_subtitle') }}</p>
           </div>
 
@@ -123,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { CrewTraceEvent, MealPlan, NegotiatedMealPlanAlternative } from '@/api'
@@ -136,13 +143,17 @@ const props = defineProps<{
   preferences: Record<string, unknown>
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (event: 'return-to-chat'): void
   (event: 'add-to-list'): void
   (event: 'start-over'): void
 }>()
 
 const { t } = useI18n()
+const rootRef = ref<HTMLElement | null>(null)
+const shellRef = ref<HTMLElement | null>(null)
+const returnButtonRef = ref<HTMLButtonElement | null>(null)
+let lastFocusedElement: HTMLElement | null = null
 
 const groupedMeals = computed(() => {
   if (!props.mealPlan) return []
@@ -174,6 +185,98 @@ const budgetLabel = computed(() => {
 function mealLabel(type: string) {
   return t(`recipes.${type}`)
 }
+
+function getFocusableElements() {
+  if (!shellRef.value) return []
+
+  const selector = [
+    'button:not([disabled])',
+    '[href]',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(', ')
+
+  return Array.from(shellRef.value.querySelectorAll<HTMLElement>(selector)).filter(
+    (element) => !element.hasAttribute('disabled') && element.tabIndex !== -1
+  )
+}
+
+function restoreFocus() {
+  if (lastFocusedElement) {
+    lastFocusedElement.focus()
+    lastFocusedElement = null
+  }
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (!props.visible) return
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    emit('return-to-chat')
+    return
+  }
+
+  if (event.key !== 'Tab') return
+
+  const focusable = getFocusableElements()
+  if (!focusable.length) return
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement as HTMLElement | null
+
+  if (!active || !focusable.includes(active)) {
+    event.preventDefault()
+    first.focus()
+    return
+  }
+
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+    return
+  }
+
+  if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+async function activateModalBehavior() {
+  lastFocusedElement = document.activeElement as HTMLElement | null
+  document.addEventListener('keydown', onKeydown)
+  await nextTick()
+  if (returnButtonRef.value) {
+    returnButtonRef.value.focus()
+    return
+  }
+  shellRef.value?.focus()
+}
+
+function deactivateModalBehavior() {
+  document.removeEventListener('keydown', onKeydown)
+  restoreFocus()
+}
+
+watch(
+  () => props.visible,
+  async (visible) => {
+    if (visible) {
+      await activateModalBehavior()
+      return
+    }
+    deactivateModalBehavior()
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  deactivateModalBehavior()
+})
 </script>
 
 <style scoped>

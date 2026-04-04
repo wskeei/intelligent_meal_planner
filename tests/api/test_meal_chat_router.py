@@ -263,3 +263,57 @@ def test_generate_session_returns_finalized_payload(client, auth_header, monkeyp
 
     assert response.status_code == 200
     assert response.json()["status"] == "finalized"
+
+
+def test_update_session_presentation_returns_overlay_state(client, auth_header, monkeypatch):
+    fake_response = {
+        "session_id": "session001",
+        "status": "finalized",
+        "messages": [{"role": "assistant", "content": "方案已生成。"}],
+        "meal_plan": {
+            "id": "plan001",
+            "created_at": "2026-04-04T10:00:00",
+            "meals": [],
+            "nutrition": {
+                "total_calories": 1800,
+                "total_protein": 120,
+                "total_carbs": 180,
+                "total_fat": 55,
+                "total_price": 120,
+                "calories_achievement": 100,
+                "protein_achievement": 100,
+                "budget_usage": 100,
+            },
+            "target": {
+                "health_goal": "gain_muscle",
+                "target_calories": 2000,
+                "target_protein": 130,
+                "target_carbs": 220,
+                "target_fat": 60,
+                "max_budget": 120,
+                "disliked_foods": [],
+                "preferred_tags": [],
+            },
+            "score": 0,
+        },
+        "presentation": {
+            "phase": "finalized",
+            "overlay_state": "hidden",
+            "can_generate": False,
+            "has_result_overlay": False,
+        },
+    }
+    monkeypatch.setattr(
+        "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.update_session_presentation",
+        lambda db, user, session_id, overlay_state: fake_response,
+    )
+
+    response = client.post(
+        "/api/meal-chat/sessions/session001/presentation",
+        headers=auth_header,
+        json={"overlay_state": "hidden"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["presentation"]["overlay_state"] == "hidden"
+    assert response.json()["presentation"]["has_result_overlay"] is False

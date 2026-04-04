@@ -95,9 +95,13 @@ export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'planni
 
 export interface MealChatPresentation {
   phase: MealChatPhase | string
-  overlay_state?: string | null
+  overlay_state?: 'hidden' | 'result' | null
   can_generate?: boolean
   has_result_overlay?: boolean
+}
+
+export interface MealChatPresentationUpdate {
+  overlay_state: 'hidden' | 'result'
 }
 
 export interface MealChatFollowUpPlan {
@@ -196,6 +200,10 @@ export const mealChatApi = {
   getSession: (sessionId: string) => api.get<MealChatSession>(`/meal-chat/sessions/${sessionId}`),
   generateSession: (sessionId: string) =>
     api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/generate`),
+  updatePresentation: (sessionId: string, overlayState: 'hidden' | 'result') =>
+    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/presentation`, {
+      overlay_state: overlayState
+    }),
   sendMessage: (sessionId: string, content: string) =>
     api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/messages`, { content })
 }

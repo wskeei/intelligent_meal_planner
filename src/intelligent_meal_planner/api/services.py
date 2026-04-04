@@ -319,7 +319,7 @@ class MealChatApplication:
                 "phase": memory.phase,
                 "overlay_state": memory.overlay_state,
                 "can_generate": session.status == "planning_ready",
-                "has_result_overlay": session.status == "finalized",
+                "has_result_overlay": memory.overlay_state == "result",
             },
             "profile_snapshot": memory.profile,
             "preferences_snapshot": memory.preferences,
@@ -471,6 +471,9 @@ class MealChatApplication:
 
         try:
             result = self.orchestrator.generate(user, session)
+            updated_memory = ConversationMemory.model_validate(session.collected_slots or {})
+            updated_memory.overlay_state = "result"
+            session.collected_slots = updated_memory.model_dump(mode="json")
             session.status = result["status"]
             if result["meal_plan"] is not None:
                 session.final_plan = result["meal_plan"]
@@ -509,6 +512,26 @@ class MealChatApplication:
                 },
             )
             raise
+
+    def update_session_presentation(
+        self,
+        db: Session,
+        user: User,
+        session_id: str,
+        overlay_state: str,
+    ) -> Dict[str, Any]:
+        session = self._load_session(db, user, session_id)
+        if session is None:
+            raise ValueError("session_not_found")
+
+        memory = ConversationMemory.model_validate(session.collected_slots or {})
+        memory.overlay_state = overlay_state
+        session.collected_slots = memory.model_dump(mode="json")
+
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+        return self._serialize_session(db, session)
 
     def get_completed_plans(
         self, db: Session, user_id: int, limit: int

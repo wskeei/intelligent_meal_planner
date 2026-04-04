@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import Literal
 
 
 class HealthGoal(str, Enum):
@@ -189,6 +190,10 @@ class ChatMessage(BaseModel):
 
 class MealChatMessageRequest(BaseModel):
     content: str = Field(..., min_length=1)
+
+
+class MealChatPresentationRequest(BaseModel):
+    overlay_state: Literal["hidden", "result"]
 
 
 class MealChatPresentation(BaseModel):

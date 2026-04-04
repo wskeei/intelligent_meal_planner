@@ -565,13 +565,25 @@ async function restoreSession() {
     sessionId.value = data.session_id
     currentSession.value = data
     optimisticMessages.value = null
-    overlayMode.value = data.presentation?.has_result_overlay ? 'result' : 'hidden'
+    overlayMode.value = data.presentation?.overlay_state === 'result' ? 'result' : 'hidden'
     await scrollToBottom()
     return true
   } catch (error) {
     console.error(error)
     persistSessionId(null)
     return false
+  }
+}
+
+async function updatePresentationState(overlayState: 'hidden' | 'result') {
+  if (!sessionId.value) return
+
+  try {
+    const { data } = await mealChatApi.updatePresentation(sessionId.value, overlayState)
+    currentSession.value = data
+    persistSessionId(data.session_id)
+  } catch (error) {
+    console.error(error)
   }
 }
 
@@ -658,10 +670,6 @@ async function sendMessage() {
     persistSessionId(data.session_id)
     optimisticMessages.value = null
     await scrollToBottom()
-
-    if (data.presentation?.can_generate || data.status === 'planning_ready') {
-      await startGenerationSequence()
-    }
   } catch (error) {
     console.error(error)
     optimisticMessages.value = null
@@ -673,13 +681,15 @@ async function sendMessage() {
   }
 }
 
-function openResultOverlay() {
+async function openResultOverlay() {
   if (!finalPlan.value || !hasResultOverlay.value) return
   overlayMode.value = 'result'
+  await updatePresentationState('result')
 }
 
-function handleReturnToChat() {
+async function handleReturnToChat() {
   overlayMode.value = 'hidden'
+  await updatePresentationState('hidden')
 }
 
 function addToShoppingList() {
