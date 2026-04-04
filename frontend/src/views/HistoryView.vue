@@ -1,191 +1,334 @@
 <template>
-  <div class="history">
-    <el-card>
-      <template #header>
-        <div class="header">
-          <span>{{ $t('history.title') }}</span>
-          <el-button type="danger" :disabled="!history.length" @click="clearHistory">
-            {{ $t('history.clear') }}
+  <div class="history-page">
+    <header class="page-header">
+      <h1>{{ $t('history.title') }}</h1>
+      <p class="subtitle">{{ $t('history.subtitle') }}</p>
+    </header>
+
+    <section v-loading="loading" class="history-content">
+      <AppEmptyState
+        v-if="error"
+        :icon="WarningFilled"
+        :eyebrow="$t('history.error_eyebrow')"
+        :title="$t('history.error_title')"
+        :description="$t('history.error_desc')"
+      >
+        <template #actions>
+          <el-button type="primary" @click="loadHistory">{{ $t('common.retry') }}</el-button>
+        </template>
+      </AppEmptyState>
+
+      <AppEmptyState
+        v-else-if="!history.length"
+        :icon="Clock"
+        :eyebrow="$t('history.empty_eyebrow')"
+        :title="$t('history.empty_title')"
+        :description="$t('history.empty_desc')"
+      >
+        <template #actions>
+          <el-button type="primary" @click="$router.push('/meal-plan')">
+            {{ $t('history.go_generate') }}
           </el-button>
-        </div>
-      </template>
+        </template>
+      </AppEmptyState>
 
-      <el-empty v-if="!history.length" :description="$t('history.empty')">
-        <el-button type="primary" @click="$router.push('/meal-plan')">{{ $t('history.go_generate') }}</el-button>
-      </el-empty>
-
-      <el-timeline v-else>
-        <el-timeline-item
-          v-for="(item, index) in history"
-          :key="index"
-          :timestamp="item.timestamp"
-          placement="top"
-        >
-          <el-card shadow="hover">
-            <div class="history-header">
-              <el-tag>{{ item.health_goal }}</el-tag>
-              <span class="budget">{{ $t('history.budget') }}: ¥{{ item.budget }}</span>
+      <div v-else class="history-list">
+        <article v-for="item in history" :key="item.id" class="history-card">
+          <div class="history-head">
+            <div>
+              <p class="eyebrow">{{ $t('history.session_label') }}</p>
+              <h2>{{ formatDate(item.created_at) }}</h2>
             </div>
-            
-            <el-row :gutter="16" class="meals">
-              <el-col :span="8" v-for="(meal, mealType) in item.meals" :key="mealType">
-                <div class="meal-item">
-                  <div class="meal-type">{{ $t('recipes.' + (mealType as string)) }}</div>
-                  <div class="meal-name">{{ meal.name }}</div>
-                  <div class="meal-info">
-                    {{ meal.calories }} kcal | ¥{{ meal.price }}
+            <div class="head-meta">
+              <span class="meta-pill">{{ goalLabel(item.target.health_goal) }}</span>
+              <span class="meta-pill accent">¥{{ item.target.max_budget }}</span>
+            </div>
+          </div>
+
+          <div class="meal-grid">
+            <section v-for="group in groupMeals(item)" :key="group.key" class="meal-group">
+              <div class="meal-group-head">
+                <span>{{ mealLabel(group.key) }}</span>
+                <span>{{ group.items.length }} {{ $t('meal_plan.items') }}</span>
+              </div>
+
+              <div class="meal-list">
+                <article
+                  v-for="meal in group.items"
+                  :key="`${item.id}-${group.key}-${meal.recipe_id}`"
+                  class="meal-item"
+                >
+                  <div>
+                    <p class="meal-name">{{ meal.recipe_name }}</p>
+                    <p class="meal-info">{{ meal.calories.toFixed(0) }} kcal</p>
                   </div>
-                </div>
-              </el-col>
-            </el-row>
+                  <strong>¥{{ meal.price.toFixed(1) }}</strong>
+                </article>
+              </div>
+            </section>
+          </div>
 
-            <el-divider />
-            
-            <div class="summary">
-              <span>{{ $t('history.total_calories') }}: <strong>{{ item.total_calories }}</strong> kcal</span>
-              <span>{{ $t('history.total_price') }}: <strong>¥{{ item.total_price }}</strong></span>
-            </div>
+          <div class="summary-row">
+            <span>{{ $t('history.total_calories') }} <strong>{{ item.nutrition.total_calories }}</strong> kcal</span>
+            <span>{{ $t('history.total_price') }} <strong>¥{{ item.nutrition.total_price.toFixed(1) }}</strong></span>
+          </div>
 
-            <div class="actions">
-              <el-button size="small" @click="reuse(item)">{{ $t('history.reuse') }}</el-button>
-              <el-button size="small" type="danger" @click="removeItem(index)">{{ $t('common.delete') }}</el-button>
-            </div>
-          </el-card>
-        </el-timeline-item>
-      </el-timeline>
-    </el-card>
+          <div class="actions">
+            <el-button type="primary" @click="reuse(item)">
+              {{ $t('history.reuse') }}
+            </el-button>
+          </div>
+        </article>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { Clock, WarningFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox, ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
+import { mealPlanApi, type MealPlan } from '@/api'
+import AppEmptyState from '@/components/common/AppEmptyState.vue'
 
-interface HistoryItem {
-  timestamp: string
-  health_goal: string
-  budget: number
-  meals: Record<string, { name: string; calories: number; price: number }>
-  total_calories: number
-  total_price: number
-}
-
+const { t, locale } = useI18n()
 const router = useRouter()
-const history = ref<HistoryItem[]>([])
 
-onMounted(() => {
-  loadHistory()
-})
+const history = ref<MealPlan[]>([])
+const loading = ref(false)
+const error = ref(false)
 
-const loadHistory = () => {
-  const saved = localStorage.getItem('meal_plan_history')
-  if (saved) {
-    history.value = JSON.parse(saved)
-  }
-}
-
-const saveHistory = () => {
-  localStorage.setItem('meal_plan_history', JSON.stringify(history.value))
-}
-
-const clearHistory = async () => {
-  try {
-    await ElMessageBox.confirm(t('history.confirm_clear'), t('history.prompt'), {
-      type: 'warning'
+const formatter = computed(
+  () =>
+    new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
     })
-    history.value = []
-    saveHistory()
-    ElMessage.success(t('history.cleared'))
-  } catch {
-    // Cancelled
+)
+
+function goalLabel(goal: string) {
+  return t(`meal_plan.goals.${goal}`)
+}
+
+function mealLabel(type: string) {
+  return t(`recipes.${type}`)
+}
+
+function groupMeals(item: MealPlan) {
+  const order = ['breakfast', 'lunch', 'dinner']
+  return order
+    .map((key) => ({
+      key,
+      items: item.meals.filter((meal) => meal.meal_type === key)
+    }))
+    .filter((group) => group.items.length > 0)
+}
+
+function formatDate(value: string) {
+  return formatter.value.format(new Date(value))
+}
+
+async function loadHistory() {
+  loading.value = true
+  error.value = false
+
+  try {
+    const { data } = await mealPlanApi.getHistory(12)
+    history.value = data
+  } catch (fetchError) {
+    console.error(fetchError)
+    error.value = true
+  } finally {
+    loading.value = false
   }
 }
 
-const removeItem = (index: number) => {
-  history.value.splice(index, 1)
-  saveHistory()
-  ElMessage.success(t('history.deleted'))
-}
+function reuse(item: MealPlan) {
+  const tags = item.target.preferred_tags.join(',')
+  const disliked = item.target.disliked_foods.join(',')
 
-const reuse = (item: HistoryItem) => {
   router.push({
     path: '/meal-plan',
     query: {
-      health_goal: item.health_goal,
-      budget: item.budget
+      reuse_source: 'history',
+      reuse_goal: item.target.health_goal,
+      reuse_budget: String(item.target.max_budget),
+      reuse_tags: tags || undefined,
+      reuse_disliked: disliked || undefined
     }
   })
 }
+
+onMounted(loadHistory)
 </script>
 
 <style scoped>
-.history {
-  max-width: 900px;
-  margin: 0 auto;
+.history-page {
+  display: grid;
+  gap: 24px;
 }
 
-.header {
+.page-header h1 {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: clamp(2rem, 4vw, 2.6rem);
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.history-content {
+  min-height: 240px;
+}
+
+.history-list {
+  display: grid;
+  gap: 18px;
+}
+
+.history-card {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+}
+
+.history-head,
+.summary-row,
+.actions {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
   align-items: center;
 }
 
-.history-header {
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--color-text-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.history-head h2,
+.meal-name,
+.meal-group-head span:first-child {
+  margin: 0;
+  color: var(--color-secondary);
+}
+
+.head-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.meta-pill {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.meta-pill.accent {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--color-primary-dark);
+}
+
+.meal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.meal-group {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f7faf8;
+}
+
+.meal-group-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
 }
 
-.budget {
-  color: #E6A23C;
-  font-weight: bold;
-}
-
-.meals {
-  margin: 16px 0;
+.meal-list {
+  display: grid;
+  gap: 10px;
 }
 
 .meal-item {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
   padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.meal-type {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
+  border-radius: 14px;
+  background: var(--color-surface);
 }
 
 .meal-name {
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 4px;
+  font-weight: 700;
+  word-break: break-word;
 }
 
 .meal-info {
-  font-size: 12px;
-  color: #606266;
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.84rem;
 }
 
-.summary {
-  display: flex;
-  justify-content: space-around;
-  color: #606266;
+.summary-row {
+  flex-wrap: wrap;
+  color: var(--color-text-secondary);
 }
 
-.summary strong {
-  color: #409EFF;
+.summary-row strong {
+  color: var(--color-secondary);
 }
 
 .actions {
-  margin-top: 16px;
-  text-align: right;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .history-card,
+  .history-head,
+  .summary-row,
+  .actions {
+    align-items: flex-start;
+  }
+
+  .history-head,
+  .summary-row,
+  .actions {
+    flex-direction: column;
+  }
+
+  .head-meta {
+    justify-content: flex-start;
+  }
+
+  .actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
+  }
 }
 </style>

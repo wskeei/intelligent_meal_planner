@@ -12,7 +12,13 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const isAuthenticated = ref(Boolean(token.value))
 
-  async function login(username: string, password: string) {
+  async function login(
+    username: string,
+    password: string,
+    options?: {
+      redirectTo?: string
+    }
+  ) {
     const formData = new FormData()
     formData.append('username', username)
     formData.append('password', password)
@@ -24,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
       isAuthenticated.value = true
 
       await fetchUser()
-      router.push('/')
+      router.push(options?.redirectTo ?? '/')
       return true
     } catch (error) {
       console.error('Login failed', error)

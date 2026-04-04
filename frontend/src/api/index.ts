@@ -29,6 +29,8 @@ export interface Recipe {
   meal_type: string[]
   cooking_time: number
   description?: string
+  ingredients?: string[]
+  instructions?: string[]
 }
 
 export interface MealItem {
@@ -88,6 +90,19 @@ export interface CrewTraceEvent {
 
 export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'planning_ready' | 'finalized'
 
+export interface MealChatFollowUpPlan {
+  questions: string[]
+  assistant_message: string
+}
+
+export interface MealChatNegotiationOption {
+  key: string
+  title: string
+  rationale: string
+  budget: number
+  preferred_tags: string[]
+}
+
 export interface NegotiatedMealPlanAlternative {
   option_key: string
   title: string
@@ -106,6 +121,12 @@ export interface MealChatSession {
   messages: ChatMessage[]
   meal_plan: MealPlan | NegotiatedMealPlan | null
   crew_trace: CrewTraceEvent[]
+  profile_snapshot?: Record<string, unknown>
+  preferences_snapshot?: Record<string, unknown>
+  known_facts?: Record<string, unknown>
+  open_questions?: string[]
+  follow_up_plan?: MealChatFollowUpPlan | null
+  negotiation_options?: MealChatNegotiationOption[]
 }
 
 export interface UserProfilePatch {

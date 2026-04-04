@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard">
+  <div class="home-page">
     <section class="hero-card">
       <div class="hero-copy">
         <p class="eyebrow">{{ $t('dashboard.welcome') }}</p>
@@ -8,52 +8,67 @@
       </div>
 
       <div class="hero-actions">
-        <router-link to="/profile">
-          <el-button plain>{{ $t('dashboard.edit_profile') }}</el-button>
-        </router-link>
         <router-link to="/meal-plan">
-          <el-button type="primary">{{ $t('dashboard.start_planning') }}</el-button>
+          <el-button type="primary" size="large">{{ $t('dashboard.start_planning') }}</el-button>
+        </router-link>
+        <router-link to="/profile">
+          <el-button plain size="large">{{ $t('dashboard.complete_profile') }}</el-button>
         </router-link>
       </div>
     </section>
 
-    <el-row :gutter="20" class="stats-row">
-      <el-col :span="24" :md="12">
-        <el-card shadow="hover" class="stat-card">
-          <div class="label">{{ $t('dashboard.current_goal') }}</div>
-          <div class="value text-cap">{{ $t(`meal_plan.goals.${profile.goal}`) }}</div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="24" :md="12">
-        <el-card shadow="hover" class="stat-card">
-          <div class="label">{{ $t('dashboard.profile_complete') }}</div>
-          <div class="value">
-            {{ profileComplete ? '100%' : $t('dashboard.profile_missing') }}
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <section class="action-grid">
-      <el-card class="action-card primary-card" shadow="hover" @click="$router.push('/meal-plan')">
-        <p class="eyebrow">{{ $t('meal_plan.nutritionist') }}</p>
+    <section class="home-grid">
+      <article class="primary-panel">
+        <p class="panel-eyebrow">{{ $t('dashboard.primary_label') }}</p>
         <h2>{{ $t('dashboard.generate_plan') }}</h2>
         <p>{{ $t('dashboard.generate_desc') }}</p>
-        <el-button type="primary">{{ $t('dashboard.launch_chat') }}</el-button>
-      </el-card>
+        <div class="primary-actions">
+          <router-link to="/meal-plan">
+            <el-button type="primary" size="large">{{ $t('dashboard.launch_chat') }}</el-button>
+          </router-link>
+          <router-link to="/history">
+            <el-button plain size="large">{{ $t('dashboard.review_history') }}</el-button>
+          </router-link>
+        </div>
+      </article>
 
-      <div class="side-actions">
-        <el-card class="action-card" shadow="hover" @click="$router.push('/profile')">
-          <h3>{{ $t('dashboard.edit_profile') }}</h3>
-          <p>{{ $t('dashboard.profile_cta') }}</p>
-        </el-card>
+      <aside class="side-stack">
+        <article class="status-card">
+          <div class="status-head">
+            <div>
+              <p class="panel-eyebrow">{{ $t('dashboard.profile_complete') }}</p>
+              <h3>{{ profileCompletionPercent }}%</h3>
+            </div>
+            <span>{{ profileCompletionCompleted }}/{{ profileCompletionTotal }}</span>
+          </div>
 
-        <el-card class="action-card" shadow="hover" @click="$router.push('/history')">
+          <p class="status-copy">
+            {{
+              missingProfileFields.length
+                ? $t('dashboard.profile_missing_detail', { count: missingProfileFields.length })
+                : $t('dashboard.profile_ready')
+            }}
+          </p>
+
+          <ul v-if="missingProfileFields.length" class="missing-list">
+            <li v-for="field in missingProfileFields" :key="field">
+              {{ $t(`profile.field_labels.${field}`) }}
+            </li>
+          </ul>
+
+          <router-link to="/profile?onboarding=1">
+            <el-button plain>{{ $t('dashboard.complete_profile') }}</el-button>
+          </router-link>
+        </article>
+
+        <article class="secondary-card">
           <h3>{{ $t('history.title') }}</h3>
           <p>{{ $t('dashboard.history_cta') }}</p>
-        </el-card>
-      </div>
+          <router-link to="/history">
+            <el-button text type="primary">{{ $t('dashboard.review_history') }}</el-button>
+          </router-link>
+        </article>
+      </aside>
     </section>
   </div>
 </template>
@@ -64,11 +79,17 @@ import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const { profile, profileComplete } = storeToRefs(userStore)
+const {
+  profile,
+  missingProfileFields,
+  profileCompletionCompleted,
+  profileCompletionPercent,
+  profileCompletionTotal
+} = storeToRefs(userStore)
 </script>
 
 <style scoped>
-.dashboard {
+.home-page {
   display: grid;
   gap: 24px;
 }
@@ -80,22 +101,23 @@ const { profile, profileComplete } = storeToRefs(userStore)
   padding: clamp(24px, 4vw, 36px);
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.24), transparent 32%),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%),
     linear-gradient(135deg, #f6fff7, #ffffff 58%, #eef8f0);
   border: 1px solid rgba(34, 197, 94, 0.14);
 }
 
-.hero-copy {
-  max-width: 680px;
-}
-
-.eyebrow {
+.eyebrow,
+.panel-eyebrow {
   margin: 0 0 10px;
   color: var(--color-primary-dark);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.hero-copy {
+  max-width: 680px;
 }
 
 .hero-copy h1 {
@@ -105,112 +127,117 @@ const { profile, profileComplete } = storeToRefs(userStore)
   line-height: 1.05;
 }
 
-.subtitle {
-  margin: 14px 0 0;
+.subtitle,
+.primary-panel p,
+.secondary-card p,
+.status-copy {
   color: var(--color-text-secondary);
-  font-size: 1rem;
   line-height: 1.7;
 }
 
-.hero-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
+.subtitle {
+  margin: 14px 0 0;
+}
+
+.hero-actions,
+.primary-actions,
+.side-stack,
+.missing-list {
+  display: grid;
   gap: 12px;
 }
 
-.stats-row {
-  margin: 0;
+.hero-actions {
+  align-content: center;
 }
 
-.stat-card,
-.action-card {
-  border: none;
-  border-radius: 24px;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
-}
-
-.stat-card .label {
-  color: var(--color-text-light);
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.stat-card .value {
-  margin-top: 10px;
-  color: var(--color-secondary);
-  font-size: 1.8rem;
-  font-weight: 800;
-}
-
-.text-cap {
-  text-transform: capitalize;
-}
-
-.action-grid {
+.home-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
   gap: 20px;
 }
 
-.primary-card {
+.primary-panel,
+.status-card,
+.secondary-card {
   display: grid;
   gap: 14px;
-  padding: 30px;
-  background: linear-gradient(145deg, #10251a, #173728 60%, #1f5137);
-  color: #f0fff5;
-  cursor: pointer;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
 }
 
-.primary-card h2,
-.side-actions h3 {
+.primary-panel {
+  background: linear-gradient(145deg, #10251a, #173728 60%, #1f5137);
+}
+
+.primary-panel h2,
+.secondary-card h3,
+.status-card h3 {
   margin: 0;
 }
 
-.primary-card p {
+.primary-panel h2,
+.primary-panel p,
+.primary-panel .panel-eyebrow {
+  color: #effff5;
+}
+
+.primary-panel p {
   margin: 0;
   max-width: 560px;
-  color: rgba(240, 255, 245, 0.78);
-  line-height: 1.7;
 }
 
-.side-actions {
-  display: grid;
-  gap: 20px;
+.primary-actions {
+  grid-auto-flow: column;
+  justify-content: start;
 }
 
-.side-actions .action-card {
-  cursor: pointer;
+.status-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
 }
 
-.side-actions p {
-  margin: 8px 0 0;
+.status-head h3 {
+  color: var(--color-secondary);
+  font-size: 2rem;
+}
+
+.status-head span {
+  color: var(--color-text-light);
+}
+
+.missing-list {
+  padding-left: 18px;
   color: var(--color-text-secondary);
-  line-height: 1.6;
 }
 
 @media (max-width: 960px) {
   .hero-card,
-  .action-grid {
+  .home-grid {
     grid-template-columns: 1fr;
     display: grid;
   }
 
   .hero-actions {
-    align-items: flex-start;
+    justify-items: start;
   }
 }
 
 @media (max-width: 640px) {
-  .hero-actions {
+  .hero-actions :deep(.el-button),
+  .primary-actions :deep(.el-button),
+  .status-card :deep(.el-button) {
     width: 100%;
+    min-height: 44px;
   }
 
-  .hero-actions :deep(.el-button) {
-    width: 100%;
+  .primary-actions {
+    grid-auto-flow: row;
   }
 }
 </style>

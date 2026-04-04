@@ -9,7 +9,7 @@
       <div class="hero-note">
         <span class="note-chip">{{ $t('meal_plan.session_tip') }}</span>
         <span class="note-chip muted">
-          {{ profileComplete ? $t('meal_plan.sync_profile') : $t('dashboard.profile_missing') }}
+          {{ $t('meal_plan.profile_progress', { completed: profileCompletionCompleted, total: profileCompletionTotal }) }}
         </span>
       </div>
     </section>
@@ -22,11 +22,21 @@
               <h2>{{ $t('meal_plan.chat_title') }}</h2>
               <p>{{ $t('meal_plan.goal_summary') }}</p>
             </div>
-            <el-button text type="primary" :disabled="loading" @click="bootstrapSession">
+            <el-button text type="primary" :disabled="loading" @click="restartSession">
               {{ $t('meal_plan.new_session') }}
             </el-button>
           </div>
         </template>
+
+        <div v-if="reuseSummary" class="reuse-banner">
+          <div>
+            <p class="reuse-eyebrow">{{ $t('history.reuse_ready') }}</p>
+            <p>{{ reuseSummary }}</p>
+          </div>
+          <el-button text type="primary" @click="draft = reuseDraft">
+            {{ $t('meal_plan.use_prefill') }}
+          </el-button>
+        </div>
 
         <div ref="messagesRef" class="messages">
           <div
@@ -65,11 +75,11 @@
             @keydown.enter.exact.prevent="sendMessage"
           />
           <div class="composer-actions">
-            <p>{{ $t('meal_plan.draft_hint') }}</p>
+            <p>{{ composerHint }}</p>
             <el-button
               type="primary"
               :loading="loading"
-              :disabled="loading || !isConversationActive"
+              :disabled="loading || !isConversationActive || !draft.trim()"
               @click="sendMessage"
             >
               {{ $t('meal_plan.send') }}
@@ -80,37 +90,31 @@
 
       <aside class="result-stack">
         <el-card class="status-card" shadow="hover">
-          <p class="eyebrow muted">{{ $t('meal_plan.final_plan') }}</p>
-          <h3>{{ finalPlan ? $t('meal_plan.budget_safe_hint') : $t('meal_plan.awaiting_reply') }}</h3>
-          <p class="status-copy">
-            {{ finalPlan ? goalLabel : $t('meal_plan.session_tip') }}
-          </p>
-        </el-card>
-
-        <el-card class="crew-card" shadow="hover">
-          <template #header>
-            <div class="section-head compact">
-              <div>
-                <h2>{{ $t('meal_plan.crew_title') }}</h2>
-                <p>{{ $t('meal_plan.crew_subtitle') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div v-if="crewTrace.length" class="crew-timeline">
-            <article
-              v-for="event in crewTrace"
-              :key="`${event.agent}-${event.message}`"
-              class="crew-event"
-            >
-              <div class="crew-event-head">
-                <strong>{{ event.agent }}</strong>
-                <span class="crew-status">{{ event.status }}</span>
-              </div>
-              <p>{{ event.message }}</p>
-            </article>
-          </div>
-          <p v-else class="crew-empty">{{ $t('meal_plan.crew_empty') }}</p>
+          <MealChatStatusPanel
+            :eyebrow="$t('meal_plan.status_eyebrow')"
+            :title="phaseTitle"
+            :summary="phaseSummary"
+            :known-title="$t('meal_plan.known_title')"
+            :missing-title="$t('meal_plan.missing_title')"
+            :next-title="$t('meal_plan.next_title')"
+            :completed-copy="$t('meal_plan.missing_done')"
+            :next-action="nextAction"
+            :assistant-hint="followUpPlan?.assistant_message"
+            :known-items="knownItems"
+            :missing-items="missingItems"
+          >
+            <template #actions>
+              <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
+                {{ $t('meal_plan.complete_profile') }}
+              </el-button>
+              <el-button v-if="finalPlan" type="primary" @click="addToShoppingList">
+                {{ $t('meal_plan.add_to_list') }}
+              </el-button>
+              <el-button v-if="finalPlan" plain @click="restartSession">
+                {{ $t('meal_plan.start_over') }}
+              </el-button>
+            </template>
+          </MealChatStatusPanel>
         </el-card>
 
         <el-card v-if="finalPlan" class="result-card" shadow="hover">
@@ -151,11 +155,7 @@
           </div>
 
           <div v-if="planAlternatives.length" class="alternative-list">
-            <article
-              v-for="alternative in planAlternatives"
-              :key="alternative.option_key"
-              class="alternative-card"
-            >
+            <article v-for="alternative in planAlternatives" :key="alternative.option_key" class="alternative-card">
               <div>
                 <p class="alternative-title">{{ alternative.title }}</p>
                 <p class="alternative-rationale">{{ alternative.rationale }}</p>
@@ -163,6 +163,39 @@
               <strong>¥{{ alternative.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
             </article>
           </div>
+
+          <div class="result-actions">
+            <el-button type="primary" @click="addToShoppingList">
+              {{ $t('meal_plan.add_to_list') }}
+            </el-button>
+            <el-button plain @click="restartSession">{{ $t('meal_plan.start_over') }}</el-button>
+          </div>
+        </el-card>
+
+        <el-card class="trace-card" shadow="never">
+          <template #header>
+            <div class="section-head compact">
+              <div>
+                <h2>{{ $t('meal_plan.crew_title') }}</h2>
+                <p>{{ $t('meal_plan.crew_subtitle') }}</p>
+              </div>
+            </div>
+          </template>
+
+          <el-collapse>
+            <el-collapse-item :title="$t('meal_plan.trace_toggle')">
+              <div v-if="crewTrace.length" class="crew-timeline">
+                <article v-for="event in crewTrace" :key="`${event.agent}-${event.message}`" class="crew-event">
+                  <div class="crew-event-head">
+                    <strong>{{ event.agent }}</strong>
+                    <span class="crew-status">{{ event.status }}</span>
+                  </div>
+                  <p>{{ event.message }}</p>
+                </article>
+              </div>
+              <p v-else class="crew-empty">{{ $t('meal_plan.crew_empty') }}</p>
+            </el-collapse-item>
+          </el-collapse>
         </el-card>
       </aside>
     </section>
@@ -174,6 +207,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 
 import {
   mealChatApi,
@@ -183,13 +217,23 @@ import {
   type MealPlan,
   type NegotiatedMealPlan
 } from '@/api'
+import MealChatStatusPanel from '@/components/meal-chat/MealChatStatusPanel.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useShoppingStore } from '@/stores/shopping'
 import { useUserStore } from '@/stores/user'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
+const shoppingStore = useShoppingStore()
 const userStore = useUserStore()
-const { profile, profileComplete } = storeToRefs(userStore)
+const {
+  profile,
+  profileComplete,
+  profileCompletionCompleted,
+  profileCompletionTotal
+} = storeToRefs(userStore)
 
 const sessionId = ref<string | null>(null)
 const currentSession = ref<MealChatSession | null>(null)
@@ -197,6 +241,7 @@ const optimisticMessages = ref<ChatMessage[] | null>(null)
 const draft = ref('')
 const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
+const hasAppliedReuseDraft = ref(false)
 
 const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
 
@@ -217,8 +262,16 @@ const planAlternatives = computed(() => {
 
 const crewTrace = computed<CrewTraceEvent[]>(() => currentSession.value?.crew_trace ?? [])
 
-const isConversationActive = computed(() =>
-  Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
+const sessionProfile = computed<Record<string, unknown>>(() => currentSession.value?.profile_snapshot ?? {})
+const sessionPreferences = computed<Record<string, unknown>>(
+  () => currentSession.value?.preferences_snapshot ?? {}
+)
+const knownFacts = computed<Record<string, unknown>>(() => currentSession.value?.known_facts ?? {})
+const openQuestions = computed(() => currentSession.value?.open_questions ?? [])
+const followUpPlan = computed(() => currentSession.value?.follow_up_plan ?? null)
+
+const isConversationActive = computed(
+  () => Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
 )
 
 const groupedMeals = computed(() => {
@@ -238,10 +291,181 @@ const groupedMeals = computed(() => {
     .map((key) => ({ key, items: buckets.get(key) ?? [] }))
 })
 
-const goalLabel = computed(() => {
-  const goal = finalPlan.value?.target.health_goal ?? profile.value.goal
-  return t(`meal_plan.goals.${goal}`)
+const reuseSeed = computed(() => {
+  const goal = typeof route.query.reuse_goal === 'string' ? route.query.reuse_goal : ''
+  const budget = typeof route.query.reuse_budget === 'string' ? route.query.reuse_budget : ''
+  const tags = typeof route.query.reuse_tags === 'string' ? route.query.reuse_tags : ''
+  const disliked = typeof route.query.reuse_disliked === 'string' ? route.query.reuse_disliked : ''
+
+  if (!goal && !budget && !tags && !disliked) return null
+
+  return {
+    goal,
+    budget,
+    tags: tags ? tags.split(',').filter(Boolean) : [],
+    disliked: disliked ? disliked.split(',').filter(Boolean) : []
+  }
 })
+
+const reuseDraft = computed(() => {
+  if (!reuseSeed.value) return ''
+
+  const parts = []
+  if (reuseSeed.value.goal) {
+    parts.push(`${t('meal_plan.health_goal')}是${t(`meal_plan.goals.${reuseSeed.value.goal}`)}`)
+  }
+  if (reuseSeed.value.budget) {
+    parts.push(`${t('meal_plan.budget')}是${reuseSeed.value.budget} 元`)
+  }
+  if (reuseSeed.value.tags.length) {
+    parts.push(`${t('meal_plan.preferred_tags')}包括${reuseSeed.value.tags.join('、')}`)
+  }
+  if (reuseSeed.value.disliked.length) {
+    parts.push(`${t('meal_plan.disliked_foods')}是${reuseSeed.value.disliked.join('、')}`)
+  }
+
+  return `我想沿用上次的设定：${parts.join('，')}。`
+})
+
+const reuseSummary = computed(() => {
+  if (!reuseSeed.value) return ''
+
+  const parts = []
+  if (reuseSeed.value.goal) {
+    parts.push(t(`meal_plan.goals.${reuseSeed.value.goal}`))
+  }
+  if (reuseSeed.value.budget) {
+    parts.push(`¥${reuseSeed.value.budget}`)
+  }
+  if (reuseSeed.value.tags.length) {
+    parts.push(reuseSeed.value.tags.join(' / '))
+  }
+
+  return parts.join(' · ')
+})
+
+const phaseTitle = computed(() => {
+  switch (currentSession.value?.status) {
+    case 'discovering':
+      return t('meal_plan.phase.discovering')
+    case 'negotiating':
+      return t('meal_plan.phase.negotiating')
+    case 'planning':
+    case 'planning_ready':
+      return t('meal_plan.phase.planning')
+    case 'finalized':
+      return t('meal_plan.phase.finalized')
+    default:
+      return t('meal_plan.phase.discovering')
+  }
+})
+
+const phaseSummary = computed(() => {
+  switch (currentSession.value?.status) {
+    case 'discovering':
+      return t('meal_plan.phase_summary.discovering')
+    case 'negotiating':
+      return t('meal_plan.phase_summary.negotiating')
+    case 'planning':
+    case 'planning_ready':
+      return t('meal_plan.phase_summary.planning')
+    case 'finalized':
+      return t('meal_plan.phase_summary.finalized')
+    default:
+      return t('meal_plan.phase_summary.discovering')
+  }
+})
+
+const missingFieldKeys = computed<string[]>(() => {
+  const value = knownFacts.value.missing_fields
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : openQuestions.value
+})
+
+const missingItems = computed(() =>
+  missingFieldKeys.value.map((field) => ({
+    label: fieldLabel(field),
+    hint: fieldReason(field)
+  }))
+)
+
+const knownItems = computed(() => {
+  const items: Array<{ label: string; value: string }> = []
+  const pushItem = (label: string, value: unknown) => {
+    if (value === null || value === undefined || value === '') return
+    items.push({ label, value: String(value) })
+  }
+
+  pushItem(t('meal_plan.field_labels.health_goal'), goalText(sessionPreferences.value.health_goal))
+  pushItem(t('meal_plan.field_labels.budget'), budgetText(sessionPreferences.value.budget))
+  pushItem(t('meal_plan.field_labels.gender'), optionText('gender', sessionProfile.value.gender))
+  pushItem(t('meal_plan.field_labels.age'), sessionProfile.value.age ? `${sessionProfile.value.age}` : '')
+  pushItem(t('meal_plan.field_labels.height'), sessionProfile.value.height ? `${sessionProfile.value.height} cm` : '')
+  pushItem(t('meal_plan.field_labels.weight'), sessionProfile.value.weight ? `${sessionProfile.value.weight} kg` : '')
+  pushItem(
+    t('meal_plan.field_labels.activity_level'),
+    optionText('activity_level', sessionProfile.value.activity_level)
+  )
+
+  const preferredTags = Array.isArray(sessionPreferences.value.preferred_tags)
+    ? sessionPreferences.value.preferred_tags.join('、')
+    : ''
+  const dislikedFoods = Array.isArray(sessionPreferences.value.disliked_foods)
+    ? sessionPreferences.value.disliked_foods.join('、')
+    : ''
+
+  pushItem(t('meal_plan.field_labels.preferred_tags'), preferredTags)
+  pushItem(t('meal_plan.field_labels.disliked_foods'), dislikedFoods)
+
+  return items
+})
+
+const nextAction = computed(() => {
+  if (followUpPlan.value?.assistant_message) {
+    return followUpPlan.value.assistant_message
+  }
+
+  if (currentSession.value?.status === 'finalized') {
+    return t('meal_plan.next_after_final')
+  }
+
+  if (openQuestions.value.length) {
+    return t('meal_plan.answer_next', { field: fieldLabel(openQuestions.value[0]) })
+  }
+
+  return t('meal_plan.session_tip')
+})
+
+const composerHint = computed(() => {
+  if (!isConversationActive.value) {
+    return t('meal_plan.final_hint')
+  }
+
+  return reuseSeed.value && !hasAppliedReuseDraft.value
+    ? t('meal_plan.prefill_hint')
+    : t('meal_plan.draft_hint')
+})
+
+function goalText(goal: unknown) {
+  return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : ''
+}
+
+function budgetText(budget: unknown) {
+  return budget ? `¥${budget}` : ''
+}
+
+function optionText(type: 'gender' | 'activity_level', value: unknown) {
+  if (!value || typeof value !== 'string') return ''
+  if (type === 'gender') return t(`auth.${value}`)
+  return t(`auth.activity.${value}`)
+}
+
+function fieldLabel(field: string) {
+  return t(`meal_plan.field_labels.${field}`)
+}
+
+function fieldReason(field: string) {
+  return t(`meal_plan.field_reasons.${field}`)
+}
 
 function mealLabel(type: string) {
   return t(`recipes.${type}`)
@@ -265,6 +489,12 @@ async function bootstrapSession() {
     sessionId.value = data.session_id
     currentSession.value = data
     optimisticMessages.value = null
+
+    if (reuseDraft.value && !hasAppliedReuseDraft.value) {
+      draft.value = reuseDraft.value
+      hasAppliedReuseDraft.value = true
+    }
+
     await scrollToBottom()
   } catch (error) {
     console.error(error)
@@ -298,6 +528,22 @@ async function sendMessage() {
   }
 }
 
+function addToShoppingList() {
+  if (!finalPlan.value) return
+  shoppingStore.addItemsFromMealPlan(finalPlan.value)
+  ElMessage.success(t('shopping.import_success'))
+}
+
+async function restartSession() {
+  if (route.query.reuse_goal || route.query.reuse_budget || route.query.reuse_tags || route.query.reuse_disliked) {
+    await router.replace({ path: '/meal-plan' })
+  }
+
+  hasAppliedReuseDraft.value = false
+  draft.value = ''
+  await bootstrapSession()
+}
+
 onMounted(async () => {
   await bootstrapSession()
 })
@@ -316,7 +562,7 @@ onMounted(async () => {
   padding: clamp(20px, 3vw, 32px);
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(74, 222, 128, 0.22), transparent 30%),
+    radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 32%),
     linear-gradient(140deg, #ffffff, #f4fbf5 55%, #eef6f1);
   border: 1px solid rgba(34, 197, 94, 0.12);
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
@@ -326,8 +572,9 @@ onMounted(async () => {
   max-width: 720px;
 }
 
-.eyebrow {
-  margin-bottom: 8px;
+.eyebrow,
+.reuse-eyebrow {
+  margin: 0 0 8px;
   color: var(--color-primary-dark);
   font-size: 0.82rem;
   font-weight: 700;
@@ -366,26 +613,34 @@ onMounted(async () => {
   font-weight: 600;
 }
 
-.note-chip.muted,
-.eyebrow.muted {
+.note-chip.muted {
   background: rgba(148, 163, 184, 0.12);
   color: var(--color-text-secondary);
 }
 
 .chat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
   gap: 24px;
   align-items: start;
 }
 
 .chat-card,
 .status-card,
-.crew-card,
+.trace-card,
 .result-card {
   border: none;
   border-radius: 24px;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.status-card {
+  background: linear-gradient(160deg, #10251a, #173728);
+  color: #effff5;
+}
+
+.trace-card {
+  background: linear-gradient(180deg, #ffffff, #f7faf8);
 }
 
 .section-head {
@@ -405,6 +660,23 @@ onMounted(async () => {
   margin: 4px 0 0;
   color: var(--color-text-secondary);
   font-size: 0.92rem;
+}
+
+.reuse-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f7faf8;
+  margin-bottom: 18px;
+}
+
+.reuse-banner p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .messages {
@@ -441,6 +713,7 @@ onMounted(async () => {
   color: var(--color-text-main);
   line-height: 1.7;
   border: 1px solid rgba(15, 23, 42, 0.06);
+  white-space: pre-wrap;
 }
 
 .message-row.user .bubble {
@@ -496,71 +769,6 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.status-card {
-  background: linear-gradient(160deg, #10251a, #173728);
-  color: #effff5;
-}
-
-.status-card h3 {
-  margin: 8px 0 10px;
-  font-size: 1.2rem;
-}
-
-.crew-card {
-  background: linear-gradient(180deg, #ffffff, #f7faf8);
-}
-
-.crew-timeline {
-  display: grid;
-  gap: 12px;
-}
-
-.crew-event {
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: #f8fbf8;
-  border: 1px solid rgba(34, 197, 94, 0.12);
-}
-
-.crew-event-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.crew-event-head strong {
-  color: var(--color-secondary);
-}
-
-.crew-event p {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-.crew-status {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
-  font-size: 0.76rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.crew-empty {
-  margin: 0;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-.status-copy {
-  color: rgba(239, 255, 245, 0.78);
-  line-height: 1.6;
-}
-
 .price-pill {
   padding: 10px 14px;
   border-radius: 999px;
@@ -580,56 +788,76 @@ onMounted(async () => {
   background: #f8fbf8;
 }
 
-.meal-group-head {
+.meal-group-head,
+.meal-item,
+.summary-row,
+.result-actions,
+.crew-event-head {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+.meal-group-head {
   margin-bottom: 12px;
 }
 
-.meal-label {
+.meal-label,
+.alternative-title,
+.meal-name,
+.crew-event-head strong {
   color: var(--color-secondary);
+}
+
+.meal-label,
+.alternative-title,
+.meal-name {
   font-weight: 700;
 }
 
+.meal-count,
+.meal-metrics,
+.alternative-rationale,
+.crew-event p,
+.crew-empty {
+  color: var(--color-text-secondary);
+}
+
 .meal-count {
-  color: var(--color-text-light);
   font-size: 0.82rem;
 }
 
-.meal-list {
+.meal-list,
+.alternative-list,
+.crew-timeline {
   display: grid;
   gap: 10px;
 }
 
-.meal-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.meal-item,
+.alternative-card,
+.crew-event {
   padding: 12px 14px;
   border-radius: 14px;
   background: #ffffff;
 }
 
-.alternative-item {
-  align-items: flex-start;
+.meal-item {
+  align-items: center;
 }
 
 .meal-name {
   margin: 0;
-  font-weight: 700;
-  color: var(--color-secondary);
 }
 
-.meal-metrics {
+.meal-metrics,
+.alternative-rationale,
+.crew-event p {
   margin: 4px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 .summary-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-top: 18px;
   padding-top: 18px;
@@ -642,33 +870,23 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
-.alternative-list {
-  margin-top: 16px;
-  display: grid;
-  gap: 10px;
+.result-actions {
+  flex-wrap: wrap;
+  margin-top: 18px;
 }
 
-.alternative-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.2);
+.crew-event {
+  border: 1px solid rgba(34, 197, 94, 0.12);
 }
 
-.alternative-title {
-  margin: 0;
+.crew-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  font-size: 0.76rem;
   font-weight: 700;
-  color: var(--color-secondary);
-}
-
-.alternative-rationale {
-  margin: 4px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  line-height: 1.5;
+  text-transform: uppercase;
 }
 
 @keyframes pulse {
@@ -708,13 +926,23 @@ onMounted(async () => {
 
   .composer-actions,
   .meal-group-head,
-  .summary-row {
+  .summary-row,
+  .reuse-banner,
+  .result-actions,
+  .meal-item,
+  .section-head {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .price-pill {
     align-self: flex-start;
+  }
+
+  .result-actions :deep(.el-button),
+  .status-card :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
   }
 }
 </style>
