@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+import importlib
 from pathlib import Path
 
 
@@ -33,3 +34,9 @@ def test_agent_deprecation_message_does_not_crash_with_gbk_stdout():
     result = _run_main_snippet("import main; main.test_agent()")
 
     assert result.returncode == 0, result.stderr
+
+
+def test_legacy_agents_package_no_longer_exports_runtime_stubs():
+    module = importlib.import_module("intelligent_meal_planner.agents")
+
+    assert getattr(module, "__all__", []) == []
