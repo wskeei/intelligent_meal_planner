@@ -1,127 +1,49 @@
-from types import SimpleNamespace
-
 from intelligent_meal_planner.meal_chat.orchestrator import MealChatOrchestrator
 from intelligent_meal_planner.meal_chat.session_schema import ConversationMemory
-from intelligent_meal_planner.meal_chat.types import CrewTurnResult
 
 
-class FakeCrewRuntime:
-    def __init__(self, result):
-        self.result = result
-        self.calls = []
-
+class FakeIntake:
     def run_turn(self, user_message, memory):
-        self.calls.append(
+        memory.phase = "planning_ready"
+        memory.preferences["budget"] = 120.0
+        return type(
+            "Result",
+            (),
             {
-                "user_message": user_message,
+                "phase": "planning_ready",
+                "assistant_message": "信息已齐，可以开始协作配餐。",
                 "memory": memory,
-            }
-        )
-        return self.result
+                "ready_for_crew": True,
+                "crew_payload": {"budget": 120.0},
+            },
+        )()
 
 
-class FakePlanner:
-    def generate(self, *_args, **_kwargs):
-        return {}
+class FakeCrewRunner:
+    def run(self, memory, user):
+        del memory
+        del user
+        return {
+            "phase": "finalized",
+            "assistant_message": "完成",
+            "meal_plan": None,
+            "events": [],
+        }
 
 
-def _user(**overrides):
-    base = {
-        "id": 1,
-        "gender": "male",
-        "age": 24,
-        "height": 175,
-        "weight": 68,
-        "activity_level": "moderate",
-        "health_goal": "healthy",
-    }
-    base.update(overrides)
-    return SimpleNamespace(**base)
-
-
-def _session(**overrides):
-    base = {
-        "status": "discovering",
-        "collected_slots": {},
-        "hidden_targets": None,
-        "final_plan": None,
-    }
-    base.update(overrides)
-    return SimpleNamespace(**base)
-
-
-def test_orchestrator_allows_budget_revision_after_negotiation():
-    runtime = FakeCrewRuntime(
-        result=CrewTurnResult(
-            phase="planning",
-            assistant_message="预算调到 200 元后，我可以继续给你两套方案。",
-            memory=ConversationMemory(
-                phase="planning",
-                preferences={"budget": 200.0},
-            ),
-            meal_plan=None,
-        )
+def test_orchestrator_switches_to_crew_stage_once_intake_is_complete():
+    orchestrator = MealChatOrchestrator(
+        intake_runtime=FakeIntake(),
+        crew_runner=FakeCrewRunner(),
     )
-    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
-    session = _session(
-        status="negotiating",
-        collected_slots={"budget": 100.0},
-    )
+    session = type(
+        "Session",
+        (),
+        {"status": "discovering", "collected_slots": {}, "final_plan": None},
+    )()
+    user = type("User", (), {"id": 1})()
 
-    response = orchestrator.advance(_user(), session, "预算设置 200 元")
+    response = orchestrator.advance(user, session, "预算120元，增肌，高蛋白")
 
-    assert response["status"] == "planning"
-    assert "200 元" in response["assistant_message"]
-    assert session.collected_slots["preferences"]["budget"] == 200.0
-    assert runtime.calls[0]["memory"].phase == "discovering"
-
-
-def test_orchestrator_returns_negotiation_trace_from_runtime():
-    runtime = FakeCrewRuntime(
-        result=CrewTurnResult(
-            phase="negotiating",
-            assistant_message="当前预算偏紧，我先给你两个方向。",
-            memory=ConversationMemory(
-                phase="negotiating",
-                preferences={"budget": 100.0},
-            ),
-            negotiation_options=[],
-        )
-    )
-    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
-
-    response = orchestrator.advance(_user(), _session(), "预算 100 元")
-
-    assert response["status"] == "negotiating"
-    assert response["trace"]["phase"] == "negotiating"
-    assert response["trace"]["memory"]["preferences"]["budget"] == 100.0
-
-
-def test_orchestrator_persists_clarification_trace_metadata():
-    runtime = FakeCrewRuntime(
-        result=CrewTurnResult(
-            phase="discovering",
-            assistant_message="我先确认一下预算，这样后面的方案会更准。",
-            memory=ConversationMemory(
-                phase="discovering",
-                preferences={"health_goal": "lose_weight"},
-                known_facts={
-                    "preference_confidence": 0.61,
-                    "missing_fields": ["budget"],
-                    "clarification_reason": "missing_required_fields",
-                },
-                open_questions=["budget"],
-            ),
-        )
-    )
-    orchestrator = MealChatOrchestrator(runtime=runtime, planner=FakePlanner())
-
-    response = orchestrator.advance(_user(), _session(), "最近想减脂")
-
-    assert response["status"] == "discovering"
-    assert response["trace"]["open_questions"] == ["budget"]
-    assert (
-        response["trace"]["known_facts"]["clarification_reason"]
-        == "missing_required_fields"
-    )
-    assert response["trace"]["memory"]["open_questions"] == ["budget"]
+    assert response["status"] == "finalized"
+    assert response["trace"]["phase"] == "finalized"

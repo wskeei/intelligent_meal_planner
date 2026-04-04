@@ -22,6 +22,14 @@ class ParsedTurn(BaseModel):
     debug: ExtractionDebug = Field(default_factory=ExtractionDebug)
 
 
+class IntakeTurnResult(BaseModel):
+    phase: str
+    assistant_message: str
+    memory: ConversationMemory
+    ready_for_crew: bool = False
+    crew_payload: dict | None = None
+
+
 class CrewTurnResult(BaseModel):
     phase: str
     assistant_message: str
