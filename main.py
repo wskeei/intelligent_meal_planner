@@ -47,9 +47,9 @@ def start_api():
 def train_model():
     """训练 DQN 模型。"""
     print("开始训练 DQN 模型...")
-    from src.intelligent_meal_planner.rl.train_dqn import train_dqn
+    from scripts.train_dqn_maskable import train
 
-    train_dqn(total_timesteps=50000)
+    train(total_timesteps=50000)
 
 
 def test_agent():

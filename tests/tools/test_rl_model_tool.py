@@ -1,7 +1,7 @@
 from intelligent_meal_planner.tools import rl_model_tool
 
 
-def test_resolve_model_path_prefers_dqn_when_ppo_is_missing(tmp_path):
+def test_resolve_model_path_only_accepts_dqn_artifacts(tmp_path):
     models_dir = tmp_path / "models"
     models_dir.mkdir()
     dqn_path = models_dir / "dqn_meal_best.pt"
@@ -10,6 +10,18 @@ def test_resolve_model_path_prefers_dqn_when_ppo_is_missing(tmp_path):
     resolved = rl_model_tool.resolve_model_path(tmp_path)
 
     assert resolved == dqn_path
+
+
+def test_resolve_model_path_raises_when_no_dqn_model_exists(tmp_path):
+    models_dir = tmp_path / "models"
+    models_dir.mkdir()
+
+    try:
+        rl_model_tool.resolve_model_path(tmp_path)
+    except FileNotFoundError as exc:
+        assert "DQN" in str(exc)
+    else:
+        raise AssertionError("expected FileNotFoundError")
 
 
 def test_rl_model_tool_runs_inference_with_dqn_backend(tmp_path, monkeypatch):

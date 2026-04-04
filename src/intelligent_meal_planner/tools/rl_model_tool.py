@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-from sb3_contrib import MaskablePPO
 
 from ..rl.environment import MealPlanningEnv
 from ..rl.dqn import MaskableDQNAgent
@@ -14,24 +13,23 @@ from ..rl.dqn import MaskableDQNAgent
 def resolve_model_path(project_root: Path) -> Path:
     models_dir = project_root / "models"
     candidates = (
-        models_dir / "best_model.zip",
-        models_dir / "ppo_meal_v2_final.zip",
         models_dir / "dqn_meal_best.pt",
         models_dir / "dqn_meal_final.pt",
     )
     for candidate in candidates:
         if candidate.exists():
             return candidate
-    return candidates[0]
+    checked_paths = ", ".join(str(path) for path in candidates)
+    raise FileNotFoundError(f"未找到 DQN 模型文件，已检查: {checked_paths}")
 
 
 class RLModelTool:
-    """Load the trained PPO model and produce a meal plan JSON payload."""
+    """Load the trained DQN model and produce a meal plan JSON payload."""
 
     def __init__(self, model_path: Optional[str] = None):
         self.name = "强化学习配餐模型"
         self.description = (
-            "使用训练好的 MaskablePPO 模型生成一日三餐方案，"
+            "使用训练好的 DQN 模型生成一日三餐方案，"
             "输入营养目标、预算和饮食限制，返回结构化结果。"
         )
 
@@ -43,21 +41,13 @@ class RLModelTool:
         if not self.model_path.exists():
             raise FileNotFoundError(f"模型文件不存在: {self.model_path}")
 
-        self.backend = self._detect_backend(self.model_path)
-        self.model: Optional[MaskablePPO | MaskableDQNAgent] = None
+        self.backend = "dqn"
+        self.model: Optional[MaskableDQNAgent] = None
         self.env: Optional[MealPlanningEnv] = None
 
     def _load_model(self) -> None:
         if self.model is None:
-            if self.backend == "ppo":
-                self.model = MaskablePPO.load(self.model_path)
-            else:
-                self.model = MaskableDQNAgent.from_pretrained(str(self.model_path))
-
-    def _detect_backend(self, model_path: Path) -> str:
-        if model_path.suffix == ".pt":
-            return "dqn"
-        return "ppo"
+            self.model = MaskableDQNAgent.from_pretrained(str(self.model_path))
 
     def _run(
         self,
@@ -119,21 +109,14 @@ class RLModelTool:
             if not action_masks.any():
                 return {}, self._build_metrics(final_reward=reward), "budget_infeasible"
 
-            if self.backend == "ppo":
-                action, _states = self.model.predict(
-                    obs,
-                    action_masks=action_masks,
-                    deterministic=True,
-                )
-            else:
-                agent = self.model
-                trimmed_mask = action_masks[: agent.action_dim]
-                action = agent.select_action(
-                    obs,
-                    trimmed_mask,
-                    step=getattr(agent, "train_step", 0),
-                    deterministic=True,
-                )
+            agent = self.model
+            trimmed_mask = action_masks[: agent.action_dim]
+            action = agent.select_action(
+                obs,
+                trimmed_mask,
+                step=getattr(agent, "train_step", 0),
+                deterministic=True,
+            )
 
             obs, reward, terminated, truncated, info = self.env.step(action)
             done = terminated or truncated
