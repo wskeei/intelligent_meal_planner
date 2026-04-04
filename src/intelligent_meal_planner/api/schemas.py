@@ -184,3 +184,4 @@ class MealChatSessionResponse(BaseModel):
     status: str
     messages: List[ChatMessage]
     meal_plan: Optional[dict] = None
+    crew_trace: List[dict] = Field(default_factory=list)

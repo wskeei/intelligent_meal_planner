@@ -27,7 +27,9 @@ class FakeCrewRunner:
             "phase": "finalized",
             "assistant_message": "完成",
             "meal_plan": None,
-            "events": [],
+            "events": [
+                {"agent": "需求审查专员", "status": "completed", "message": "已确认用户需求"}
+            ],
         }
 
 
@@ -47,3 +49,5 @@ def test_orchestrator_switches_to_crew_stage_once_intake_is_complete():
 
     assert response["status"] == "finalized"
     assert response["trace"]["phase"] == "finalized"
+    assert response["trace"]["crew_trace"][0]["agent"] == "需求审查专员"
+    assert session.collected_slots["crew_events"][0]["agent"] == "需求审查专员"

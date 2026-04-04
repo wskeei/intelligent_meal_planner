@@ -164,3 +164,31 @@ def test_send_message_accepts_dual_plan_payload(client, auth_header, monkeypatch
 
     assert response.status_code == 200
     assert "alternatives" in response.json()["meal_plan"]
+
+
+def test_send_message_returns_visible_crew_events(client, auth_header, monkeypatch):
+    fake_response = {
+        "session_id": "session001",
+        "status": "finalized",
+        "messages": [
+            {"role": "assistant", "content": "多智能体协作已完成，我给你整理好了方案。"}
+        ],
+        "meal_plan": {"id": "plan001", "meals": [], "nutrition": {}, "target": {}, "score": 10},
+        "crew_trace": [
+            {"agent": "需求审查专员", "status": "completed", "message": "需求已确认"},
+            {"agent": "DQN 配餐师", "status": "completed", "message": "DQN 配餐完成"},
+        ],
+    }
+    monkeypatch.setattr(
+        "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
+        lambda db, user, session_id, content: fake_response,
+    )
+
+    response = client.post(
+        "/api/meal-chat/sessions/session001/messages",
+        headers=auth_header,
+        json={"content": "给我方案"},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["crew_trace"]) == 2
