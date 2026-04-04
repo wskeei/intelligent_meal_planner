@@ -29,6 +29,9 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
+  --overlay-enter-duration: 420ms;
+  --overlay-exit-duration: 260ms;
+  --overlay-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 * {
@@ -104,4 +107,11 @@ video {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --overlay-enter-duration: 1ms;
+    --overlay-exit-duration: 1ms;
+  }
 }

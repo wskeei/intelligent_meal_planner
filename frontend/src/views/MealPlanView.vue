@@ -1,5 +1,5 @@
 <template>
-  <div class="meal-chat-page">
+  <div class="meal-chat-page" :class="{ 'overlay-active': overlayVisible }">
     <section class="hero-shell">
       <div class="hero-copy">
         <p class="eyebrow">{{ $t('meal_plan.nutritionist') }}</p>
@@ -65,7 +65,7 @@
             </div>
           </div>
 
-          <div v-if="loading" class="message-row assistant pending">
+          <div v-if="loading && overlayMode !== 'generating'" class="message-row assistant pending">
             <div class="message-meta">
               <span>{{ $t('meal_plan.nutritionist') }}</span>
             </div>
@@ -100,7 +100,7 @@
             <p>{{ composerHint }}</p>
             <el-button
               type="primary"
-              :loading="loading"
+              :loading="loading && overlayMode !== 'generating'"
               :disabled="loading || !isConversationActive || !draft.trim()"
               @click="sendMessage"
             >
@@ -110,7 +110,7 @@
         </div>
       </el-card>
 
-      <aside class="result-stack">
+      <aside class="result-stack" :class="{ muted: overlayVisible }">
         <el-card class="status-card" shadow="hover">
           <MealChatStatusPanel
             :eyebrow="$t('meal_plan.status_eyebrow')"
@@ -129,7 +129,22 @@
               <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
                 {{ $t('meal_plan.complete_profile') }}
               </el-button>
-              <el-button v-if="finalPlan" type="primary" @click="addToShoppingList">
+              <el-button
+                v-if="canGenerate"
+                type="primary"
+                :loading="overlayMode === 'generating'"
+                @click="startGenerationSequence"
+              >
+                {{ $t('meal_plan.generate_plan') }}
+              </el-button>
+              <el-button
+                v-else-if="finalPlan && overlayMode !== 'result'"
+                type="primary"
+                @click="openResultOverlay"
+              >
+                {{ $t('meal_plan.view_result') }}
+              </el-button>
+              <el-button v-if="finalPlan" plain @click="addToShoppingList">
                 {{ $t('meal_plan.add_to_list') }}
               </el-button>
               <el-button v-if="finalPlan" plain @click="restartSession">
@@ -137,61 +152,6 @@
               </el-button>
             </template>
           </MealChatStatusPanel>
-        </el-card>
-
-        <el-card v-if="finalPlan" class="result-card" shadow="hover">
-          <template #header>
-            <div class="section-head compact">
-              <div>
-                <h2>{{ $t('meal_plan.final_plan') }}</h2>
-                <p>{{ $t('meal_plan.budget_safe_hint') }}</p>
-              </div>
-              <div class="price-pill">¥{{ finalPlan.nutrition.total_price.toFixed(1) }}</div>
-            </div>
-          </template>
-
-          <div class="meal-groups">
-            <section v-for="group in groupedMeals" :key="group.key" class="meal-group">
-              <div class="meal-group-head">
-                <span class="meal-label">{{ mealLabel(group.key) }}</span>
-                <span class="meal-count">{{ group.items.length }} {{ $t('meal_plan.items') }}</span>
-              </div>
-
-              <div class="meal-list">
-                <article v-for="meal in group.items" :key="`${group.key}-${meal.recipe_id}`" class="meal-item">
-                  <div>
-                    <p class="meal-name">{{ meal.recipe_name }}</p>
-                    <p class="meal-metrics">
-                      {{ meal.calories.toFixed(0) }} kcal · {{ meal.protein.toFixed(0) }}g P
-                    </p>
-                  </div>
-                  <strong>¥{{ meal.price.toFixed(1) }}</strong>
-                </article>
-              </div>
-            </section>
-          </div>
-
-          <div class="summary-row">
-            <span>{{ $t('meal_plan.total_cost') }}</span>
-            <strong>¥{{ finalPlan.nutrition.total_price.toFixed(1) }}</strong>
-          </div>
-
-          <div v-if="planAlternatives.length" class="alternative-list">
-            <article v-for="alternative in planAlternatives" :key="alternative.option_key" class="alternative-card">
-              <div>
-                <p class="alternative-title">{{ alternative.title }}</p>
-                <p class="alternative-rationale">{{ alternative.rationale }}</p>
-              </div>
-              <strong>¥{{ alternative.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
-            </article>
-          </div>
-
-          <div class="result-actions">
-            <el-button type="primary" @click="addToShoppingList">
-              {{ $t('meal_plan.add_to_list') }}
-            </el-button>
-            <el-button plain @click="restartSession">{{ $t('meal_plan.start_over') }}</el-button>
-          </div>
         </el-card>
 
         <el-card class="trace-card" shadow="never">
@@ -222,6 +182,18 @@
         </el-card>
       </aside>
     </section>
+
+    <MealChatGenerationOverlay :visible="overlayMode === 'generating'" />
+    <MealChatResultOverlay
+      :visible="overlayMode === 'result' && Boolean(finalPlan)"
+      :meal-plan="finalPlan"
+      :alternatives="planAlternatives"
+      :crew-trace="crewTrace"
+      :preferences="sessionPreferences"
+      @return-to-chat="handleReturnToChat"
+      @add-to-list="addToShoppingList"
+      @start-over="restartSession"
+    />
   </div>
 </template>
 
@@ -240,6 +212,8 @@ import {
   type MealPlan,
   type NegotiatedMealPlan
 } from '@/api'
+import MealChatGenerationOverlay from '@/components/meal-chat/MealChatGenerationOverlay.vue'
+import MealChatResultOverlay from '@/components/meal-chat/MealChatResultOverlay.vue'
 import MealChatStatusPanel from '@/components/meal-chat/MealChatStatusPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useShoppingStore } from '@/stores/shopping'
@@ -267,6 +241,8 @@ const messagesRef = ref<HTMLElement | null>(null)
 const hasAppliedReuseDraft = ref(false)
 const sessionError = ref('')
 const messageError = ref('')
+const overlayMode = ref<'hidden' | 'generating' | 'result'>('hidden')
+const generationStartedAt = ref<number | null>(null)
 const CANONICAL_MISSING_FIELDS = new Set([
   'gender',
   'age',
@@ -279,6 +255,7 @@ const CANONICAL_MISSING_FIELDS = new Set([
   'disliked_foods'
 ])
 
+const overlayVisible = computed(() => overlayMode.value !== 'hidden')
 const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
 
 function isNegotiatedMealPlan(mealPlan: MealPlan | NegotiatedMealPlan): mealPlan is NegotiatedMealPlan {
@@ -297,7 +274,6 @@ const planAlternatives = computed(() => {
 })
 
 const crewTrace = computed<CrewTraceEvent[]>(() => currentSession.value?.crew_trace ?? [])
-
 const sessionProfile = computed<Record<string, unknown>>(() => currentSession.value?.profile_snapshot ?? {})
 const sessionPreferences = computed<Record<string, unknown>>(
   () => currentSession.value?.preferences_snapshot ?? {}
@@ -306,25 +282,22 @@ const knownFacts = computed<Record<string, unknown>>(() => currentSession.value?
 const openQuestions = computed(() => currentSession.value?.open_questions ?? [])
 const followUpPlan = computed(() => currentSession.value?.follow_up_plan ?? null)
 
-const isConversationActive = computed(
-  () => Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
-)
+const canGenerate = computed(() => {
+  const value = currentSession.value?.presentation?.can_generate
+  return typeof value === 'boolean' ? value : currentSession.value?.status === 'planning_ready'
+})
 
-const groupedMeals = computed(() => {
-  const order = ['breakfast', 'lunch', 'dinner']
-  const buckets = new Map<string, NonNullable<MealPlan['meals']>>()
+const hasResultOverlay = computed(() => {
+  const value = currentSession.value?.presentation?.has_result_overlay
+  return typeof value === 'boolean' ? value : currentSession.value?.status === 'finalized'
+})
 
-  if (!finalPlan.value) return []
-
-  for (const meal of finalPlan.value.meals) {
-    const list = buckets.get(meal.meal_type) ?? []
-    list.push(meal)
-    buckets.set(meal.meal_type, list)
-  }
-
-  return order
-    .filter((key) => buckets.has(key))
-    .map((key) => ({ key, items: buckets.get(key) ?? [] }))
+const isConversationActive = computed(() => {
+  return (
+    Boolean(currentSession.value) &&
+    currentSession.value?.status !== 'finalized' &&
+    overlayMode.value !== 'generating'
+  )
 })
 
 const reuseSeed = computed(() => {
@@ -464,10 +437,10 @@ const knownItems = computed(() => {
   )
 
   const preferredTags = Array.isArray(sessionPreferences.value.preferred_tags)
-    ? sessionPreferences.value.preferred_tags.join('、')
+    ? sessionPreferences.value.preferred_tags.join(localeJoiner.value)
     : ''
   const dislikedFoods = Array.isArray(sessionPreferences.value.disliked_foods)
-    ? sessionPreferences.value.disliked_foods.join('、')
+    ? sessionPreferences.value.disliked_foods.join(localeJoiner.value)
     : ''
 
   pushItem(t('meal_plan.field_labels.preferred_tags'), preferredTags)
@@ -477,12 +450,16 @@ const knownItems = computed(() => {
 })
 
 const nextAction = computed(() => {
-  if (followUpPlan.value?.assistant_message) {
-    return followUpPlan.value.assistant_message
-  }
-
   if (currentSession.value?.status === 'finalized') {
     return t('meal_plan.next_after_final')
+  }
+
+  if (canGenerate.value) {
+    return t('meal_plan.ready_to_generate')
+  }
+
+  if (followUpPlan.value?.assistant_message) {
+    return followUpPlan.value.assistant_message
   }
 
   if (openQuestions.value.length) {
@@ -495,6 +472,10 @@ const nextAction = computed(() => {
 })
 
 const composerHint = computed(() => {
+  if (overlayMode.value === 'generating') {
+    return t('meal_plan.generation.summary')
+  }
+
   if (!isConversationActive.value) {
     return t('meal_plan.final_hint')
   }
@@ -532,8 +513,26 @@ function fieldReason(field: string) {
   return t(`meal_plan.field_reasons.${field}`)
 }
 
-function mealLabel(type: string) {
-  return t(`recipes.${type}`)
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
+function minimumGenerationDuration() {
+  return prefersReducedMotion() ? 240 : 1400
+}
+
+async function waitForMinimumGenerationDuration(startedAt: number, minDuration: number) {
+  const elapsed = performance.now() - startedAt
+  const remaining = Math.max(0, minDuration - elapsed)
+
+  if (remaining === 0) return
+
+  await new Promise<void>((resolve) => {
+    window.setTimeout(resolve, remaining)
+  })
 }
 
 async function scrollToBottom() {
@@ -546,6 +545,10 @@ async function scrollToBottom() {
 async function bootstrapSession() {
   loading.value = true
   sessionError.value = ''
+  messageError.value = ''
+  overlayMode.value = 'hidden'
+  generationStartedAt.value = null
+
   try {
     if (authStore.isAuthenticated && !profile.value.username) {
       await authStore.fetchUser()
@@ -571,6 +574,34 @@ async function bootstrapSession() {
   }
 }
 
+async function startGenerationSequence() {
+  if (!sessionId.value || overlayMode.value === 'generating' || !canGenerate.value) return
+
+  overlayMode.value = 'generating'
+  loading.value = true
+  messageError.value = ''
+  generationStartedAt.value = performance.now()
+
+  try {
+    const { data } = await mealChatApi.generateSession(sessionId.value)
+    await waitForMinimumGenerationDuration(
+      generationStartedAt.value,
+      minimumGenerationDuration()
+    )
+    currentSession.value = data
+    optimisticMessages.value = null
+    overlayMode.value = data.meal_plan ? 'result' : 'hidden'
+    await scrollToBottom()
+  } catch (error) {
+    console.error(error)
+    overlayMode.value = 'hidden'
+    messageError.value = t('meal_plan.message_inline_error')
+    ElMessage.error(t('meal_plan.message_failed'))
+  } finally {
+    loading.value = false
+  }
+}
+
 async function sendMessage() {
   if (!sessionId.value || !draft.value.trim() || loading.value || !isConversationActive.value) return
 
@@ -586,6 +617,10 @@ async function sendMessage() {
     currentSession.value = data
     optimisticMessages.value = null
     await scrollToBottom()
+
+    if (data.presentation?.can_generate || data.status === 'planning_ready') {
+      await startGenerationSequence()
+    }
   } catch (error) {
     console.error(error)
     optimisticMessages.value = null
@@ -595,6 +630,15 @@ async function sendMessage() {
   } finally {
     loading.value = false
   }
+}
+
+function openResultOverlay() {
+  if (!finalPlan.value || !hasResultOverlay.value) return
+  overlayMode.value = 'result'
+}
+
+function handleReturnToChat() {
+  overlayMode.value = 'hidden'
 }
 
 function addToShoppingList() {
@@ -608,7 +652,12 @@ async function restartSession() {
     await router.replace({ path: '/meal-plan' })
   }
 
+  overlayMode.value = 'hidden'
+  generationStartedAt.value = null
   hasAppliedReuseDraft.value = false
+  currentSession.value = null
+  optimisticMessages.value = null
+  sessionId.value = null
   draft.value = ''
   await bootstrapSession()
 }
@@ -622,6 +671,28 @@ onMounted(async () => {
 .meal-chat-page {
   display: grid;
   gap: 24px;
+}
+
+.hero-shell,
+.chat-layout,
+.result-stack {
+  transition:
+    filter var(--overlay-enter-duration) var(--overlay-ease),
+    transform var(--overlay-enter-duration) var(--overlay-ease),
+    opacity var(--overlay-enter-duration) var(--overlay-ease);
+}
+
+.meal-chat-page.overlay-active .hero-shell,
+.meal-chat-page.overlay-active .chat-layout {
+  filter: blur(8px);
+  transform: scale(0.985);
+  opacity: 0.42;
+  pointer-events: none;
+  user-select: none;
+}
+
+.meal-chat-page.overlay-active .result-stack.muted {
+  opacity: 0.36;
 }
 
 .hero-shell {
@@ -696,8 +767,7 @@ onMounted(async () => {
 
 .chat-card,
 .status-card,
-.trace-card,
-.result-card {
+.trace-card {
   border: none;
   border-radius: 24px;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
@@ -842,114 +912,33 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.price-pill {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: var(--color-primary-dark);
-  font-weight: 700;
-}
-
-.meal-groups {
-  display: grid;
-  gap: 16px;
-}
-
-.meal-group {
-  padding: 16px;
-  border-radius: 18px;
-  background: #f8fbf8;
-}
-
-.meal-group-head,
-.meal-item,
-.summary-row,
-.result-actions,
 .crew-event-head {
   display: flex;
   justify-content: space-between;
   gap: 12px;
 }
 
-.meal-group-head {
-  margin-bottom: 12px;
-}
-
-.meal-label,
-.alternative-title,
-.meal-name,
-.crew-event-head strong {
-  color: var(--color-secondary);
-}
-
-.meal-label,
-.alternative-title,
-.meal-name {
-  font-weight: 700;
-}
-
-.meal-count,
-.meal-metrics,
-.alternative-rationale,
-.crew-event p,
-.crew-empty {
-  color: var(--color-text-secondary);
-}
-
-.meal-count {
-  font-size: 0.82rem;
-}
-
-.meal-list,
-.alternative-list,
 .crew-timeline {
   display: grid;
   gap: 10px;
 }
 
-.meal-item,
-.alternative-card,
 .crew-event {
   padding: 12px 14px;
   border-radius: 14px;
   background: #ffffff;
-}
-
-.meal-item {
-  align-items: center;
-}
-
-.meal-name {
-  margin: 0;
-}
-
-.meal-metrics,
-.alternative-rationale,
-.crew-event p {
-  margin: 4px 0 0;
-  line-height: 1.5;
-}
-
-.summary-row {
-  align-items: center;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
-  color: var(--color-text-secondary);
-}
-
-.summary-row strong {
-  color: var(--color-secondary);
-  font-size: 1.1rem;
-}
-
-.result-actions {
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
-.crew-event {
   border: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.crew-event-head strong {
+  color: var(--color-secondary);
+}
+
+.crew-event p,
+.crew-empty {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 .crew-status {
@@ -998,21 +987,12 @@ onMounted(async () => {
   }
 
   .composer-actions,
-  .meal-group-head,
-  .summary-row,
   .reuse-banner,
-  .result-actions,
-  .meal-item,
   .section-head {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .price-pill {
-    align-self: flex-start;
-  }
-
-  .result-actions :deep(.el-button),
   .status-card :deep(.el-button) {
     width: 100%;
     min-height: 44px;
