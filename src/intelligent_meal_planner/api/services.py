@@ -287,6 +287,7 @@ class MealChatApplication:
     def _serialize_session(
         self, db: Session, session: MealChatSession
     ) -> Dict[str, Any]:
+        memory = ConversationMemory.model_validate(session.collected_slots or {})
         messages = (
             db.query(MealChatMessage)
             .filter(MealChatMessage.session_id == session.id)
@@ -305,7 +306,19 @@ class MealChatApplication:
                 for message in messages
             ],
             "meal_plan": session.final_plan,
-            "crew_trace": (session.collected_slots or {}).get("crew_events", []),
+            "crew_trace": memory.crew_events,
+            "open_questions": memory.open_questions,
+            "known_facts": memory.known_facts,
+            "follow_up_plan": (
+                memory.follow_up_plan.model_dump(mode="json")
+                if memory.follow_up_plan is not None
+                else None
+            ),
+            "profile_snapshot": memory.profile,
+            "preferences_snapshot": memory.preferences,
+            "negotiation_options": [
+                option.model_dump(mode="json") for option in memory.negotiation_options
+            ],
         }
 
     def start_session(self, db: Session, user: User) -> Dict[str, Any]:

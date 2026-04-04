@@ -197,3 +197,9 @@ class MealChatSessionResponse(BaseModel):
     messages: List[ChatMessage]
     meal_plan: MealPlanResponse | NegotiatedMealPlanResponse | None = None
     crew_trace: List[dict] = Field(default_factory=list)
+    open_questions: List[str] = Field(default_factory=list)
+    known_facts: dict = Field(default_factory=dict)
+    follow_up_plan: dict | None = None
+    profile_snapshot: dict = Field(default_factory=dict)
+    preferences_snapshot: dict = Field(default_factory=dict)
+    negotiation_options: List[dict] = Field(default_factory=list)
