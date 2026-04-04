@@ -31,10 +31,13 @@ export const useAuthStore = defineStore('auth', () => {
 
       await fetchUser()
       router.push(options?.redirectTo ?? '/')
-      return true
+      return { ok: true as const, reason: null }
     } catch (error) {
       console.error('Login failed', error)
-      return false
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return { ok: false as const, reason: 'invalid_credentials' as const }
+      }
+      return { ok: false as const, reason: 'request_failed' as const }
     }
   }
 

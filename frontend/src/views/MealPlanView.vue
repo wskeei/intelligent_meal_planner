@@ -205,6 +205,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import {
+  isUnauthorizedError,
   mealChatApi,
   type ChatMessage,
   type CrewTraceEvent,
@@ -514,6 +515,11 @@ function fieldReason(field: string) {
   return t(`meal_plan.field_reasons.${field}`)
 }
 
+function handleAuthFailure() {
+  authStore.logout()
+  ElMessage.error(t('meal_plan.auth_required'))
+}
+
 function prefersReducedMotion() {
   return (
     typeof window !== 'undefined' &&
@@ -570,6 +576,10 @@ async function restoreSession() {
     return true
   } catch (error) {
     console.error(error)
+    if (isUnauthorizedError(error)) {
+      handleAuthFailure()
+      return false
+    }
     persistSessionId(null)
     return false
   }
@@ -584,6 +594,9 @@ async function updatePresentationState(overlayState: 'hidden' | 'result') {
     persistSessionId(data.session_id)
   } catch (error) {
     console.error(error)
+    if (isUnauthorizedError(error)) {
+      handleAuthFailure()
+    }
   }
 }
 
@@ -618,6 +631,10 @@ async function bootstrapSession() {
     await scrollToBottom()
   } catch (error) {
     console.error(error)
+    if (isUnauthorizedError(error)) {
+      handleAuthFailure()
+      return
+    }
     sessionError.value = t('meal_plan.session_inline_error')
     ElMessage.error(t('meal_plan.session_failed'))
   } finally {
@@ -646,9 +663,14 @@ async function startGenerationSequence() {
     await scrollToBottom()
   } catch (error) {
     console.error(error)
+    if (isUnauthorizedError(error)) {
+      overlayMode.value = 'hidden'
+      handleAuthFailure()
+      return
+    }
     overlayMode.value = 'hidden'
-    messageError.value = t('meal_plan.message_inline_error')
-    ElMessage.error(t('meal_plan.message_failed'))
+    messageError.value = t('meal_plan.generation_inline_error')
+    ElMessage.error(t('meal_plan.generation_failed'))
   } finally {
     loading.value = false
   }
@@ -672,6 +694,12 @@ async function sendMessage() {
     await scrollToBottom()
   } catch (error) {
     console.error(error)
+    if (isUnauthorizedError(error)) {
+      optimisticMessages.value = null
+      draft.value = content
+      handleAuthFailure()
+      return
+    }
     optimisticMessages.value = null
     draft.value = content
     messageError.value = t('meal_plan.message_inline_error')
