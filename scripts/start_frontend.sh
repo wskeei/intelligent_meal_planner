@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_PORT="${1:-${MEAL_PLANNER_API_PORT:-9000}}"
+FRONTEND_PORT="${2:-${MEAL_PLANNER_FRONTEND_PORT:-5173}}"
 
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 export VITE_API_PROXY_TARGET="${VITE_API_PROXY_TARGET:-http://127.0.0.1:${API_PORT}}"
@@ -10,7 +11,7 @@ export VITE_API_PROXY_TARGET="${VITE_API_PROXY_TARGET:-http://127.0.0.1:${API_PO
 cd "$ROOT_DIR/frontend"
 
 echo "[FRONTEND] Starting Vite dev server..."
-echo "[FRONTEND] URL: http://127.0.0.1:5173"
+echo "[FRONTEND] URL: http://127.0.0.1:${FRONTEND_PORT}"
 echo "[FRONTEND] API proxy: ${VITE_API_PROXY_TARGET}"
 
-exec npm run dev -- --host 0.0.0.0
+exec npm run dev -- --host 0.0.0.0 --port "$FRONTEND_PORT" --strictPort

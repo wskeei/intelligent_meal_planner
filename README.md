@@ -111,7 +111,7 @@ chmod +x start_project.sh scripts/start_backend.sh scripts/start_frontend.sh
 - 检查 `uv` 和 `npm`
 - 在缺失时执行 `uv sync`
 - 在缺失时执行 `frontend/npm install`
-- 自动探测可用后端端口
+- 自动探测可用的前后端端口
 - 后台启动前后端，并把日志写到 `backend.log` / `frontend.log`
 
 首次从 Windows 目录直接迁移到 Linux 时，建议先重新安装前端依赖，避免 `node_modules/.bin/*` 缺少可执行位：
