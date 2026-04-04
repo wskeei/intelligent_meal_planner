@@ -113,6 +113,7 @@ def test_start_project_passes_backend_and_frontend_ports_to_child_scripts(tmp_pa
     env["CAPTURE_FILE"] = str(capture_file)
     env["MEAL_PLANNER_API_PORT"] = "9123"
     env["MEAL_PLANNER_FRONTEND_PORT"] = "5179"
+    env["MEAL_PLANNER_STARTUP_CHECK"] = "0"
 
     result = subprocess.run(
         ["bash", str(project / "start_project.sh")],
@@ -134,6 +135,69 @@ def test_start_project_passes_backend_and_frontend_ports_to_child_scripts(tmp_pa
     assert "nohup" in captured
     assert "scripts/start_backend.sh 9123" in captured
     assert "scripts/start_frontend.sh 9123 5179" in captured
+
+
+def test_start_project_runs_child_scripts_without_executable_bits(tmp_path):
+    project = _prepare_temp_project(tmp_path)
+    fake_bin, capture_file = _prepare_fake_bin(tmp_path)
+
+    (project / "scripts" / "start_backend.sh").chmod(0o644)
+    (project / "scripts" / "start_frontend.sh").chmod(0o644)
+    (fake_bin / "nohup").write_text(
+        "#!/usr/bin/env bash\n"
+        "printf 'nohup %s\\n' \"$*\" >> \"$CAPTURE_FILE\"\n"
+        "\"$@\"\n",
+        encoding="utf-8",
+    )
+    (fake_bin / "nohup").chmod(0o755)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["CAPTURE_FILE"] = str(capture_file)
+    env["MEAL_PLANNER_API_PORT"] = "9123"
+    env["MEAL_PLANNER_FRONTEND_PORT"] = "5179"
+    env["MEAL_PLANNER_STARTUP_CHECK"] = "0"
+
+    result = subprocess.run(
+        ["bash", str(project / "start_project.sh")],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    for _ in range(20):
+        if (project / ".run" / "backend.pid").exists() and (project / ".run" / "frontend.pid").exists():
+            break
+        time.sleep(0.05)
+    assert (project / ".run" / "backend.pid").exists()
+    assert (project / ".run" / "frontend.pid").exists()
+
+
+def test_start_project_fails_when_services_exit_immediately(tmp_path):
+    project = _prepare_temp_project(tmp_path)
+    fake_bin, capture_file = _prepare_fake_bin(tmp_path)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["CAPTURE_FILE"] = str(capture_file)
+    env["MEAL_PLANNER_API_PORT"] = "9123"
+    env["MEAL_PLANNER_FRONTEND_PORT"] = "5179"
+    env["MEAL_PLANNER_STARTUP_TIMEOUT_SECONDS"] = "1"
+
+    result = subprocess.run(
+        ["bash", str(project / "start_project.sh")],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "failed to stay running" in result.stdout
 
 
 def test_stop_project_stops_processes_from_pidfiles(tmp_path):
