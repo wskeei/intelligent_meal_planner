@@ -83,9 +83,10 @@ def prompt_for_field(field: str, locale: str) -> str:
 
 def low_confidence_prompt(goal: str | None, budget: object, locale: str) -> str:
     if locale == "en":
+        goal_text = GOAL_TEXT["en"].get(goal, goal or "your current goal")
         return (
             f"I want to confirm one thing: should I keep planning around "
-            f'"{goal or "your current goal"}" and a budget of {budget}?'
+            f'"{goal_text}" and a budget of {budget}?'
         )
     return (
         f"我先确认一下，我现在是按“{goal}”和 {budget} 元预算理解的，对吗？"

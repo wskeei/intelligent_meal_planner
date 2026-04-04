@@ -60,6 +60,7 @@
     "crew_subtitle": "This is secondary information. Open it only if you want to inspect how the system moved forward.",
     "trace_toggle": "Show system trace",
     "crew_empty": "There is no system trace to show yet.",
+    "trace_unavailable_locale": "Detailed system trace messages are currently generated in Chinese only. Switch to Chinese if you need the raw trace.",
     "budget_safe_hint": "This result is constrained to your current budget.",
     "items": "items",
     "total_cost": "Total cost",

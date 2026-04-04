@@ -60,6 +60,7 @@
     "crew_subtitle": "这是次级信息。只有在你想确认系统如何推进时再展开查看。",
     "trace_toggle": "查看系统过程",
     "crew_empty": "当前还没有可展示的系统过程。",
+    "trace_unavailable_locale": "当前系统过程明细仍以中文生成。切换到中文后可查看原始过程记录。",
     "budget_safe_hint": "结果已按你当前预算范围约束。",
     "items": "项",
     "total_cost": "总花费",

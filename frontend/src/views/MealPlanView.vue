@@ -206,7 +206,8 @@
 
           <el-collapse>
             <el-collapse-item :title="$t('meal_plan.trace_toggle')">
-              <div v-if="crewTrace.length" class="crew-timeline">
+              <p v-if="traceUnavailableMessage" class="crew-empty">{{ traceUnavailableMessage }}</p>
+              <div v-else-if="crewTrace.length" class="crew-timeline">
                 <article v-for="event in crewTrace" :key="`${event.agent}-${event.message}`" class="crew-event">
                   <div class="crew-event-head">
                     <strong>{{ event.agent }}</strong>
@@ -505,6 +506,9 @@ const composerHint = computed(() => {
 
 const localeJoiner = computed(() => (locale.value === 'en' ? ', ' : '、'))
 const sentenceJoiner = computed(() => (locale.value === 'en' ? ', ' : '，'))
+const traceUnavailableMessage = computed(() =>
+  locale.value === 'en' && crewTrace.value.length ? t('meal_plan.trace_unavailable_locale') : ''
+)
 
 function goalText(goal: unknown) {
   return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : ''
