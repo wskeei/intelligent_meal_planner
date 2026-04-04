@@ -55,3 +55,12 @@ async def send_message(
         payload.content,
         locale=_request_locale(request),
     )
+
+
+@router.post("/sessions/{session_id}/generate", response_model=MealChatSessionResponse)
+async def generate_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return meal_chat_app.generate_session(db, current_user, session_id)

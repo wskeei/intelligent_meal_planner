@@ -328,6 +328,15 @@ class MealChatApplication:
             ],
         }
 
+    def _load_session(
+        self, db: Session, user: User, session_id: str
+    ) -> MealChatSession | None:
+        return (
+            db.query(MealChatSession)
+            .filter(MealChatSession.id == session_id, MealChatSession.user_id == user.id)
+            .first()
+        )
+
     def start_session(self, db: Session, user: User, locale: str = "zh") -> Dict[str, Any]:
         resolved_locale = normalize_locale(locale)
         memory = ConversationMemory(
@@ -372,13 +381,7 @@ class MealChatApplication:
     def get_session(
         self, db: Session, user: User, session_id: str
     ) -> Optional[Dict[str, Any]]:
-        session = (
-            db.query(MealChatSession)
-            .filter(
-                MealChatSession.id == session_id, MealChatSession.user_id == user.id
-            )
-            .first()
-        )
+        session = self._load_session(db, user, session_id)
         if not session:
             return None
         return self._serialize_session(db, session)
@@ -391,13 +394,7 @@ class MealChatApplication:
         content: str,
         locale: str = "zh",
     ) -> Dict[str, Any]:
-        session = (
-            db.query(MealChatSession)
-            .filter(
-                MealChatSession.id == session_id, MealChatSession.user_id == user.id
-            )
-            .first()
-        )
+        session = self._load_session(db, user, session_id)
         if session is None:
             raise ValueError("session_not_found")
 
@@ -457,6 +454,57 @@ class MealChatApplication:
                     "user_id": user.id,
                     "stage_before": stage_before,
                     "user_message": content,
+                    "error": repr(exc),
+                },
+            )
+            raise
+
+    def generate_session(self, db: Session, user: User, session_id: str) -> Dict[str, Any]:
+        session = self._load_session(db, user, session_id)
+        if session is None:
+            raise ValueError("session_not_found")
+
+        if session.status == "finalized":
+            return self._serialize_session(db, session)
+        if session.status != "planning_ready":
+            raise ValueError("generation_not_ready")
+
+        try:
+            result = self.orchestrator.generate(user, session)
+            session.status = result["status"]
+            if result["meal_plan"] is not None:
+                session.final_plan = result["meal_plan"]
+
+            db.add(session)
+            db.add(
+                MealChatMessage(
+                    session_id=session.id,
+                    role="assistant",
+                    content=result["assistant_message"],
+                    stage=session.status,
+                )
+            )
+            db.commit()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="generation_completed",
+                payload={
+                    "user_id": user.id,
+                    "status": result["status"],
+                    "assistant_message": result["assistant_message"],
+                    "trace": result.get("trace", {}),
+                },
+            )
+            db.refresh(session)
+            return self._serialize_session(db, session)
+        except Exception as exc:
+            db.rollback()
+            self.trace_writer.write(
+                session_id=session.id,
+                event="generation_failed",
+                payload={
+                    "user_id": user.id,
+                    "status": session.status,
                     "error": repr(exc),
                 },
             )
