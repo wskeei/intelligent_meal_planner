@@ -243,6 +243,7 @@ const sessionError = ref('')
 const messageError = ref('')
 const overlayMode = ref<'hidden' | 'generating' | 'result'>('hidden')
 const generationStartedAt = ref<number | null>(null)
+const SESSION_STORAGE_KEY = 'meal-chat-active-session-id'
 const CANONICAL_MISSING_FIELDS = new Set([
   'gender',
   'age',
@@ -542,6 +543,38 @@ async function scrollToBottom() {
   }
 }
 
+function persistSessionId(value: string | null) {
+  if (typeof window === 'undefined') return
+
+  if (value) {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, value)
+    return
+  }
+
+  window.localStorage.removeItem(SESSION_STORAGE_KEY)
+}
+
+async function restoreSession() {
+  if (typeof window === 'undefined') return false
+
+  const savedSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  if (!savedSessionId) return false
+
+  try {
+    const { data } = await mealChatApi.getSession(savedSessionId)
+    sessionId.value = data.session_id
+    currentSession.value = data
+    optimisticMessages.value = null
+    overlayMode.value = data.presentation?.has_result_overlay ? 'result' : 'hidden'
+    await scrollToBottom()
+    return true
+  } catch (error) {
+    console.error(error)
+    persistSessionId(null)
+    return false
+  }
+}
+
 async function bootstrapSession() {
   loading.value = true
   sessionError.value = ''
@@ -554,10 +587,16 @@ async function bootstrapSession() {
       await authStore.fetchUser()
     }
 
+    if (!route.query.reuse_goal && !route.query.reuse_budget && !route.query.reuse_tags && !route.query.reuse_disliked) {
+      const restored = await restoreSession()
+      if (restored) return
+    }
+
     const { data } = await mealChatApi.createSession()
     sessionId.value = data.session_id
     currentSession.value = data
     optimisticMessages.value = null
+    persistSessionId(data.session_id)
 
     if (reuseDraft.value && !hasAppliedReuseDraft.value) {
       draft.value = reuseDraft.value
@@ -589,6 +628,7 @@ async function startGenerationSequence() {
       minimumGenerationDuration()
     )
     currentSession.value = data
+    persistSessionId(data.session_id)
     optimisticMessages.value = null
     overlayMode.value = data.meal_plan ? 'result' : 'hidden'
     await scrollToBottom()
@@ -615,6 +655,7 @@ async function sendMessage() {
     await scrollToBottom()
     const { data } = await mealChatApi.sendMessage(sessionId.value, content)
     currentSession.value = data
+    persistSessionId(data.session_id)
     optimisticMessages.value = null
     await scrollToBottom()
 
@@ -659,6 +700,7 @@ async function restartSession() {
   optimisticMessages.value = null
   sessionId.value = null
   draft.value = ''
+  persistSessionId(null)
   await bootstrapSession()
 }
 
