@@ -87,6 +87,32 @@
           </p>
         </el-card>
 
+        <el-card class="crew-card" shadow="hover">
+          <template #header>
+            <div class="section-head compact">
+              <div>
+                <h2>{{ $t('meal_plan.crew_title') }}</h2>
+                <p>{{ $t('meal_plan.crew_subtitle') }}</p>
+              </div>
+            </div>
+          </template>
+
+          <div v-if="crewTrace.length" class="crew-timeline">
+            <article
+              v-for="event in crewTrace"
+              :key="`${event.agent}-${event.message}`"
+              class="crew-event"
+            >
+              <div class="crew-event-head">
+                <strong>{{ event.agent }}</strong>
+                <span class="crew-status">{{ event.status }}</span>
+              </div>
+              <p>{{ event.message }}</p>
+            </article>
+          </div>
+          <p v-else class="crew-empty">{{ $t('meal_plan.crew_empty') }}</p>
+        </el-card>
+
         <el-card v-if="finalPlan" class="result-card" shadow="hover">
           <template #header>
             <div class="section-head compact">
@@ -152,6 +178,7 @@ import { useI18n } from 'vue-i18n'
 import {
   mealChatApi,
   type ChatMessage,
+  type CrewTraceEvent,
   type MealChatSession,
   type MealPlan,
   type NegotiatedMealPlan
@@ -187,6 +214,8 @@ const planAlternatives = computed(() => {
   const mealPlan = currentSession.value?.meal_plan
   return mealPlan && isNegotiatedMealPlan(mealPlan) ? mealPlan.alternatives : []
 })
+
+const crewTrace = computed<CrewTraceEvent[]>(() => currentSession.value?.crew_trace ?? [])
 
 const isConversationActive = computed(() =>
   Boolean(currentSession.value) && currentSession.value?.status !== 'finalized'
@@ -352,6 +381,7 @@ onMounted(async () => {
 
 .chat-card,
 .status-card,
+.crew-card,
 .result-card {
   border: none;
   border-radius: 24px;
@@ -474,6 +504,56 @@ onMounted(async () => {
 .status-card h3 {
   margin: 8px 0 10px;
   font-size: 1.2rem;
+}
+
+.crew-card {
+  background: linear-gradient(180deg, #ffffff, #f7faf8);
+}
+
+.crew-timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.crew-event {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #f8fbf8;
+  border: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.crew-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.crew-event-head strong {
+  color: var(--color-secondary);
+}
+
+.crew-event p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.crew-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.crew-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .status-copy {

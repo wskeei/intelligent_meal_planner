@@ -31,6 +31,8 @@ class ConversationMemory(BaseModel):
     preferences: dict = Field(default_factory=dict)
     known_facts: dict = Field(default_factory=dict)
     open_questions: list[str] = Field(default_factory=list)
+    crew_events: list[dict] = Field(default_factory=list)
+    crew_summary: dict | None = None
     analysis: UnderstandingAnalysis | None = None
     follow_up_plan: FollowUpPlan | None = None
     target_ranges: TargetRanges | None = None

@@ -79,7 +79,14 @@ export interface ChatMessage {
   created_at?: string
 }
 
-export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'finalized'
+export interface CrewTraceEvent {
+  agent: string
+  status: 'completed' | 'running' | 'blocked' | string
+  message: string
+  payload?: Record<string, unknown>
+}
+
+export type MealChatPhase = 'discovering' | 'negotiating' | 'planning' | 'planning_ready' | 'finalized'
 
 export interface NegotiatedMealPlanAlternative {
   option_key: string
@@ -98,6 +105,7 @@ export interface MealChatSession {
   status: MealChatPhase
   messages: ChatMessage[]
   meal_plan: MealPlan | NegotiatedMealPlan | null
+  crew_trace: CrewTraceEvent[]
 }
 
 export interface UserProfilePatch {

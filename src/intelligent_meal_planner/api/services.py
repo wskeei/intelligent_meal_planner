@@ -9,8 +9,10 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from ..db.models import MealChatMessage, MealChatSession, User
-from ..meal_chat.crew_runtime import CrewMealChatRuntime
+from ..meal_chat.crew_factory import build_meal_planning_crew
+from ..meal_chat.crew_runner import CrewMealPlannerRunner
 from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
+from ..meal_chat.intake_runtime import IntakeRuntime
 from ..meal_chat.local_trace import MealChatTraceWriter
 from ..meal_chat.orchestrator import MealChatOrchestrator
 from ..meal_chat.semantic_normalizer import normalize_goal
@@ -272,11 +274,14 @@ class MealChatApplication:
     def orchestrator(self) -> MealChatOrchestrator:
         if self._orchestrator is None:
             planner = StrictBudgetPlanner()
-            runtime = CrewMealChatRuntime(
-                planning_tool=planner,
+            intake_runtime = IntakeRuntime(
                 extractor=DeepSeekSlotExtractor(),
             )
-            self._orchestrator = MealChatOrchestrator(runtime=runtime, planner=planner)
+            crew_runner = CrewMealPlannerRunner(build_meal_planning_crew, planner)
+            self._orchestrator = MealChatOrchestrator(
+                intake_runtime=intake_runtime,
+                crew_runner=crew_runner,
+            )
         return self._orchestrator
 
     def _serialize_session(
@@ -300,6 +305,7 @@ class MealChatApplication:
                 for message in messages
             ],
             "meal_plan": session.final_plan,
+            "crew_trace": (session.collected_slots or {}).get("crew_events", []),
         }
 
     def start_session(self, db: Session, user: User) -> Dict[str, Any]:

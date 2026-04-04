@@ -149,6 +149,18 @@ class MealPlanHistory(BaseModel):
     items: List[MealPlanResponse]
 
 
+class NegotiatedMealPlanAlternativeResponse(BaseModel):
+    option_key: str
+    title: str
+    rationale: str
+    meal_plan: MealPlanResponse
+
+
+class NegotiatedMealPlanResponse(BaseModel):
+    primary: MealPlanResponse
+    alternatives: List[NegotiatedMealPlanAlternativeResponse]
+
+
 # ============ 通用响应 ============
 
 
@@ -183,4 +195,5 @@ class MealChatSessionResponse(BaseModel):
     session_id: str
     status: str
     messages: List[ChatMessage]
-    meal_plan: Optional[dict] = None
+    meal_plan: MealPlanResponse | NegotiatedMealPlanResponse | None = None
+    crew_trace: List[dict] = Field(default_factory=list)
