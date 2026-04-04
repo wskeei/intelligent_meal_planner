@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUN_DIR="$ROOT_DIR/.run"
 cd "$ROOT_DIR"
 
 echo "[INFO] Intelligent Meal Planner startup"
@@ -85,12 +86,19 @@ fi
 echo "[INFO] Selected backend port: $API_PORT"
 echo "[INFO] Selected frontend port: $FRONTEND_PORT"
 
+mkdir -p "$RUN_DIR"
+BACKEND_PID_FILE="$RUN_DIR/backend.pid"
+FRONTEND_PID_FILE="$RUN_DIR/frontend.pid"
+rm -f "$BACKEND_PID_FILE" "$FRONTEND_PID_FILE"
+
 echo "[INFO] Starting backend..."
-nohup "$ROOT_DIR/scripts/start_backend.sh" "$API_PORT" > "$ROOT_DIR/backend.log" 2>&1 &
+nohup env MEAL_PLANNER_BACKEND_PID_FILE="$BACKEND_PID_FILE" \
+  "$ROOT_DIR/scripts/start_backend.sh" "$API_PORT" > "$ROOT_DIR/backend.log" 2>&1 &
 BACKEND_PID=$!
 
 echo "[INFO] Starting frontend..."
-nohup "$ROOT_DIR/scripts/start_frontend.sh" "$API_PORT" "$FRONTEND_PORT" > "$ROOT_DIR/frontend.log" 2>&1 &
+nohup env MEAL_PLANNER_FRONTEND_PID_FILE="$FRONTEND_PID_FILE" \
+  "$ROOT_DIR/scripts/start_frontend.sh" "$API_PORT" "$FRONTEND_PORT" > "$ROOT_DIR/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 
 echo "[INFO] Backend PID: $BACKEND_PID"
@@ -99,3 +107,4 @@ echo "[INFO] Backend:  http://127.0.0.1:$API_PORT"
 echo "[INFO] Frontend: http://127.0.0.1:$FRONTEND_PORT"
 echo "[INFO] API Docs: http://127.0.0.1:$API_PORT/docs"
 echo "[INFO] Logs: backend.log / frontend.log"
+echo "[INFO] Stop: ./stop_project.sh"

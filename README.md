@@ -106,6 +106,12 @@ chmod +x start_project.sh scripts/start_backend.sh scripts/start_frontend.sh
 ./start_project.sh
 ```
 
+停止前后端：
+
+```bash
+./stop_project.sh
+```
+
 脚本会自动：
 
 - 检查 `uv` 和 `npm`

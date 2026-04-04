@@ -1,6 +1,7 @@
 .agent/
 .claude/
 .worktrees/
+.run/
 # Python
 __pycache__/
 *.py[cod]
