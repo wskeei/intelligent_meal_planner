@@ -55,7 +55,7 @@
       "protein": 15,
       "carbs": 52,
       "fat": 18,
-      "price": 8,
+      "price": 6,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["traditional"]
@@ -67,7 +67,7 @@
       "protein": 16,
       "carbs": 38,
       "fat": 8,
-      "price": 10,
+      "price": 6,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["soup", "high-protein"]
@@ -79,7 +79,7 @@
       "protein": 10,
       "carbs": 35,
       "fat": 6,
-      "price": 5,
+      "price": 4,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["healthy"]
@@ -91,7 +91,7 @@
       "protein": 14,
       "carbs": 42,
       "fat": 14,
-      "price": 6,
+      "price": 4,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["traditional"]
@@ -103,7 +103,7 @@
       "protein": 12,
       "carbs": 40,
       "fat": 8,
-      "price": 4,
+      "price": 1.5,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["simple"]
@@ -115,7 +115,7 @@
       "protein": 8,
       "carbs": 48,
       "fat": 15,
-      "price": 5,
+      "price": 3,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["traditional"]
@@ -127,7 +127,7 @@
       "protein": 14,
       "carbs": 50,
       "fat": 20,
-      "price": 8,
+      "price": 6,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["traditional"]
@@ -139,7 +139,7 @@
       "protein": 8,
       "carbs": 52,
       "fat": 4,
-      "price": 6,
+      "price": 2,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["healthy", "sweet"]
@@ -151,7 +151,7 @@
       "protein": 12,
       "carbs": 42,
       "fat": 8,
-      "price": 8,
+      "price": 3,
       "meal_type": ["breakfast"],
       "category": "Breakfast",
       "tags": ["healthy", "western"]
@@ -163,7 +163,7 @@
       "protein": 14,
       "carbs": 58,
       "fat": 18,
-      "price": 12,
+      "price": 8,
       "meal_type": ["breakfast", "lunch"],
       "category": "Staple",
       "tags": ["quick"]
@@ -187,7 +187,7 @@
       "protein": 32,
       "carbs": 62,
       "fat": 22,
-      "price": 18,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["spicy", "classic"]
@@ -199,7 +199,7 @@
       "protein": 28,
       "carbs": 65,
       "fat": 20,
-      "price": 16,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["classic"]
@@ -211,7 +211,7 @@
       "protein": 26,
       "carbs": 60,
       "fat": 18,
-      "price": 15,
+      "price": 11,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["simple"]
@@ -223,7 +223,7 @@
       "protein": 30,
       "carbs": 55,
       "fat": 38,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["classic", "rich"]
@@ -235,7 +235,7 @@
       "protein": 28,
       "carbs": 70,
       "fat": 24,
-      "price": 20,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["sweet-sour"]
@@ -247,7 +247,7 @@
       "protein": 26,
       "carbs": 58,
       "fat": 35,
-      "price": 18,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["spicy", "sichuan"]
@@ -259,7 +259,7 @@
       "protein": 35,
       "carbs": 55,
       "fat": 25,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["spicy", "sichuan"]
@@ -271,7 +271,7 @@
       "protein": 35,
       "carbs": 58,
       "fat": 38,
-      "price": 28,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["classic", "rich"]
@@ -283,7 +283,7 @@
       "protein": 30,
       "carbs": 65,
       "fat": 26,
-      "price": 20,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["sweet"]
@@ -295,7 +295,7 @@
       "protein": 22,
       "carbs": 58,
       "fat": 18,
-      "price": 12,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Tofu",
       "tags": ["spicy", "vegetarian-option"]
@@ -319,7 +319,7 @@
       "protein": 10,
       "carbs": 52,
       "fat": 8,
-      "price": 10,
+      "price": 7,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy", "low-fat"]
@@ -331,7 +331,7 @@
       "protein": 8,
       "carbs": 48,
       "fat": 6,
-      "price": 9,
+      "price": 7,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy", "low-fat"]
@@ -343,7 +343,7 @@
       "protein": 8,
       "carbs": 62,
       "fat": 8,
-      "price": 9,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["spicy", "home-style"]
@@ -355,7 +355,7 @@
       "protein": 10,
       "carbs": 55,
       "fat": 18,
-      "price": 14,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["northeast"]
@@ -367,7 +367,7 @@
       "protein": 38,
       "carbs": 45,
       "fat": 8,
-      "price": 35,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["healthy", "premium"]
@@ -379,7 +379,7 @@
       "protein": 32,
       "carbs": 50,
       "fat": 16,
-      "price": 22,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["classic"]
@@ -391,7 +391,7 @@
       "protein": 35,
       "carbs": 48,
       "fat": 12,
-      "price": 32,
+      "price": 22,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["premium"]
@@ -403,7 +403,7 @@
       "protein": 42,
       "carbs": 50,
       "fat": 28,
-      "price": 38,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["spicy", "sichuan"]
@@ -415,7 +415,7 @@
       "protein": 38,
       "carbs": 52,
       "fat": 22,
-      "price": 32,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["sour"]
@@ -427,7 +427,7 @@
       "protein": 28,
       "carbs": 68,
       "fat": 16,
-      "price": 18,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle"]
@@ -439,7 +439,7 @@
       "protein": 22,
       "carbs": 72,
       "fat": 12,
-      "price": 15,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "halal"]
@@ -451,7 +451,7 @@
       "protein": 20,
       "carbs": 65,
       "fat": 24,
-      "price": 14,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "spicy", "sichuan"]
@@ -463,7 +463,7 @@
       "protein": 22,
       "carbs": 70,
       "fat": 22,
-      "price": 14,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "beijing"]
@@ -487,7 +487,7 @@
       "protein": 32,
       "carbs": 55,
       "fat": 30,
-      "price": 28,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["sour", "spicy"]
@@ -499,7 +499,7 @@
       "protein": 35,
       "carbs": 52,
       "fat": 25,
-      "price": 26,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["western-style"]
@@ -511,7 +511,7 @@
       "protein": 30,
       "carbs": 65,
       "fat": 26,
-      "price": 24,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["curry"]
@@ -523,7 +523,7 @@
       "protein": 28,
       "carbs": 62,
       "fat": 22,
-      "price": 18,
+      "price": 12,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["curry"]
@@ -535,7 +535,7 @@
       "protein": 32,
       "carbs": 58,
       "fat": 24,
-      "price": 18,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["braised"]
@@ -547,7 +547,7 @@
       "protein": 35,
       "carbs": 50,
       "fat": 22,
-      "price": 20,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["spicy", "cold", "sichuan"]
@@ -559,7 +559,7 @@
       "protein": 38,
       "carbs": 48,
       "fat": 18,
-      "price": 22,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["guangdong", "light"]
@@ -571,7 +571,7 @@
       "protein": 20,
       "carbs": 52,
       "fat": 16,
-      "price": 12,
+      "price": 7,
       "meal_type": ["lunch", "dinner"],
       "category": "Tofu",
       "tags": ["home-style"]
@@ -583,7 +583,7 @@
       "protein": 18,
       "carbs": 50,
       "fat": 15,
-      "price": 11,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Tofu",
       "tags": ["classic"]
@@ -595,7 +595,7 @@
       "protein": 16,
       "carbs": 35,
       "fat": 20,
-      "price": 15,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Tofu",
       "tags": ["street-food"]
@@ -607,7 +607,7 @@
       "protein": 14,
       "carbs": 50,
       "fat": 10,
-      "price": 10,
+      "price": 4,
       "meal_type": ["lunch", "dinner"],
       "category": "Soup",
       "tags": ["light", "home-style"]
@@ -619,7 +619,7 @@
       "protein": 12,
       "carbs": 48,
       "fat": 8,
-      "price": 9,
+      "price": 4,
       "meal_type": ["lunch", "dinner"],
       "category": "Soup",
       "tags": ["light"]
@@ -631,7 +631,7 @@
       "protein": 15,
       "carbs": 52,
       "fat": 12,
-      "price": 12,
+      "price": 4,
       "meal_type": ["lunch", "dinner"],
       "category": "Soup",
       "tags": ["spicy", "sour"]
@@ -643,7 +643,7 @@
       "protein": 22,
       "carbs": 48,
       "fat": 16,
-      "price": 18,
+      "price": 4,
       "meal_type": ["lunch", "dinner"],
       "category": "Soup",
       "tags": ["nourishing"]
@@ -655,7 +655,7 @@
       "protein": 24,
       "carbs": 52,
       "fat": 20,
-      "price": 15,
+      "price": 12,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["classic", "north"]
@@ -667,7 +667,7 @@
       "protein": 26,
       "carbs": 55,
       "fat": 22,
-      "price": 16,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["beijing"]
@@ -679,7 +679,7 @@
       "protein": 12,
       "carbs": 48,
       "fat": 16,
-      "price": 12,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["sichuan"]
@@ -691,7 +691,7 @@
       "protein": 10,
       "carbs": 50,
       "fat": 18,
-      "price": 14,
+      "price": 12,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["dry-pot"]
@@ -703,7 +703,7 @@
       "protein": 8,
       "carbs": 48,
       "fat": 8,
-      "price": 10,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["guangdong", "light"]
@@ -715,7 +715,7 @@
       "protein": 10,
       "carbs": 50,
       "fat": 8,
-      "price": 11,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy"]
@@ -727,7 +727,7 @@
       "protein": 32,
       "carbs": 52,
       "fat": 32,
-      "price": 28,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["xinjiang", "spicy"]
@@ -739,7 +739,7 @@
       "protein": 30,
       "carbs": 50,
       "fat": 30,
-      "price": 26,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["north"]
@@ -751,7 +751,7 @@
       "protein": 38,
       "carbs": 52,
       "fat": 32,
-      "price": 30,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["sichuan", "spicy"]
@@ -775,7 +775,7 @@
       "protein": 18,
       "carbs": 55,
       "fat": 22,
-      "price": 14,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -787,7 +787,7 @@
       "protein": 18,
       "carbs": 62,
       "fat": 22,
-      "price": 15,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["fried-rice"]
@@ -799,7 +799,7 @@
       "protein": 16,
       "carbs": 58,
       "fat": 20,
-      "price": 14,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["fried-rice"]
@@ -811,7 +811,7 @@
       "protein": 10,
       "carbs": 62,
       "fat": 15,
-      "price": 10,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["fried-rice", "simple"]
@@ -823,7 +823,7 @@
       "protein": 24,
       "carbs": 58,
       "fat": 20,
-      "price": 22,
+      "price": 12,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["fried-rice"]
@@ -835,7 +835,7 @@
       "protein": 22,
       "carbs": 58,
       "fat": 12,
-      "price": 12,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["cold", "summer"]
@@ -847,7 +847,7 @@
       "protein": 12,
       "carbs": 68,
       "fat": 16,
-      "price": 10,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["noodle", "simple"]
@@ -859,7 +859,7 @@
       "protein": 16,
       "carbs": 65,
       "fat": 22,
-      "price": 10,
+      "price": 7,
       "meal_type": ["breakfast", "lunch"],
       "category": "Staple",
       "tags": ["wuhan", "noodle"]
@@ -871,7 +871,7 @@
       "protein": 22,
       "carbs": 52,
       "fat": 22,
-      "price": 12,
+      "price": 8,
       "meal_type": ["breakfast", "lunch"],
       "category": "Meat",
       "tags": ["shaanxi"]
@@ -883,7 +883,7 @@
       "protein": 10,
       "carbs": 62,
       "fat": 12,
-      "price": 8,
+      "price": 4,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["shaanxi", "cold", "summer"]
@@ -895,7 +895,7 @@
       "protein": 12,
       "carbs": 68,
       "fat": 14,
-      "price": 10,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["sichuan", "spicy", "sour"]
@@ -907,7 +907,7 @@
       "protein": 15,
       "carbs": 65,
       "fat": 18,
-      "price": 12,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["chongqing", "spicy", "noodle"]
@@ -919,7 +919,7 @@
       "protein": 22,
       "carbs": 68,
       "fat": 18,
-      "price": 18,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["yunnan", "noodle"]
@@ -931,7 +931,7 @@
       "protein": 16,
       "carbs": 65,
       "fat": 18,
-      "price": 15,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangxi", "spicy"]
@@ -943,7 +943,7 @@
       "protein": 35,
       "carbs": 52,
       "fat": 38,
-      "price": 35,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["beijing", "premium"]
@@ -955,7 +955,7 @@
       "protein": 35,
       "carbs": 48,
       "fat": 22,
-      "price": 25,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["nanjing"]
@@ -967,7 +967,7 @@
       "protein": 8,
       "carbs": 52,
       "fat": 16,
-      "price": 11,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["home-style"]
@@ -979,7 +979,7 @@
       "protein": 10,
       "carbs": 55,
       "fat": 18,
-      "price": 13,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["sichuan"]
@@ -991,7 +991,7 @@
       "protein": 8,
       "carbs": 48,
       "fat": 12,
-      "price": 10,
+      "price": 3,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["spicy"]
@@ -1003,7 +1003,7 @@
       "protein": 22,
       "carbs": 52,
       "fat": 20,
-      "price": 15,
+      "price": 9,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -1015,7 +1015,7 @@
       "protein": 22,
       "carbs": 50,
       "fat": 20,
-      "price": 15,
+      "price": 9,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -1027,7 +1027,7 @@
       "protein": 20,
       "carbs": 52,
       "fat": 18,
-      "price": 14,
+      "price": 9,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -1039,7 +1039,7 @@
       "protein": 22,
       "carbs": 50,
       "fat": 20,
-      "price": 16,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -1051,7 +1051,7 @@
       "protein": 32,
       "carbs": 52,
       "fat": 22,
-      "price": 22,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["simple"]
@@ -1063,7 +1063,7 @@
       "protein": 30,
       "carbs": 50,
       "fat": 20,
-      "price": 22,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["healthy"]
@@ -1075,7 +1075,7 @@
       "protein": 35,
       "carbs": 52,
       "fat": 30,
-      "price": 28,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["dry-pot", "spicy"]
@@ -1087,7 +1087,7 @@
       "protein": 32,
       "carbs": 52,
       "fat": 28,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["dry-pot", "spicy"]
@@ -1099,7 +1099,7 @@
       "protein": 35,
       "carbs": 50,
       "fat": 32,
-      "price": 24,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["taiwan"]
@@ -1111,7 +1111,7 @@
       "protein": 32,
       "carbs": 48,
       "fat": 18,
-      "price": 38,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["hunan", "spicy"]
@@ -1123,7 +1123,7 @@
       "protein": 35,
       "carbs": 45,
       "fat": 6,
-      "price": 35,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["healthy", "light"]
@@ -1135,7 +1135,7 @@
       "protein": 32,
       "carbs": 48,
       "fat": 18,
-      "price": 35,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["crispy"]
@@ -1147,7 +1147,7 @@
       "protein": 35,
       "carbs": 42,
       "fat": 4,
-      "price": 32,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["guangdong", "light"]
@@ -1159,7 +1159,7 @@
       "protein": 30,
       "carbs": 48,
       "fat": 25,
-      "price": 48,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["spicy", "premium"]
@@ -1171,7 +1171,7 @@
       "protein": 28,
       "carbs": 45,
       "fat": 8,
-      "price": 28,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Seafood",
       "tags": ["guangdong"]
@@ -1183,7 +1183,7 @@
       "protein": 32,
       "carbs": 52,
       "fat": 22,
-      "price": 24,
+      "price": 22,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangdong"]
@@ -1195,7 +1195,7 @@
       "protein": 35,
       "carbs": 52,
       "fat": 28,
-      "price": 28,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["premium"]
@@ -1207,7 +1207,7 @@
       "protein": 35,
       "carbs": 50,
       "fat": 26,
-      "price": 26,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["hunan", "spicy"]
@@ -1219,7 +1219,7 @@
       "protein": 25,
       "carbs": 52,
       "fat": 24,
-      "price": 16,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["hunan", "spicy"]
@@ -1231,7 +1231,7 @@
       "protein": 26,
       "carbs": 52,
       "fat": 26,
-      "price": 16,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["home-style"]
@@ -1243,7 +1243,7 @@
       "protein": 22,
       "carbs": 52,
       "fat": 38,
-      "price": 24,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["spicy"]
@@ -1255,7 +1255,7 @@
       "protein": 22,
       "carbs": 52,
       "fat": 42,
-      "price": 26,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["braised"]
@@ -1267,7 +1267,7 @@
       "protein": 25,
       "carbs": 62,
       "fat": 26,
-      "price": 16,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["taiwan"]
@@ -1279,7 +1279,7 @@
       "protein": 35,
       "carbs": 58,
       "fat": 38,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangdong"]
@@ -1291,7 +1291,7 @@
       "protein": 32,
       "carbs": 55,
       "fat": 35,
-      "price": 25,
+      "price": 16,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["guangdong"]
@@ -1303,7 +1303,7 @@
       "protein": 30,
       "carbs": 58,
       "fat": 30,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangdong"]
@@ -1315,7 +1315,7 @@
       "protein": 38,
       "carbs": 50,
       "fat": 18,
-      "price": 25,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["guangdong", "healthy"]
@@ -1327,7 +1327,7 @@
       "protein": 35,
       "carbs": 55,
       "fat": 24,
-      "price": 25,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["hainan"]
@@ -1339,7 +1339,7 @@
       "protein": 25,
       "carbs": 62,
       "fat": 28,
-      "price": 28,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangdong"]
@@ -1351,7 +1351,7 @@
       "protein": 30,
       "carbs": 62,
       "fat": 32,
-      "price": 30,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["guangdong"]
@@ -1363,7 +1363,7 @@
       "protein": 32,
       "carbs": 58,
       "fat": 24,
-      "price": 26,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["guangdong"]
@@ -1375,7 +1375,7 @@
       "protein": 8,
       "carbs": 48,
       "fat": 6,
-      "price": 10,
+      "price": 7,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy", "light"]
@@ -1387,7 +1387,7 @@
       "protein": 8,
       "carbs": 50,
       "fat": 10,
-      "price": 10,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["hunan"]
@@ -1399,7 +1399,7 @@
       "protein": 6,
       "carbs": 50,
       "fat": 8,
-      "price": 9,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["north", "sour"]
@@ -1411,7 +1411,7 @@
       "protein": 7,
       "carbs": 50,
       "fat": 9,
-      "price": 9,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["simple"]
@@ -1423,7 +1423,7 @@
       "protein": 10,
       "carbs": 45,
       "fat": 6,
-      "price": 8,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy", "low-fat"]
@@ -1435,7 +1435,7 @@
       "protein": 12,
       "carbs": 52,
       "fat": 10,
-      "price": 13,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy"]
@@ -1447,7 +1447,7 @@
       "protein": 16,
       "carbs": 48,
       "fat": 15,
-      "price": 11,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["home-style"]
@@ -1459,7 +1459,7 @@
       "protein": 14,
       "carbs": 48,
       "fat": 12,
-      "price": 10,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["light"]
@@ -1471,7 +1471,7 @@
       "protein": 14,
       "carbs": 46,
       "fat": 12,
-      "price": 11,
+      "price": 5,
       "meal_type": ["lunch", "dinner"],
       "category": "Vegan",
       "tags": ["healthy", "bitter"]
@@ -1507,7 +1507,7 @@
       "protein": 28,
       "carbs": 55,
       "fat": 32,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["jiangsu", "braised"]
@@ -1519,7 +1519,7 @@
       "protein": 18,
       "carbs": 45,
       "fat": 14,
-      "price": 15,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["dumpling"]
@@ -1531,7 +1531,7 @@
       "protein": 18,
       "carbs": 45,
       "fat": 20,
-      "price": 15,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["dumpling", "fried"]
@@ -1543,7 +1543,7 @@
       "protein": 22,
       "carbs": 55,
       "fat": 16,
-      "price": 18,
+      "price": 12,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["dumpling", "north"]
@@ -1555,7 +1555,7 @@
       "protein": 18,
       "carbs": 42,
       "fat": 16,
-      "price": 18,
+      "price": 7,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["shanghai"]
@@ -1567,7 +1567,7 @@
       "protein": 16,
       "carbs": 45,
       "fat": 22,
-      "price": 14,
+      "price": 6,
       "meal_type": ["breakfast", "lunch"],
       "category": "Staple",
       "tags": ["shanghai", "fried"]
@@ -1579,7 +1579,7 @@
       "protein": 18,
       "carbs": 42,
       "fat": 12,
-      "price": 12,
+      "price": 10,
       "meal_type": ["breakfast", "lunch", "dinner"],
       "category": "Staple",
       "tags": ["soup"]
@@ -1591,7 +1591,7 @@
       "protein": 22,
       "carbs": 42,
       "fat": 12,
-      "price": 18,
+      "price": 15,
       "meal_type": ["breakfast", "lunch", "dinner"],
       "category": "Seafood",
       "tags": ["soup"]
@@ -1603,7 +1603,7 @@
       "protein": 18,
       "carbs": 48,
       "fat": 22,
-      "price": 15,
+      "price": 8,
       "meal_type": ["lunch", "dinner"],
       "category": "Staple",
       "tags": ["fried"]
@@ -1615,7 +1615,7 @@
       "protein": 35,
       "carbs": 5,
       "fat": 14,
-      "price": 25,
+      "price": 20,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["cold", "high-protein"]
@@ -1639,7 +1639,7 @@
       "protein": 3,
       "carbs": 15,
       "fat": 4,
-      "price": 8,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Cold",
       "tags": ["cold", "healthy"]
@@ -1663,7 +1663,7 @@
       "protein": 5,
       "carbs": 16,
       "fat": 5,
-      "price": 10,
+      "price": 6,
       "meal_type": ["lunch", "dinner"],
       "category": "Cold",
       "tags": ["cold"]
@@ -1675,7 +1675,7 @@
       "protein": 14,
       "carbs": 8,
       "fat": 12,
-      "price": 12,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Cold",
       "tags": ["cold", "high-protein"]
@@ -1687,7 +1687,7 @@
       "protein": 35,
       "carbs": 45,
       "fat": 42,
-      "price": 38,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["spicy", "sichuan"]
@@ -1711,7 +1711,7 @@
       "protein": 22,
       "carbs": 52,
       "fat": 26,
-      "price": 22,
+      "price": 18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["spicy", "sichuan"]
@@ -1723,7 +1723,7 @@
       "protein": 25,
       "carbs": 48,
       "fat": 30,
-      "price": 28,
+      "price":18,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["spicy", "sichuan"]
@@ -1735,7 +1735,7 @@
       "protein": 20,
       "carbs": 58,
       "fat": 16,
-      "price": 15,
+      "price": 14,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "soup"]
@@ -1747,7 +1747,7 @@
       "protein": 28,
       "carbs": 62,
       "fat": 24,
-      "price": 22,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle"]
@@ -1759,7 +1759,7 @@
       "protein": 22,
       "carbs": 58,
       "fat": 28,
-      "price": 18,
+      "price": 13,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle"]
@@ -1771,7 +1771,7 @@
       "protein": 25,
       "carbs": 55,
       "fat": 12,
-      "price": 18,
+      "price": 10,
       "meal_type": ["lunch", "dinner"],
       "category": "Poultry",
       "tags": ["noodle", "soup"]
@@ -1783,7 +1783,7 @@
       "protein": 20,
       "carbs": 60,
       "fat": 18,
-      "price": 14,
+      "price": 11,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "sour"]
@@ -1795,7 +1795,7 @@
       "protein": 30,
       "carbs": 62,
       "fat": 20,
-      "price": 20,
+      "price": 15,
       "meal_type": ["lunch", "dinner"],
       "category": "Meat",
       "tags": ["noodle", "taiwan"]
