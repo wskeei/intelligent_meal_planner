@@ -73,7 +73,7 @@ async function handleRegister() {
       redirectTo: '/profile?onboarding=1'
     })
 
-    if (loggedIn) {
+    if (loggedIn.ok) {
       ElMessage.success(t('auth.register_success'))
       return
     }

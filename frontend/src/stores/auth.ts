@@ -12,6 +12,17 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const isAuthenticated = ref(Boolean(token.value))
 
+  async function requestCurrentUser() {
+    if (!token.value) {
+      throw new Error('missing_token')
+    }
+
+    const { data } = await authApi.me()
+    user.value = data
+    useUserStore().hydrateFromAuthUser(data)
+    return data
+  }
+
   async function login(
     username: string,
     password: string,
@@ -29,12 +40,15 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('token', data.access_token)
       isAuthenticated.value = true
 
-      await fetchUser()
+      await requestCurrentUser()
       router.push(options?.redirectTo ?? '/')
-      return true
+      return { ok: true as const, reason: null }
     } catch (error) {
       console.error('Login failed', error)
-      return false
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return { ok: false as const, reason: 'invalid_credentials' as const }
+      }
+      return { ok: false as const, reason: 'request_failed' as const }
     }
   }
 
@@ -52,11 +66,13 @@ export const useAuthStore = defineStore('auth', () => {
     if (!token.value) return
 
     try {
-      const { data } = await authApi.me()
-      user.value = data
-      useUserStore().hydrateFromAuthUser(data)
-    } catch (_error) {
-      logout()
+      await requestCurrentUser()
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        logout()
+        return
+      }
+      throw error
     }
   }
 
@@ -70,7 +86,9 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   if (token.value) {
-    void fetchUser()
+    void fetchUser().catch((error) => {
+      console.error('Fetch current user failed', error)
+    })
   }
 
   return {

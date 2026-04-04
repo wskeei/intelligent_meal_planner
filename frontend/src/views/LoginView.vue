@@ -71,17 +71,22 @@ async function handleLogin() {
 
   errorMessage.value = ''
   loading.value = true
-  const success = await auth.login(username.value, password.value, {
+  const result = await auth.login(username.value, password.value, {
     redirectTo: redirectTarget.value
   })
   loading.value = false
 
-  if (success) {
+  if (result.ok) {
     errorMessage.value = ''
     ElMessage.success(t('auth.login_success'))
   } else {
-    errorMessage.value = t('auth.login_inline_error')
-    ElMessage.error(t('auth.login_failed'))
+    const key =
+      result.reason === 'invalid_credentials' ? 'auth.invalid_credentials' : 'auth.login_inline_error'
+    const toastKey =
+      result.reason === 'invalid_credentials' ? 'auth.invalid_credentials' : 'auth.login_failed'
+
+    errorMessage.value = t(key)
+    ElMessage.error(t(toastKey))
   }
 }
 </script>

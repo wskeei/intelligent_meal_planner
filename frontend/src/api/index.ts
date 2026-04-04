@@ -7,6 +7,10 @@ const api = axios.create({
   timeout: 120000
 })
 
+export function isUnauthorizedError(error: unknown) {
+  return axios.isAxiosError(error) && error.response?.status === 401
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   const locale = localStorage.getItem('locale') || 'zh'
