@@ -2,6 +2,13 @@ from __future__ import annotations
 
 import re
 
+from .copy import (
+    dual_plan_ready,
+    negotiation_missing_inputs,
+    planning_tool_ready,
+    resolve_locale,
+    single_plan_ready,
+)
 from .feasibility_negotiator import build_negotiation_result
 from .question_strategy import build_follow_up_plan
 from .semantic_normalizer import (
@@ -209,16 +216,18 @@ class CrewMealChatRuntime:
         self, user_message: str, memory: ConversationMemory, intent: dict
     ) -> dict:
         budget = memory.preferences.get("budget")
+        locale = self._session_locale(memory)
         if budget is None or memory.target_ranges is None:
             return {
                 "phase": memory.phase,
-                "assistant_message": "我还需要你的预算和目标信息，才能继续判断。",
+                "assistant_message": negotiation_missing_inputs(locale),
                 "options": [],
             }
 
         negotiation = build_negotiation_result(
             budget=float(budget),
             target_ranges=memory.target_ranges,
+            locale=locale,
         )
         return {
             "phase": negotiation.phase,
@@ -228,21 +237,22 @@ class CrewMealChatRuntime:
 
     def planning_agent(self, memory: ConversationMemory, user_message: str) -> dict:
         del user_message
+        locale = self._session_locale(memory)
         if self.planning_tool is None:
             return {
                 "phase": "planning",
-                "assistant_message": "我已经准备好开始配餐。",
+                "assistant_message": planning_tool_ready(locale),
                 "meal_plan": None,
             }
         if memory.negotiation_options:
             return {
                 "phase": "finalized",
-                "assistant_message": "我给你整理了两套方案。",
+                "assistant_message": dual_plan_ready(locale),
                 "meal_plan": self._build_dual_plan(memory),
             }
         return {
             "phase": "finalized",
-            "assistant_message": "我给你整理好了一份方案。",
+            "assistant_message": single_plan_ready(locale),
             "meal_plan": self.planning_tool.generate(
                 goal=memory.preferences.get("health_goal", "healthy"),
                 budget=float(memory.preferences.get("budget", 0)),
@@ -408,6 +418,9 @@ class CrewMealChatRuntime:
         if isinstance(previous_confidence, (int, float)):
             return max(current_confidence, float(previous_confidence))
         return current_confidence
+
+    def _session_locale(self, memory: ConversationMemory) -> str:
+        return resolve_locale(memory)
 
     def _normalize_profile_updates(self, profile_updates: dict) -> dict:
         normalized = dict(profile_updates)

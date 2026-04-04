@@ -16,6 +16,15 @@
         </template>
 
         <el-form label-position="top" size="large">
+          <el-alert
+            v-if="saveError"
+            :title="saveError"
+            type="error"
+            show-icon
+            :closable="false"
+            class="inline-alert"
+          />
+
           <el-form-item :label="$t('auth.username')">
             <el-input :model-value="profile.username" disabled />
           </el-form-item>
@@ -146,6 +155,7 @@ const {
 } = storeToRefs(userStore)
 
 const saving = ref(false)
+const saveError = ref('')
 const onboardingMode = route.query.onboarding === '1'
 const localProfile = reactive<UserProfile>({
   username: '',
@@ -167,11 +177,13 @@ watch(
 
 async function save() {
   saving.value = true
+  saveError.value = ''
   try {
     await userStore.saveProfile(localProfile)
     ElMessage.success(t('profile.saved'))
   } catch (error) {
     console.error(error)
+    saveError.value = t('profile.save_inline_error')
     ElMessage.error(t('profile.save_failed'))
   } finally {
     saving.value = false
@@ -231,6 +243,10 @@ async function save() {
   color: var(--color-text-light);
   font-size: 0.84rem;
   line-height: 1.5;
+}
+
+.inline-alert {
+  margin-bottom: 16px;
 }
 
 .actions,

@@ -20,6 +20,21 @@ def test_create_session_includes_metadata_fields(client, auth_header):
     assert payload["negotiation_options"] == []
 
 
+def test_create_session_respects_english_locale(client, auth_header):
+    response = client.post(
+        "/api/meal-chat/sessions",
+        headers={**auth_header, "Accept-Language": "en-US,en;q=0.9"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert (
+        payload["messages"][0]["content"]
+        == "I will first confirm your goal, budget, and food preferences, then organize a realistic daily meal plan within budget."
+    )
+
+
 def test_post_message_session_includes_memory_metadata(
     client, auth_header, monkeypatch
 ):

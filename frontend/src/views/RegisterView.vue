@@ -51,8 +51,7 @@ const loading = ref(false)
 const form = reactive({
   username: '',
   email: '',
-  password: '',
-  health_goal: 'healthy'
+  password: ''
 })
 
 async function handleRegister() {

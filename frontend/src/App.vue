@@ -127,6 +127,7 @@ function handleLogout() {
 
 function handleCommand(command: string) {
   locale.value = command
+  localStorage.setItem('locale', command)
 }
 </script>
 

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import MealChatMessage, MealChatSession, User
 from ..meal_chat.crew_factory import build_meal_planning_crew
+from ..meal_chat.copy import normalize_locale, session_intro
 from ..meal_chat.crew_runner import CrewMealPlannerRunner
 from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
 from ..meal_chat.intake_runtime import IntakeRuntime
@@ -321,7 +322,8 @@ class MealChatApplication:
             ],
         }
 
-    def start_session(self, db: Session, user: User) -> Dict[str, Any]:
+    def start_session(self, db: Session, user: User, locale: str = "zh") -> Dict[str, Any]:
+        resolved_locale = normalize_locale(locale)
         memory = ConversationMemory(
             phase="discovering",
             profile={
@@ -332,6 +334,7 @@ class MealChatApplication:
                 "activity_level": user.activity_level,
             },
             preferences={"health_goal": normalize_goal(user.health_goal) or "healthy"},
+            known_facts={"locale": resolved_locale},
         )
         session = MealChatSession(
             id=str(uuid.uuid4())[:8],
@@ -344,7 +347,7 @@ class MealChatApplication:
             MealChatMessage(
                 session_id=session.id,
                 role="assistant",
-                content="我会先了解你的目标、预算和口味偏好，再帮你整理一份预算内的一日三餐方案。",
+                content=session_intro(resolved_locale),
                 stage="discovering",
             )
         )
@@ -375,7 +378,12 @@ class MealChatApplication:
         return self._serialize_session(db, session)
 
     def handle_message(
-        self, db: Session, user: User, session_id: str, content: str
+        self,
+        db: Session,
+        user: User,
+        session_id: str,
+        content: str,
+        locale: str = "zh",
     ) -> Dict[str, Any]:
         session = (
             db.query(MealChatSession)
@@ -388,6 +396,12 @@ class MealChatApplication:
             raise ValueError("session_not_found")
 
         stage_before = session.status
+        resolved_locale = normalize_locale(locale)
+        current_slots = dict(session.collected_slots or {})
+        current_known_facts = dict(current_slots.get("known_facts") or {})
+        current_known_facts["locale"] = resolved_locale
+        current_slots["known_facts"] = current_known_facts
+        session.collected_slots = current_slots
 
         try:
             db.add(

@@ -9,10 +9,13 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
+  const locale = localStorage.getItem('locale') || 'zh'
   if (token) {
     config.headers = config.headers ?? {}
     ;(config.headers as Record<string, string>).Authorization = `Bearer ${token}`
   }
+  config.headers = config.headers ?? {}
+  ;(config.headers as Record<string, string>)['Accept-Language'] = locale
   return config
 })
 

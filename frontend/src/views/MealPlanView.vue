@@ -38,6 +38,19 @@
           </el-button>
         </div>
 
+        <el-alert
+          v-if="sessionError"
+          :title="sessionError"
+          type="error"
+          show-icon
+          :closable="false"
+          class="inline-alert"
+        >
+          <template #default>
+            <el-button type="primary" text @click="bootstrapSession">{{ $t('common.retry') }}</el-button>
+          </template>
+        </el-alert>
+
         <div ref="messagesRef" class="messages">
           <div
             v-for="(message, index) in messages"
@@ -65,6 +78,15 @@
         </div>
 
         <div class="composer">
+          <el-alert
+            v-if="messageError"
+            :title="messageError"
+            type="error"
+            show-icon
+            :closable="false"
+            class="inline-alert"
+          />
+
           <el-input
             v-model="draft"
             type="textarea"
@@ -222,7 +244,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useShoppingStore } from '@/stores/shopping'
 import { useUserStore } from '@/stores/user'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -242,6 +264,19 @@ const draft = ref('')
 const loading = ref(false)
 const messagesRef = ref<HTMLElement | null>(null)
 const hasAppliedReuseDraft = ref(false)
+const sessionError = ref('')
+const messageError = ref('')
+const CANONICAL_MISSING_FIELDS = new Set([
+  'gender',
+  'age',
+  'height',
+  'weight',
+  'activity_level',
+  'health_goal',
+  'budget',
+  'preferred_tags',
+  'disliked_foods'
+])
 
 const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
 
@@ -310,21 +345,39 @@ const reuseSeed = computed(() => {
 const reuseDraft = computed(() => {
   if (!reuseSeed.value) return ''
 
-  const parts = []
+  const parts: string[] = []
   if (reuseSeed.value.goal) {
-    parts.push(`${t('meal_plan.health_goal')}是${t(`meal_plan.goals.${reuseSeed.value.goal}`)}`)
+    parts.push(
+      t('meal_plan.reuse_parts.goal', {
+        value: t(`meal_plan.goals.${reuseSeed.value.goal}`)
+      })
+    )
   }
   if (reuseSeed.value.budget) {
-    parts.push(`${t('meal_plan.budget')}是${reuseSeed.value.budget} 元`)
+    parts.push(
+      t('meal_plan.reuse_parts.budget', {
+        value: reuseSeed.value.budget
+      })
+    )
   }
   if (reuseSeed.value.tags.length) {
-    parts.push(`${t('meal_plan.preferred_tags')}包括${reuseSeed.value.tags.join('、')}`)
+    parts.push(
+      t('meal_plan.reuse_parts.tags', {
+        value: reuseSeed.value.tags.join(localeJoiner.value)
+      })
+    )
   }
   if (reuseSeed.value.disliked.length) {
-    parts.push(`${t('meal_plan.disliked_foods')}是${reuseSeed.value.disliked.join('、')}`)
+    parts.push(
+      t('meal_plan.reuse_parts.disliked', {
+        value: reuseSeed.value.disliked.join(localeJoiner.value)
+      })
+    )
   }
 
-  return `我想沿用上次的设定：${parts.join('，')}。`
+  return t('meal_plan.reuse_prefill', {
+    details: parts.join(sentenceJoiner.value)
+  })
 })
 
 const reuseSummary = computed(() => {
@@ -378,7 +431,10 @@ const phaseSummary = computed(() => {
 
 const missingFieldKeys = computed<string[]>(() => {
   const value = knownFacts.value.missing_fields
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : openQuestions.value
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (item): item is string => typeof item === 'string' && CANONICAL_MISSING_FIELDS.has(item)
+  )
 })
 
 const missingItems = computed(() =>
@@ -429,7 +485,9 @@ const nextAction = computed(() => {
   }
 
   if (openQuestions.value.length) {
-    return t('meal_plan.answer_next', { field: fieldLabel(openQuestions.value[0]) })
+    const firstQuestion = openQuestions.value[0]
+    const label = CANONICAL_MISSING_FIELDS.has(firstQuestion) ? fieldLabel(firstQuestion) : firstQuestion
+    return t('meal_plan.answer_next', { field: label })
   }
 
   return t('meal_plan.session_tip')
@@ -444,6 +502,9 @@ const composerHint = computed(() => {
     ? t('meal_plan.prefill_hint')
     : t('meal_plan.draft_hint')
 })
+
+const localeJoiner = computed(() => (locale.value === 'en' ? ', ' : '、'))
+const sentenceJoiner = computed(() => (locale.value === 'en' ? ', ' : '，'))
 
 function goalText(goal: unknown) {
   return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : ''
@@ -480,6 +541,7 @@ async function scrollToBottom() {
 
 async function bootstrapSession() {
   loading.value = true
+  sessionError.value = ''
   try {
     if (authStore.isAuthenticated && !profile.value.username) {
       await authStore.fetchUser()
@@ -498,6 +560,7 @@ async function bootstrapSession() {
     await scrollToBottom()
   } catch (error) {
     console.error(error)
+    sessionError.value = t('meal_plan.session_inline_error')
     ElMessage.error(t('meal_plan.session_failed'))
   } finally {
     loading.value = false
@@ -508,6 +571,7 @@ async function sendMessage() {
   if (!sessionId.value || !draft.value.trim() || loading.value || !isConversationActive.value) return
 
   loading.value = true
+  messageError.value = ''
   const content = draft.value.trim()
   draft.value = ''
   optimisticMessages.value = [...messages.value, { role: 'user', content }]
@@ -522,6 +586,7 @@ async function sendMessage() {
     console.error(error)
     optimisticMessages.value = null
     draft.value = content
+    messageError.value = t('meal_plan.message_inline_error')
     ElMessage.error(t('meal_plan.message_failed'))
   } finally {
     loading.value = false
@@ -671,6 +736,10 @@ onMounted(async () => {
   border-radius: 18px;
   background: #f7faf8;
   margin-bottom: 18px;
+}
+
+.inline-alert {
+  margin-bottom: 16px;
 }
 
 .reuse-banner p {

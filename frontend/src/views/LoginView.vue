@@ -6,6 +6,15 @@
       <p class="subtitle">{{ $t('auth.login_intro') }}</p>
 
       <el-form label-position="top" @submit.prevent>
+        <el-alert
+          v-if="errorMessage"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          :closable="false"
+          class="inline-alert"
+        />
+
         <el-form-item :label="$t('auth.username')">
           <el-input v-model="username" :placeholder="$t('auth.username')" size="large" />
         </el-form-item>
@@ -47,6 +56,7 @@ const auth = useAuthStore()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
+const errorMessage = ref('')
 
 const redirectTarget = computed(() =>
   typeof route.query.redirect === 'string' ? route.query.redirect : '/'
@@ -54,10 +64,12 @@ const redirectTarget = computed(() =>
 
 async function handleLogin() {
   if (!username.value || !password.value) {
-    ElMessage.warning(t('auth.login_missing'))
+    errorMessage.value = t('auth.login_missing')
+    ElMessage.warning(errorMessage.value)
     return
   }
 
+  errorMessage.value = ''
   loading.value = true
   const success = await auth.login(username.value, password.value, {
     redirectTo: redirectTarget.value
@@ -65,8 +77,10 @@ async function handleLogin() {
   loading.value = false
 
   if (success) {
+    errorMessage.value = ''
     ElMessage.success(t('auth.login_success'))
   } else {
+    errorMessage.value = t('auth.login_inline_error')
     ElMessage.error(t('auth.login_failed'))
   }
 }
@@ -110,6 +124,10 @@ h1 {
 
 .full-width {
   width: 100%;
+}
+
+.inline-alert {
+  margin-bottom: 16px;
 }
 
 .auth-links {
