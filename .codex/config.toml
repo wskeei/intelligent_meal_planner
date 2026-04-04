@@ -1,0 +1,3 @@
+[agents.frontend-ux-auditor-planner]
+description = "Frontend UX auditor and planner for reviewing product UX and turning findings into a remediation plan with design-skill sequencing."
+config_file = "./agents/frontend-ux-auditor-planner.toml"
