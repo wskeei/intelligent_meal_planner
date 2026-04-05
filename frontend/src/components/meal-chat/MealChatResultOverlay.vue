@@ -19,15 +19,35 @@
           >
             {{ t('meal_plan.return_to_chat') }}
           </button>
-          <div class="price-pill">¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</div>
-        </header>
-
-        <main class="result-hero">
-          <div class="result-hero-copy">
+          <div class="result-title-copy">
             <p class="eyebrow">{{ t('meal_plan.final_plan') }}</p>
             <h1 id="meal-chat-result-title">{{ t('meal_plan.result_title') }}</h1>
-            <p class="result-subtitle">{{ t('meal_plan.result_subtitle') }}</p>
           </div>
+          <div class="price-pill">
+            <span>{{ t('meal_plan.total_cost') }}</span>
+            <strong>¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</strong>
+          </div>
+        </header>
+
+        <main class="result-main">
+          <section class="summary-grid">
+            <div class="summary-item">
+              <span>{{ t('meal_plan.field_labels.health_goal') }}</span>
+              <strong>{{ goalLabel }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>{{ t('meal_plan.field_labels.budget') }}</span>
+              <strong>{{ budgetLabel }}</strong>
+            </div>
+            <div class="summary-item">
+              <span>{{ t('meal_plan.calories') }}</span>
+              <strong>{{ mealPlan.nutrition.total_calories.toFixed(0) }} kcal</strong>
+            </div>
+            <div class="summary-item">
+              <span>{{ t('meal_plan.protein') }}</span>
+              <strong>{{ mealPlan.nutrition.total_protein.toFixed(0) }} g</strong>
+            </div>
+          </section>
 
           <div class="meal-groups">
             <section v-for="group in groupedMeals" :key="group.key" class="meal-group">
@@ -56,54 +76,41 @@
         </main>
 
         <section class="result-secondary">
-          <article class="secondary-card explanation-card">
-            <p class="secondary-eyebrow">{{ t('meal_plan.result_explanation_title') }}</p>
-            <h2>{{ t('meal_plan.result_explanation_summary') }}</h2>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <span>{{ t('meal_plan.field_labels.health_goal') }}</span>
-                <strong>{{ goalLabel }}</strong>
+          <article v-if="alternatives.length" class="secondary-card alternatives-card collapsed">
+            <details>
+              <summary>
+                <span>{{ t('meal_plan.alt_title') }}</span>
+                <span>{{ alternatives.length }} {{ t('meal_plan.items') }}</span>
+              </summary>
+              <div class="alternative-list">
+                <article
+                  v-for="alternative in alternatives"
+                  :key="alternative.option_key"
+                  class="alternative-card"
+                >
+                  <div>
+                    <p class="alternative-title">{{ alternative.title }}</p>
+                    <p class="alternative-rationale">{{ alternative.rationale }}</p>
+                  </div>
+                  <strong>¥{{ alternative.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
+                </article>
               </div>
-              <div class="summary-item">
-                <span>{{ t('meal_plan.field_labels.budget') }}</span>
-                <strong>{{ budgetLabel }}</strong>
-              </div>
-              <div class="summary-item">
-                <span>{{ t('meal_plan.calories') }}</span>
-                <strong>{{ mealPlan.nutrition.total_calories.toFixed(0) }} kcal</strong>
-              </div>
-              <div class="summary-item">
-                <span>{{ t('meal_plan.protein') }}</span>
-                <strong>{{ mealPlan.nutrition.total_protein.toFixed(0) }} g</strong>
-              </div>
-            </div>
+            </details>
           </article>
 
-          <article v-if="alternatives.length" class="secondary-card alternatives-card">
-            <p class="secondary-eyebrow">{{ t('meal_plan.alt_title') }}</p>
-            <div class="alternative-list">
-              <article
-                v-for="alternative in alternatives"
-                :key="alternative.option_key"
-                class="alternative-card"
-              >
-                <div>
-                  <p class="alternative-title">{{ alternative.title }}</p>
-                  <p class="alternative-rationale">{{ alternative.rationale }}</p>
-                </div>
-                <strong>¥{{ alternative.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
-              </article>
-            </div>
-          </article>
-
-          <article class="secondary-card trace-card collapsed">
+          <article v-if="hasTraceSection" class="secondary-card trace-card collapsed">
             <details>
               <summary>
                 <span>{{ t('meal_plan.crew_title') }}</span>
                 <span>{{ t('meal_plan.trace_toggle') }}</span>
               </summary>
-              <div v-if="crewTrace.length" class="crew-timeline">
-                <article v-for="event in crewTrace" :key="`${event.agent}-${event.message}`" class="crew-event">
+              <p v-if="traceUnavailableMessage" class="crew-empty">{{ traceUnavailableMessage }}</p>
+              <div v-else-if="visibleCrewTrace.length" class="crew-timeline">
+                <article
+                  v-for="event in visibleCrewTrace"
+                  :key="`${event.agent}-${event.message}`"
+                  class="crew-event"
+                >
                   <div class="crew-event-head">
                     <strong>{{ event.agent }}</strong>
                     <span class="crew-status">{{ event.status }}</span>
@@ -149,7 +156,7 @@ const emit = defineEmits<{
   (event: 'start-over'): void
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const rootRef = ref<HTMLElement | null>(null)
 const shellRef = ref<HTMLElement | null>(null)
 const returnButtonRef = ref<HTMLButtonElement | null>(null)
@@ -181,6 +188,16 @@ const budgetLabel = computed(() => {
   const budget = props.preferences.budget ?? props.mealPlan?.target.max_budget
   return budget ? `¥${budget}` : '...'
 })
+
+const traceUnavailableMessage = computed(() =>
+  locale.value === 'en' && props.crewTrace.length ? t('meal_plan.trace_unavailable_locale') : ''
+)
+
+const visibleCrewTrace = computed(() => (traceUnavailableMessage.value ? [] : props.crewTrace))
+
+const hasTraceSection = computed(
+  () => Boolean(traceUnavailableMessage.value) || props.crewTrace.length > 0
+)
 
 function mealLabel(type: string) {
   return t(`recipes.${type}`)
@@ -323,7 +340,7 @@ summary {
 }
 
 .result-overlay-head {
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
@@ -338,21 +355,35 @@ summary {
   font-weight: 700;
 }
 
+.result-title-copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .price-pill {
+  display: inline-grid;
+  gap: 2px;
   padding: 10px 14px;
   border-radius: 999px;
   background: rgba(126, 216, 139, 0.18);
   color: var(--color-primary-dark);
   font-weight: 700;
+  text-align: right;
 }
 
-.result-hero {
+.price-pill span {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.price-pill strong {
+  font-size: 1.06rem;
+}
+
+.result-main {
   display: grid;
-  gap: clamp(20px, 3vw, 36px);
-}
-
-.result-hero-copy {
-  max-width: 68ch;
+  gap: 16px;
 }
 
 .eyebrow,
@@ -365,18 +396,11 @@ summary {
   text-transform: uppercase;
 }
 
-.result-hero-copy h1 {
+.result-title-copy h1 {
   margin: 0;
   color: var(--color-secondary);
-  font-size: clamp(2.4rem, 5vw, 4.6rem);
-  line-height: 0.98;
-}
-
-.result-subtitle {
-  margin: 14px 0 0;
-  color: var(--color-text-secondary);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.02;
 }
 
 .meal-groups {
@@ -452,20 +476,11 @@ summary {
 
 .result-secondary {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 16px;
-  margin-top: 18px;
-}
-
-.secondary-card h2 {
-  margin: 0;
-  color: var(--color-secondary);
-  font-size: 1.05rem;
-  line-height: 1.5;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .summary-grid {
-  margin-top: 18px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
@@ -485,6 +500,12 @@ summary {
   width: 100%;
 }
 
+.alternatives-card details,
+.trace-card details {
+  width: 100%;
+}
+
+.alternatives-card summary,
 .trace-card summary {
   align-items: center;
   cursor: pointer;
@@ -493,10 +514,12 @@ summary {
   color: var(--color-secondary);
 }
 
+.alternatives-card summary::-webkit-details-marker,
 .trace-card summary::-webkit-details-marker {
   display: none;
 }
 
+.alternatives-card details[open] .alternative-list,
 .trace-card details[open] .crew-timeline,
 .trace-card details[open] .crew-empty {
   margin-top: 16px;
@@ -557,8 +580,8 @@ summary {
 }
 
 @media (max-width: 900px) {
-  .result-secondary {
-    grid-template-columns: 1fr;
+  .result-overlay-head {
+    flex-wrap: wrap;
   }
 }
 
@@ -578,8 +601,12 @@ summary {
     align-items: flex-start;
   }
 
-  .result-hero-copy h1 {
+  .result-title-copy h1 {
     font-size: 2.1rem;
+  }
+
+  .price-pill {
+    text-align: left;
   }
 
   .action-button {
