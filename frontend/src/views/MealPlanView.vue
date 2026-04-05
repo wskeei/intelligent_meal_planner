@@ -1,187 +1,193 @@
 <template>
   <div class="meal-chat-page" :class="{ 'overlay-active': overlayVisible }">
-    <section class="hero-shell">
-      <div class="hero-copy">
-        <p class="eyebrow">{{ $t('meal_plan.nutritionist') }}</p>
-        <h1>{{ $t('meal_plan.chat_title') }}</h1>
-        <p class="subtitle">{{ $t('meal_plan.chat_subtitle') }}</p>
+    <header class="chat-topbar">
+      <div class="topbar-copy">
+        <p class="topbar-kicker">{{ $t('meal_plan.title') }}</p>
+        <h1>{{ $t('meal_plan.chat_header_title') }}</h1>
+        <p class="topbar-summary">{{ topSummaryLine }}</p>
       </div>
-      <div class="hero-note">
-        <span class="note-chip">{{ $t('meal_plan.session_tip') }}</span>
-        <span class="note-chip muted">
+      <div class="topbar-actions">
+        <span class="topbar-pill">
           {{ $t('meal_plan.profile_progress', { completed: profileCompletionCompleted, total: profileCompletionTotal }) }}
         </span>
+        <el-button text type="primary" :disabled="loading" @click="restartSession">
+          {{ $t('meal_plan.new_session') }}
+        </el-button>
       </div>
-    </section>
+    </header>
 
     <section class="chat-layout">
-      <el-card class="chat-card" shadow="hover">
-        <template #header>
-          <div class="section-head">
+      <aside class="context-rail" :class="{ muted: overlayVisible }">
+        <MealChatStatusPanel
+          :eyebrow="$t('meal_plan.status_eyebrow')"
+          :title="phaseTitle"
+          :summary="phaseSummary"
+          :condensed-label="statusBadge"
+          :expanded="statusExpanded"
+          :expand-label="$t('meal_plan.expand_status')"
+          :collapse-label="$t('meal_plan.collapse_status')"
+          :known-title="$t('meal_plan.known_title')"
+          :missing-title="$t('meal_plan.missing_title')"
+          :next-title="$t('meal_plan.next_title')"
+          :completed-copy="$t('meal_plan.missing_done')"
+          :next-action="nextAction"
+          :assistant-hint="followUpPlan?.assistant_message"
+          :known-items="knownItems"
+          :missing-items="missingItems"
+          @toggle="toggleStatus"
+        >
+          <template #actions>
+            <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
+              {{ $t('meal_plan.complete_profile') }}
+            </el-button>
+            <el-button
+              v-if="canGenerate"
+              type="primary"
+              :loading="overlayMode === 'generating'"
+              @click="startGenerationSequence"
+            >
+              {{ $t('meal_plan.generate_plan') }}
+            </el-button>
+            <el-button
+              v-else-if="finalPlan && overlayMode !== 'result'"
+              type="primary"
+              @click="openResultOverlay"
+            >
+              {{ $t('meal_plan.view_result') }}
+            </el-button>
+            <el-button v-if="finalPlan" plain @click="addToShoppingList">
+              {{ $t('meal_plan.add_to_list') }}
+            </el-button>
+            <el-button v-if="finalPlan" plain @click="restartSession">
+              {{ $t('meal_plan.start_over') }}
+            </el-button>
+          </template>
+        </MealChatStatusPanel>
+
+        <div class="context-secondary">
+          <button class="trace-trigger" type="button" @click="processDrawerVisible = true">
+            {{ $t('meal_plan.view_process') }}
+          </button>
+          <p>{{ traceCallout }}</p>
+        </div>
+      </aside>
+
+      <div class="chat-main">
+        <el-card class="chat-card" shadow="hover">
+          <div class="chat-card-head">
             <div>
-              <h2>{{ $t('meal_plan.chat_title') }}</h2>
-              <p>{{ $t('meal_plan.goal_summary') }}</p>
+              <p class="thread-label">{{ $t('meal_plan.chat_panel_title') }}</p>
+              <p class="thread-caption">{{ $t('meal_plan.chat_panel_caption') }}</p>
             </div>
-            <el-button text type="primary" :disabled="loading" @click="restartSession">
-              {{ $t('meal_plan.new_session') }}
+            <span class="thread-status">{{ statusBadge }}</span>
+          </div>
+
+          <div v-if="reuseSummary" class="reuse-banner">
+            <div>
+              <p class="reuse-eyebrow">{{ $t('history.reuse_ready') }}</p>
+              <p>{{ reuseSummary }}</p>
+            </div>
+            <el-button text type="primary" @click="draft = reuseDraft">
+              {{ $t('meal_plan.use_prefill') }}
             </el-button>
           </div>
-        </template>
 
-        <div v-if="reuseSummary" class="reuse-banner">
-          <div>
-            <p class="reuse-eyebrow">{{ $t('history.reuse_ready') }}</p>
-            <p>{{ reuseSummary }}</p>
-          </div>
-          <el-button text type="primary" @click="draft = reuseDraft">
-            {{ $t('meal_plan.use_prefill') }}
-          </el-button>
-        </div>
-
-        <el-alert
-          v-if="sessionError"
-          :title="sessionError"
-          type="error"
-          show-icon
-          :closable="false"
-          class="inline-alert"
-        >
-          <template #default>
-            <el-button type="primary" text @click="bootstrapSession">{{ $t('common.retry') }}</el-button>
-          </template>
-        </el-alert>
-
-        <div ref="messagesRef" class="messages">
-          <div
-            v-for="(message, index) in messages"
-            :key="`${message.role}-${index}-${message.created_at ?? 'local'}`"
-            :class="['message-row', message.role]"
-          >
-            <div class="message-meta">
-              <span>{{ message.role === 'assistant' ? $t('meal_plan.nutritionist') : profile.username || $t('common.you') }}</span>
-            </div>
-            <div class="bubble">
-              {{ message.content }}
-            </div>
-          </div>
-
-          <div v-if="loading && overlayMode !== 'generating'" class="message-row assistant pending">
-            <div class="message-meta">
-              <span>{{ $t('meal_plan.nutritionist') }}</span>
-            </div>
-            <div class="bubble pending-bubble">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="composer">
           <el-alert
-            v-if="messageError"
-            :title="messageError"
+            v-if="sessionError"
+            :title="sessionError"
             type="error"
             show-icon
             :closable="false"
             class="inline-alert"
-          />
-
-          <el-input
-            v-model="draft"
-            type="textarea"
-            :rows="3"
-            resize="none"
-            :disabled="!isConversationActive"
-            :placeholder="$t('meal_plan.chat_placeholder')"
-            @keydown.enter.exact.prevent="sendMessage"
-          />
-          <div class="composer-actions">
-            <p>{{ composerHint }}</p>
-            <el-button
-              type="primary"
-              :loading="loading && overlayMode !== 'generating'"
-              :disabled="loading || !isConversationActive || !draft.trim()"
-              @click="sendMessage"
-            >
-              {{ $t('meal_plan.send') }}
-            </el-button>
-          </div>
-        </div>
-      </el-card>
-
-      <aside class="result-stack" :class="{ muted: overlayVisible }">
-        <el-card class="status-card" shadow="hover">
-          <MealChatStatusPanel
-            :eyebrow="$t('meal_plan.status_eyebrow')"
-            :title="phaseTitle"
-            :summary="phaseSummary"
-            :known-title="$t('meal_plan.known_title')"
-            :missing-title="$t('meal_plan.missing_title')"
-            :next-title="$t('meal_plan.next_title')"
-            :completed-copy="$t('meal_plan.missing_done')"
-            :next-action="nextAction"
-            :assistant-hint="followUpPlan?.assistant_message"
-            :known-items="knownItems"
-            :missing-items="missingItems"
           >
-            <template #actions>
-              <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
-                {{ $t('meal_plan.complete_profile') }}
-              </el-button>
-              <el-button
-                v-if="canGenerate"
-                type="primary"
-                :loading="overlayMode === 'generating'"
-                @click="startGenerationSequence"
-              >
-                {{ $t('meal_plan.generate_plan') }}
-              </el-button>
-              <el-button
-                v-else-if="finalPlan && overlayMode !== 'result'"
-                type="primary"
-                @click="openResultOverlay"
-              >
-                {{ $t('meal_plan.view_result') }}
-              </el-button>
-              <el-button v-if="finalPlan" plain @click="addToShoppingList">
-                {{ $t('meal_plan.add_to_list') }}
-              </el-button>
-              <el-button v-if="finalPlan" plain @click="restartSession">
-                {{ $t('meal_plan.start_over') }}
-              </el-button>
+            <template #default>
+              <el-button type="primary" text @click="bootstrapSession">{{ $t('common.retry') }}</el-button>
             </template>
-          </MealChatStatusPanel>
-        </el-card>
+          </el-alert>
 
-        <el-card class="trace-card" shadow="never">
-          <template #header>
-            <div class="section-head compact">
-              <div>
-                <h2>{{ $t('meal_plan.crew_title') }}</h2>
-                <p>{{ $t('meal_plan.crew_subtitle') }}</p>
+          <div ref="messagesRef" class="messages">
+            <div
+              v-for="(message, index) in messages"
+              :key="`${message.role}-${index}-${message.created_at ?? 'local'}`"
+              :class="['message-row', message.role]"
+            >
+              <div class="message-meta">
+                <span>{{ message.role === 'assistant' ? $t('meal_plan.nutritionist') : profile.username || $t('common.you') }}</span>
+              </div>
+              <div class="bubble">
+                {{ message.content }}
               </div>
             </div>
-          </template>
 
-          <el-collapse>
-            <el-collapse-item :title="$t('meal_plan.trace_toggle')">
-              <p v-if="traceUnavailableMessage" class="crew-empty">{{ traceUnavailableMessage }}</p>
-              <div v-else-if="crewTrace.length" class="crew-timeline">
-                <article v-for="event in crewTrace" :key="`${event.agent}-${event.message}`" class="crew-event">
-                  <div class="crew-event-head">
-                    <strong>{{ event.agent }}</strong>
-                    <span class="crew-status">{{ event.status }}</span>
-                  </div>
-                  <p>{{ event.message }}</p>
-                </article>
+            <div v-if="loading && overlayMode !== 'generating'" class="message-row assistant pending">
+              <div class="message-meta">
+                <span>{{ $t('meal_plan.nutritionist') }}</span>
               </div>
-              <p v-else class="crew-empty">{{ $t('meal_plan.crew_empty') }}</p>
-            </el-collapse-item>
-          </el-collapse>
+              <div class="bubble pending-bubble">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <el-alert
+              v-if="messageError"
+              :title="messageError"
+              type="error"
+              show-icon
+              :closable="false"
+              class="inline-alert"
+            />
+
+            <el-input
+              v-model="draft"
+              type="textarea"
+              :rows="3"
+              resize="none"
+              :disabled="!isConversationActive"
+              :placeholder="$t('meal_plan.chat_placeholder')"
+              @keydown.enter.exact.prevent="sendMessage"
+            />
+            <div class="composer-actions">
+              <p>{{ composerHint }}</p>
+              <el-button
+                type="primary"
+                :loading="loading && overlayMode !== 'generating'"
+                :disabled="loading || !isConversationActive || !draft.trim()"
+                @click="sendMessage"
+              >
+                {{ $t('meal_plan.send') }}
+              </el-button>
+            </div>
+          </div>
         </el-card>
-      </aside>
+      </div>
     </section>
+
+    <el-drawer
+      v-model="processDrawerVisible"
+      :title="$t('meal_plan.crew_title')"
+      :size="processDrawerSize"
+      direction="rtl"
+      append-to-body
+    >
+      <div class="process-drawer-body">
+        <p class="process-drawer-summary">{{ $t('meal_plan.process_hint') }}</p>
+        <p v-if="traceUnavailableMessage" class="crew-empty">{{ traceUnavailableMessage }}</p>
+        <div v-else-if="crewTrace.length" class="crew-timeline">
+          <article v-for="event in crewTrace" :key="`${event.agent}-${event.message}`" class="crew-event">
+            <div class="crew-event-head">
+              <strong>{{ event.agent }}</strong>
+              <span class="crew-status">{{ event.status }}</span>
+            </div>
+            <p>{{ event.message }}</p>
+          </article>
+        </div>
+        <p v-else class="crew-empty">{{ $t('meal_plan.crew_empty') }}</p>
+      </div>
+    </el-drawer>
 
     <MealChatGenerationOverlay :visible="overlayMode === 'generating'" />
     <MealChatResultOverlay
@@ -198,7 +204,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -244,6 +250,12 @@ const sessionError = ref('')
 const messageError = ref('')
 const overlayMode = ref<'hidden' | 'generating' | 'result'>('hidden')
 const generationStartedAt = ref<number | null>(null)
+const statusExpanded = ref(false)
+const processDrawerVisible = ref(false)
+const isDesktopViewport = ref(false)
+const hasUserToggledStatus = ref(false)
+let desktopMediaQuery: MediaQueryList | null = null
+let onDesktopViewportChange: ((event: MediaQueryListEvent) => void) | null = null
 const SESSION_STORAGE_KEY = 'meal-chat-active-session-id'
 const CANONICAL_MISSING_FIELDS = new Set([
   'gender',
@@ -259,6 +271,7 @@ const CANONICAL_MISSING_FIELDS = new Set([
 
 const overlayVisible = computed(() => overlayMode.value !== 'hidden')
 const messages = computed(() => optimisticMessages.value ?? currentSession.value?.messages ?? [])
+const missingCount = computed(() => missingFieldKeys.value.length)
 
 function isNegotiatedMealPlan(mealPlan: MealPlan | NegotiatedMealPlan): mealPlan is NegotiatedMealPlan {
   return 'alternatives' in mealPlan
@@ -493,6 +506,48 @@ const traceUnavailableMessage = computed(() =>
   locale.value === 'en' && crewTrace.value.length ? t('meal_plan.trace_unavailable_locale') : ''
 )
 
+const statusBadge = computed(() => {
+  if (currentSession.value?.status === 'finalized') {
+    return t('meal_plan.status_badges.finalized')
+  }
+
+  if (canGenerate.value) {
+    return t('meal_plan.status_badges.ready')
+  }
+
+  if (missingCount.value > 0) {
+    return t('meal_plan.status_badges.missing', { count: missingCount.value })
+  }
+
+  return t('meal_plan.status_badges.active')
+})
+
+const topSummaryLine = computed(() => {
+  if (currentSession.value?.status === 'finalized') {
+    return t('meal_plan.header_summary.finalized')
+  }
+
+  if (canGenerate.value) {
+    return t('meal_plan.header_summary.ready')
+  }
+
+  if (missingCount.value > 0) {
+    return t('meal_plan.header_summary.missing', { count: missingCount.value })
+  }
+
+  return t('meal_plan.header_summary.active')
+})
+
+const traceCallout = computed(() => {
+  if (traceUnavailableMessage.value) {
+    return traceUnavailableMessage.value
+  }
+
+  return crewTrace.value.length ? t('meal_plan.process_ready') : t('meal_plan.process_empty_hint')
+})
+
+const processDrawerSize = computed(() => (isDesktopViewport.value ? '400px' : '92%'))
+
 function goalText(goal: unknown) {
   return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : ''
 }
@@ -525,6 +580,25 @@ function prefersReducedMotion() {
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches
   )
+}
+
+function syncViewportState(matches?: boolean) {
+  isDesktopViewport.value = matches ?? false
+
+  if (!hasUserToggledStatus.value) {
+    statusExpanded.value = isDesktopViewport.value
+  }
+}
+
+function resetPresentationState() {
+  hasUserToggledStatus.value = false
+  processDrawerVisible.value = false
+  statusExpanded.value = isDesktopViewport.value
+}
+
+function toggleStatus() {
+  hasUserToggledStatus.value = true
+  statusExpanded.value = !statusExpanded.value
 }
 
 function minimumGenerationDuration() {
@@ -733,6 +807,7 @@ async function restartSession() {
 
   overlayMode.value = 'hidden'
   generationStartedAt.value = null
+  resetPresentationState()
   hasAppliedReuseDraft.value = false
   currentSession.value = null
   optimisticMessages.value = null
@@ -743,26 +818,44 @@ async function restartSession() {
 }
 
 onMounted(async () => {
+  if (typeof window !== 'undefined') {
+    desktopMediaQuery = window.matchMedia('(min-width: 961px)')
+    syncViewportState(desktopMediaQuery.matches)
+    onDesktopViewportChange = (event) => {
+      syncViewportState(event.matches)
+    }
+    desktopMediaQuery.addEventListener('change', onDesktopViewportChange)
+  }
+
+  resetPresentationState()
   await bootstrapSession()
+})
+
+onBeforeUnmount(() => {
+  if (desktopMediaQuery && onDesktopViewportChange) {
+    desktopMediaQuery.removeEventListener('change', onDesktopViewportChange)
+  }
+
+  processDrawerVisible.value = false
 })
 </script>
 
 <style scoped>
 .meal-chat-page {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
-.hero-shell,
+.chat-topbar,
 .chat-layout,
-.result-stack {
+.context-rail {
   transition:
     filter var(--overlay-enter-duration) var(--overlay-ease),
     transform var(--overlay-enter-duration) var(--overlay-ease),
     opacity var(--overlay-enter-duration) var(--overlay-ease);
 }
 
-.meal-chat-page.overlay-active .hero-shell,
+.meal-chat-page.overlay-active .chat-topbar,
 .meal-chat-page.overlay-active .chat-layout {
   filter: blur(8px);
   transform: scale(0.985);
@@ -771,114 +864,116 @@ onMounted(async () => {
   user-select: none;
 }
 
-.meal-chat-page.overlay-active .result-stack.muted {
+.meal-chat-page.overlay-active .context-rail.muted {
   opacity: 0.36;
 }
 
-.hero-shell {
+.chat-topbar {
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  padding: clamp(20px, 3vw, 32px);
+  align-items: flex-start;
+  padding: clamp(18px, 2.4vw, 26px);
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 32%),
-    linear-gradient(140deg, #ffffff, #f4fbf5 55%, #eef6f1);
+    radial-gradient(circle at top right, rgba(126, 216, 139, 0.18), transparent 30%),
+    linear-gradient(145deg, #ffffff, #f5faf6 58%, #edf4ef);
   border: 1px solid rgba(34, 197, 94, 0.12);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
 }
 
-.hero-copy {
-  max-width: 720px;
+.topbar-copy {
+  display: grid;
+  gap: 8px;
+  max-width: 52rem;
 }
 
-.eyebrow,
+.topbar-kicker,
+.thread-label,
 .reuse-eyebrow {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--color-primary-dark);
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.hero-copy h1 {
+.topbar-copy h1 {
   margin: 0;
   color: var(--color-secondary);
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  line-height: 1.02;
+  font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+  line-height: 1.05;
 }
 
-.subtitle {
-  margin-top: 14px;
+.topbar-summary {
+  margin: 0;
   color: var(--color-text-secondary);
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 0.96rem;
+  line-height: 1.55;
 }
 
-.hero-note {
+.topbar-actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 10px;
-  align-items: flex-end;
-  min-width: 220px;
+  align-items: center;
 }
 
-.note-chip {
-  padding: 10px 14px;
+.topbar-pill,
+.thread-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
   border-radius: 999px;
   background: rgba(34, 197, 94, 0.12);
   color: #166534;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 600;
-}
-
-.note-chip.muted {
-  background: rgba(148, 163, 184, 0.12);
-  color: var(--color-text-secondary);
 }
 
 .chat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.7fr) minmax(290px, 0.88fr);
+  gap: 20px;
   align-items: start;
 }
 
-.chat-card,
-.status-card,
-.trace-card {
+.chat-main {
+  min-width: 0;
+}
+
+.context-rail {
+  display: grid;
+  gap: 12px;
+  align-self: start;
+}
+
+.chat-card {
   border: none;
-  border-radius: 24px;
+  border-radius: 28px;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
 }
 
-.status-card {
-  background: linear-gradient(160deg, #10251a, #173728);
-  color: #effff5;
+.chat-card :deep(.el-card__body) {
+  padding: clamp(18px, 2vw, 24px);
 }
 
-.trace-card {
-  background: linear-gradient(180deg, #ffffff, #f7faf8);
-}
-
-.section-head {
+.chat-card-head {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.section-head h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--color-secondary);
-}
-
-.section-head p {
-  margin: 4px 0 0;
+.thread-caption {
+  margin: 6px 0 0;
   color: var(--color-text-secondary);
-  font-size: 0.92rem;
+  font-size: 0.94rem;
+  line-height: 1.5;
 }
 
 .reuse-banner {
@@ -906,8 +1001,8 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  max-height: 58vh;
-  min-height: 420px;
+  max-height: 62vh;
+  min-height: 440px;
   overflow: auto;
   padding-right: 6px;
 }
@@ -987,9 +1082,33 @@ onMounted(async () => {
   font-size: 0.84rem;
 }
 
-.result-stack {
+.context-secondary {
   display: grid;
-  gap: 16px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f7faf8);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.trace-trigger {
+  justify-self: start;
+  min-height: 40px;
+  padding: 0;
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.context-secondary p,
+.process-drawer-summary {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.process-drawer-body {
+  display: grid;
+  gap: 12px;
 }
 
 .crew-event-head {
@@ -1044,36 +1163,67 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 960px) {
-  .hero-shell,
+@media (max-width: 1120px) {
   .chat-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.95fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .chat-topbar,
+  .topbar-actions,
+  .chat-card-head,
+  .chat-layout,
+  .composer-actions,
+  .reuse-banner {
     display: grid;
   }
 
-  .hero-note {
-    align-items: flex-start;
+  .chat-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .context-rail {
+    order: 1;
+  }
+
+  .chat-main {
+    order: 2;
   }
 
   .messages {
-    max-height: 48vh;
+    max-height: none;
     min-height: 360px;
   }
 }
 
 @media (max-width: 640px) {
+  .meal-chat-page {
+    gap: 16px;
+  }
+
+  .chat-topbar {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .chat-card {
+    border-radius: 22px;
+  }
+
   .message-row {
     max-width: 100%;
   }
 
+  .topbar-actions,
   .composer-actions,
-  .reuse-banner,
-  .section-head {
-    flex-direction: column;
-    align-items: flex-start;
+  .reuse-banner {
+    width: 100%;
   }
 
-  .status-card :deep(.el-button) {
+  .context-rail :deep(.el-button),
+  .composer-actions :deep(.el-button),
+  .reuse-banner :deep(.el-button) {
     width: 100%;
     min-height: 44px;
   }

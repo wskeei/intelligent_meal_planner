@@ -43,12 +43,15 @@
   },
   "meal_plan": {
     "title": "Planner",
-    "subtitle": "Tell the system what you need, then get a budget-safe daily plan.",
-    "chat_title": "Nutrition chat planner",
-    "chat_subtitle": "The system confirms your goal, budget, and missing details first, then builds a realistic daily plan.",
+    "subtitle": "Clarify the request, then get the plan.",
+    "chat_title": "Meal-planning chat",
+    "chat_subtitle": "Fill the key gaps first, then generate today's plan.",
+    "chat_header_title": "Plan today's meals through chat",
+    "chat_panel_title": "Conversation",
+    "chat_panel_caption": "Fill the remaining gaps and the result can stay grounded.",
     "nutritionist": "Nutritionist",
-    "session_tip": "The system starts from your saved profile and only asks for what's still missing.",
-    "goal_summary": "Once your goal, budget, and preferences are clear, the final result is generated in one step.",
+    "session_tip": "The system reads your profile first, then asks only for missing details.",
+    "goal_summary": "Once the goal, budget, and preferences are clear, the result can be generated.",
     "new_session": "Start a new request",
     "chat_placeholder": "Share your budget, food preferences, or answer the latest question",
     "draft_hint": "Press Enter to send. Use Shift + Enter for a new line.",
@@ -59,6 +62,10 @@
     "crew_title": "System trace",
     "crew_subtitle": "This is secondary information. Open it only if you want to inspect how the system moved forward.",
     "trace_toggle": "Show system trace",
+    "view_process": "View process",
+    "process_hint": "System details stay here so the main chat stays clean.",
+    "process_ready": "Open the trace only when you need it.",
+    "process_empty_hint": "There is no process detail yet.",
     "crew_empty": "There is no system trace to show yet.",
     "trace_unavailable_locale": "Detailed system trace messages are currently generated in Chinese only. Switch to Chinese if you need the raw trace.",
     "budget_safe_hint": "This result is constrained to your current budget.",
@@ -87,6 +94,8 @@
     },
     "profile_progress": "Profile progress {completed}/{total}",
     "status_eyebrow": "Current progress",
+    "expand_status": "Show details",
+    "collapse_status": "Hide details",
     "known_title": "Already known",
     "missing_title": "Still missing",
     "next_title": "What to do next",
@@ -94,9 +103,21 @@
     "ready_to_generate": "The key inputs are complete. You can start the formal meal generation now.",
     "next_after_final": "You can start a new request now or add this result to your shopping list.",
     "answer_next": "Answer \"{field}\" next so the planner can keep moving.",
+    "header_summary": {
+      "active": "Fill the key gaps and the chat can keep moving.",
+      "missing": "{count} key details are still missing.",
+      "ready": "The inputs are ready. You can generate now.",
+      "finalized": "Today's final meal plan is ready."
+    },
+    "status_badges": {
+      "active": "Keep going",
+      "missing": "{count} missing",
+      "ready": "Ready to generate",
+      "finalized": "Result ready"
+    },
     "complete_profile": "Complete profile",
     "result_title": "Today's meal plan",
-    "result_subtitle": "Review the result first. If you want the original context again, return to chat.",
+    "result_subtitle": "Review the result first. Return to chat only if you need more context.",
     "result_explanation_title": "Plan summary",
     "result_explanation_summary": "This result prioritizes your current budget, goal, and core nutrition constraints.",
     "alt_title": "Alternative directions",
@@ -143,10 +164,10 @@
       "finalized": "Your final plan is ready"
     },
     "phase_summary": {
-      "discovering": "The current job is to fill key gaps so the system does not have to guess.",
-      "negotiating": "The system has enough context and is checking whether the plan is feasible within budget.",
-      "planning": "The key inputs are complete and the final plan is being assembled.",
-      "finalized": "This meal-planning request is complete and ready for the next action."
+      "discovering": "Fill the key gaps first.",
+      "negotiating": "Checking the budget and boundaries.",
+      "planning": "Preparing the final plan.",
+      "finalized": "The result is ready."
     },
     "goals": {
       "healthy": "Healthy eating",
