@@ -17,61 +17,6 @@
     </header>
 
     <section class="chat-layout">
-      <aside class="context-rail" :class="{ muted: overlayVisible }">
-        <MealChatStatusPanel
-          :eyebrow="$t('meal_plan.status_eyebrow')"
-          :title="phaseTitle"
-          :summary="phaseSummary"
-          :condensed-label="statusBadge"
-          :expanded="statusExpanded"
-          :expand-label="$t('meal_plan.expand_status')"
-          :collapse-label="$t('meal_plan.collapse_status')"
-          :known-title="$t('meal_plan.known_title')"
-          :missing-title="$t('meal_plan.missing_title')"
-          :next-title="$t('meal_plan.next_title')"
-          :completed-copy="$t('meal_plan.missing_done')"
-          :next-action="nextAction"
-          :assistant-hint="followUpPlan?.assistant_message"
-          :known-items="knownItems"
-          :missing-items="missingItems"
-          @toggle="toggleStatus"
-        >
-          <template #actions>
-            <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
-              {{ $t('meal_plan.complete_profile') }}
-            </el-button>
-            <el-button
-              v-if="canGenerate"
-              type="primary"
-              :loading="overlayMode === 'generating'"
-              @click="startGenerationSequence"
-            >
-              {{ $t('meal_plan.generate_plan') }}
-            </el-button>
-            <el-button
-              v-else-if="finalPlan && overlayMode !== 'result'"
-              type="primary"
-              @click="openResultOverlay"
-            >
-              {{ $t('meal_plan.view_result') }}
-            </el-button>
-            <el-button v-if="finalPlan" plain @click="addToShoppingList">
-              {{ $t('meal_plan.add_to_list') }}
-            </el-button>
-            <el-button v-if="finalPlan" plain @click="restartSession">
-              {{ $t('meal_plan.start_over') }}
-            </el-button>
-          </template>
-        </MealChatStatusPanel>
-
-        <div class="context-secondary">
-          <button class="trace-trigger" type="button" @click="processDrawerVisible = true">
-            {{ $t('meal_plan.view_process') }}
-          </button>
-          <p>{{ traceCallout }}</p>
-        </div>
-      </aside>
-
       <div class="chat-main">
         <el-card class="chat-card" shadow="hover">
           <div class="chat-card-head">
@@ -164,6 +109,80 @@
           </div>
         </el-card>
       </div>
+
+      <aside class="context-rail" :class="{ muted: overlayVisible }">
+        <MealChatStatusPanel
+          :eyebrow="$t('meal_plan.status_eyebrow')"
+          :title="phaseTitle"
+          :summary="phaseSummary"
+          :condensed-label="statusBadge"
+          :expanded="statusExpanded"
+          :expand-label="$t('meal_plan.expand_status')"
+          :collapse-label="$t('meal_plan.collapse_status')"
+          :known-title="$t('meal_plan.known_title')"
+          :missing-title="$t('meal_plan.missing_title')"
+          :next-title="$t('meal_plan.next_title')"
+          :completed-copy="$t('meal_plan.missing_done')"
+          :next-action="nextAction"
+          :assistant-hint="followUpPlan?.assistant_message"
+          :known-items="knownItems"
+          :missing-items="missingItems"
+          @toggle="toggleStatus"
+        >
+          <template #primary-action>
+            <el-button v-if="primaryActionKind === 'complete_profile'" plain @click="$router.push('/profile?onboarding=1')">
+              {{ $t('meal_plan.complete_profile') }}
+            </el-button>
+            <el-button
+              v-else-if="primaryActionKind === 'generate_plan'"
+              type="primary"
+              :loading="overlayMode === 'generating'"
+              @click="startGenerationSequence"
+            >
+              {{ $t('meal_plan.generate_plan') }}
+            </el-button>
+            <el-button
+              v-else-if="primaryActionKind === 'view_result'"
+              type="primary"
+              @click="openResultOverlay"
+            >
+              {{ $t('meal_plan.view_result') }}
+            </el-button>
+          </template>
+
+          <template #actions>
+            <el-button v-if="!profileComplete" plain @click="$router.push('/profile?onboarding=1')">
+              {{ $t('meal_plan.complete_profile') }}
+            </el-button>
+            <el-button
+              v-if="canGenerate"
+              type="primary"
+              :loading="overlayMode === 'generating'"
+              @click="startGenerationSequence"
+            >
+              {{ $t('meal_plan.generate_plan') }}
+            </el-button>
+            <el-button
+              v-else-if="finalPlan && overlayMode !== 'result'"
+              type="primary"
+              @click="openResultOverlay"
+            >
+              {{ $t('meal_plan.view_result') }}
+            </el-button>
+            <el-button v-if="finalPlan" plain @click="addToShoppingList">
+              {{ $t('meal_plan.add_to_list') }}
+            </el-button>
+            <el-button v-if="finalPlan" plain @click="restartSession">
+              {{ $t('meal_plan.start_over') }}
+            </el-button>
+          </template>
+        </MealChatStatusPanel>
+
+        <button class="context-secondary" type="button" @click="processDrawerVisible = true">
+          <span class="trace-trigger">{{ $t('meal_plan.view_process') }}</span>
+          <span class="trace-callout">{{ traceCallout }}</span>
+        </button>
+      </aside>
     </section>
 
     <el-drawer
@@ -522,6 +541,22 @@ const statusBadge = computed(() => {
   return t('meal_plan.status_badges.active')
 })
 
+const primaryActionKind = computed<'complete_profile' | 'generate_plan' | 'view_result' | null>(() => {
+  if (!profileComplete.value) {
+    return 'complete_profile'
+  }
+
+  if (canGenerate.value) {
+    return 'generate_plan'
+  }
+
+  if (finalPlan.value && overlayMode.value !== 'result') {
+    return 'view_result'
+  }
+
+  return null
+})
+
 const topSummaryLine = computed(() => {
   if (currentSession.value?.status === 'finalized') {
     return t('meal_plan.header_summary.finalized')
@@ -539,10 +574,6 @@ const topSummaryLine = computed(() => {
 })
 
 const traceCallout = computed(() => {
-  if (traceUnavailableMessage.value) {
-    return traceUnavailableMessage.value
-  }
-
   return crewTrace.value.length ? t('meal_plan.process_ready') : t('meal_plan.process_empty_hint')
 })
 
@@ -1083,27 +1114,31 @@ onBeforeUnmount(() => {
 }
 
 .context-secondary {
+  width: 100%;
   display: grid;
-  gap: 8px;
-  padding: 12px 14px;
+  justify-items: start;
+  gap: 4px;
+  padding: 10px 12px;
   border-radius: 18px;
   background: linear-gradient(180deg, #ffffff, #f7faf8);
   border: 1px solid rgba(148, 163, 184, 0.14);
+  text-align: left;
+  cursor: pointer;
 }
 
 .trace-trigger {
-  justify-self: start;
-  min-height: 40px;
+  min-height: 0;
   padding: 0;
   color: var(--color-secondary);
   font-weight: 700;
 }
 
-.context-secondary p,
+.trace-callout,
 .process-drawer-summary {
   margin: 0;
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: 1.4;
+  font-size: 0.84rem;
 }
 
 .process-drawer-body {

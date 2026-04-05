@@ -14,17 +14,21 @@
       </button>
     </div>
 
-    <div class="status-block next-step compact">
-      <div class="block-title">{{ nextTitle }}</div>
-      <p>{{ nextAction }}</p>
-      <p v-if="assistantHint" class="assistant-hint">{{ assistantHint }}</p>
+    <div v-if="!expanded && $slots['primary-action']" class="status-primary-action">
+      <slot name="primary-action" />
     </div>
 
-    <div v-if="$slots.actions" class="status-actions">
-      <slot name="actions" />
-    </div>
+    <div v-show="expanded" class="status-expanded">
+      <div class="status-block next-step compact">
+        <div class="block-title">{{ nextTitle }}</div>
+        <p>{{ nextAction }}</p>
+        <p v-if="assistantHint" class="assistant-hint">{{ assistantHint }}</p>
+      </div>
 
-    <div v-show="expanded" class="status-details">
+      <div v-if="$slots.actions" class="status-actions">
+        <slot name="actions" />
+      </div>
+
       <div v-if="knownItems.length" class="status-block">
         <div class="block-title">{{ knownTitle }}</div>
         <div class="chips">
@@ -86,10 +90,20 @@ defineEmits<{
 <style scoped>
 .status-panel {
   display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff, #f6faf7);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.status-panel.expanded {
   gap: 16px;
   padding: 18px;
   border-radius: 24px;
   background: linear-gradient(180deg, rgba(15, 37, 27, 0.98), rgba(20, 46, 34, 0.96));
+  border-color: transparent;
   box-shadow: 0 18px 34px rgba(16, 37, 27, 0.18);
 }
 
@@ -118,21 +132,21 @@ defineEmits<{
 
 .status-header h2 {
   margin: 0;
-  font-size: 1.16rem;
+  font-size: 1.02rem;
 }
 
 .state-pill {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(214, 247, 223, 0.14);
-  color: #e6fff0;
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .eyebrow {
   margin: 0;
-  color: rgba(239, 255, 245, 0.7);
+  color: var(--color-primary-dark);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -141,17 +155,17 @@ defineEmits<{
 
 .summary {
   margin: 0;
-  color: rgba(239, 255, 245, 0.82);
-  line-height: 1.55;
-  font-size: 0.94rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  font-size: 0.88rem;
 }
 
 .toggle-button {
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 36px;
+  padding: 0 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #effff5;
+  background: rgba(21, 48, 40, 0.06);
+  color: var(--color-secondary);
   font-weight: 700;
   transition:
     background 180ms ease,
@@ -161,6 +175,15 @@ defineEmits<{
 .toggle-button:hover {
   background: rgba(255, 255, 255, 0.14);
   transform: translateY(-1px);
+}
+
+.status-primary-action {
+  display: flex;
+}
+
+.status-expanded {
+  display: grid;
+  gap: 14px;
 }
 
 .status-block {
@@ -188,11 +211,6 @@ defineEmits<{
   margin: 0;
   color: rgba(239, 255, 245, 0.82);
   line-height: 1.5;
-}
-
-.status-details {
-  display: grid;
-  gap: 14px;
 }
 
 .chips {
@@ -243,9 +261,33 @@ defineEmits<{
   gap: 10px;
 }
 
+.status-panel.expanded .status-header h2,
+.status-panel.expanded .state-pill,
+.status-panel.expanded .summary {
+  color: #effff5;
+}
+
+.status-panel.expanded .state-pill {
+  background: rgba(214, 247, 223, 0.14);
+}
+
+.status-panel.expanded .eyebrow {
+  color: rgba(239, 255, 245, 0.7);
+}
+
+.status-panel.expanded .toggle-button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #effff5;
+}
+
+.status-primary-action :deep(.el-button) {
+  min-height: 42px;
+}
+
 @media (max-width: 640px) {
   .status-header,
-  .status-actions {
+  .status-actions,
+  .status-primary-action {
     flex-direction: column;
   }
 
