@@ -28,10 +28,61 @@ def client(tmp_path):
         finally:
             db.close()
 
+    app.state.testing_session_local = testing_session_local
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+    del app.state.testing_session_local
+
+
+@pytest.fixture()
+def db_session(client):
+    session = app.state.testing_session_local()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+def make_final_plan_payload(plan_id: str = "plan-001") -> dict:
+    return {
+        "id": plan_id,
+        "created_at": "2026-04-06T10:00:00",
+        "meals": [
+            {
+                "meal_type": "lunch",
+                "recipe_id": 1,
+                "recipe_name": "番茄鸡胸肉",
+                "calories": 420,
+                "protein": 36,
+                "carbs": 18,
+                "fat": 14,
+                "price": 22,
+            }
+        ],
+        "nutrition": {
+            "total_calories": 420,
+            "total_protein": 36,
+            "total_carbs": 18,
+            "total_fat": 14,
+            "total_price": 22,
+            "calories_achievement": 24,
+            "protein_achievement": 36,
+            "budget_usage": 18,
+        },
+        "target": {
+            "health_goal": "healthy",
+            "target_calories": 1800,
+            "target_protein": 100,
+            "target_carbs": 180,
+            "target_fat": 60,
+            "max_budget": 120,
+            "disliked_foods": [],
+            "preferred_tags": [],
+        },
+        "score": 0,
+    }
 
 
 @pytest.fixture()

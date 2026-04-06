@@ -12,7 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from ..db import database, models
-from .routers import auth_router, meal_chat_router, meal_plans_router, recipes_router
+from .routers import (
+    auth_router,
+    meal_chat_router,
+    meal_plans_router,
+    recipes_router,
+    shopping_lists_router,
+    weekly_plans_router,
+)
 
 load_dotenv()
 
@@ -136,6 +143,8 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(recipes_router, prefix="/api")
 app.include_router(meal_chat_router, prefix="/api")
 app.include_router(meal_plans_router, prefix="/api")
+app.include_router(weekly_plans_router, prefix="/api")
+app.include_router(shopping_lists_router, prefix="/api")
 
 
 @app.get("/", tags=["system"])

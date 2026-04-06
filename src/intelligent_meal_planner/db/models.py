@@ -1,7 +1,22 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    JSON,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship
+
 from .database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -66,3 +81,87 @@ class MealChatMessage(Base):
     content = Column(Text, nullable=False)
     stage = Column(String, nullable=False, default="collecting")
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WeeklyPlan(Base):
+    __tablename__ = "weekly_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    days = relationship(
+        "WeeklyPlanDay",
+        back_populates="weekly_plan",
+        cascade="all, delete-orphan",
+        order_by="WeeklyPlanDay.plan_date",
+    )
+    shopping_lists = relationship(
+        "ShoppingList",
+        back_populates="weekly_plan",
+        cascade="all, delete-orphan",
+    )
+
+
+class WeeklyPlanDay(Base):
+    __tablename__ = "weekly_plan_days"
+    __table_args__ = (
+        UniqueConstraint("weekly_plan_id", "plan_date", name="uq_weekly_plan_day_date"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    weekly_plan_id = Column(
+        Integer, ForeignKey("weekly_plans.id"), nullable=False, index=True
+    )
+    plan_date = Column(Date, nullable=False, index=True)
+    source_session_id = Column(String, nullable=True)
+    meal_plan_snapshot = Column(JSON, nullable=False)
+    nutrition_snapshot = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    weekly_plan = relationship("WeeklyPlan", back_populates="days")
+
+
+class ShoppingList(Base):
+    __tablename__ = "shopping_lists"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    weekly_plan_id = Column(
+        Integer, ForeignKey("weekly_plans.id"), nullable=False, index=True
+    )
+    name = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="active")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    weekly_plan = relationship("WeeklyPlan", back_populates="shopping_lists")
+    items = relationship(
+        "ShoppingListItem",
+        back_populates="shopping_list",
+        cascade="all, delete-orphan",
+        order_by="ShoppingListItem.id",
+    )
+
+
+class ShoppingListItem(Base):
+    __tablename__ = "shopping_list_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    shopping_list_id = Column(
+        Integer, ForeignKey("shopping_lists.id"), nullable=False, index=True
+    )
+    ingredient_name = Column(String, nullable=False, index=True)
+    display_amount = Column(String, nullable=True)
+    checked = Column(Boolean, nullable=False, default=False)
+    category = Column(String, nullable=True)
+    source_kind = Column(String, nullable=False, default="weekly-plan")
+    source_refs = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    shopping_list = relationship("ShoppingList", back_populates="items")

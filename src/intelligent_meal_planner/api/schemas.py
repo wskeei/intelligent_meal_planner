@@ -2,11 +2,11 @@
 Pydantic 数据模型 - 请求和响应的数据验证
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional, List
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
-from typing import Literal
+from typing import Any, List, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 
 class HealthGoal(str, Enum):
@@ -136,6 +136,7 @@ class MealPlanResponse(BaseModel):
     """配餐响应"""
 
     id: str
+    source_session_id: str | None = None
     created_at: datetime
     meals: List[MealItem]
     nutrition: NutritionSummary
@@ -216,3 +217,87 @@ class MealChatSessionResponse(BaseModel):
     preferences_snapshot: dict = Field(default_factory=dict)
     negotiation_options: List[dict] = Field(default_factory=list)
     presentation: MealChatPresentation | None = None
+
+
+class WeeklyPlanCreateRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    notes: str | None = None
+
+
+class WeeklyPlanAttachDayRequest(BaseModel):
+    plan_date: date
+    meal_plan_id: str
+    source_session_id: str
+
+
+class WeeklyPlanDayResponse(BaseModel):
+    id: int
+    plan_date: date
+    source_session_id: str | None = None
+    meal_plan_snapshot: dict[str, Any]
+    nutrition_snapshot: dict[str, Any] = Field(default_factory=dict)
+
+
+class WeeklyPlanSummaryResponse(BaseModel):
+    id: int
+    name: str
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    day_count: int = 0
+
+
+class WeeklyPlanResponse(BaseModel):
+    id: int
+    name: str
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    days: list[WeeklyPlanDayResponse] = Field(default_factory=list)
+
+
+class ShoppingListGenerateRequest(BaseModel):
+    weekly_plan_id: int
+    name: str | None = None
+
+
+class ShoppingListItemCreateRequest(BaseModel):
+    ingredient_name: str = Field(..., min_length=1, max_length=200)
+    display_amount: str | None = Field(default=None, max_length=100)
+    category: str | None = Field(default=None, max_length=100)
+
+
+class ShoppingListItemUpdateRequest(BaseModel):
+    display_amount: str | None = Field(default=None, max_length=100)
+    checked: bool | None = None
+    category: str | None = Field(default=None, max_length=100)
+
+
+class ShoppingListItemResponse(BaseModel):
+    id: int
+    ingredient_name: str
+    display_amount: str = ""
+    checked: bool = False
+    category: str | None = None
+    source_kind: str
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ShoppingListSummaryResponse(BaseModel):
+    id: int
+    weekly_plan_id: int
+    name: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    item_count: int = 0
+
+
+class ShoppingListResponse(BaseModel):
+    id: int
+    weekly_plan_id: int
+    name: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    items: list[ShoppingListItemResponse] = Field(default_factory=list)
