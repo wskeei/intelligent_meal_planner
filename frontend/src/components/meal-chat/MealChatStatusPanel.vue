@@ -1,40 +1,54 @@
 <template>
-  <section class="status-panel">
+  <section class="status-panel" :class="{ expanded }">
     <div class="status-header">
-      <p class="eyebrow">{{ eyebrow }}</p>
-      <h2>{{ title }}</h2>
-      <p class="summary">{{ summary }}</p>
-    </div>
-
-    <div v-if="knownItems.length" class="status-block">
-      <div class="block-title">{{ knownTitle }}</div>
-      <div class="chips">
-        <span v-for="item in knownItems" :key="`${item.label}-${item.value}`" class="chip">
-          <strong>{{ item.label }}</strong>
-          <span>{{ item.value }}</span>
-        </span>
+      <div class="status-copy">
+        <p class="eyebrow">{{ eyebrow }}</p>
+        <div class="heading-row">
+          <h2>{{ title }}</h2>
+          <span class="state-pill">{{ condensedLabel }}</span>
+        </div>
+        <p class="summary">{{ summary }}</p>
       </div>
+      <button class="toggle-button" type="button" @click="$emit('toggle')">
+        {{ expanded ? collapseLabel : expandLabel }}
+      </button>
     </div>
 
-    <div class="status-block">
-      <div class="block-title">{{ missingTitle }}</div>
-      <div v-if="missingItems.length" class="missing-list">
-        <article v-for="item in missingItems" :key="item.label" class="missing-item">
-          <strong>{{ item.label }}</strong>
-          <p>{{ item.hint }}</p>
-        </article>
+    <div v-if="!expanded && $slots['primary-action']" class="status-primary-action">
+      <slot name="primary-action" />
+    </div>
+
+    <div v-show="expanded" class="status-expanded">
+      <div class="status-block next-step compact">
+        <div class="block-title">{{ nextTitle }}</div>
+        <p>{{ nextAction }}</p>
+        <p v-if="assistantHint" class="assistant-hint">{{ assistantHint }}</p>
       </div>
-      <p v-else class="complete-note">{{ completedCopy }}</p>
-    </div>
 
-    <div class="status-block next-step">
-      <div class="block-title">{{ nextTitle }}</div>
-      <p>{{ nextAction }}</p>
-      <p v-if="assistantHint" class="assistant-hint">{{ assistantHint }}</p>
-    </div>
+      <div v-if="$slots.actions" class="status-actions">
+        <slot name="actions" />
+      </div>
 
-    <div v-if="$slots.actions" class="status-actions">
-      <slot name="actions" />
+      <div v-if="knownItems.length" class="status-block">
+        <div class="block-title">{{ knownTitle }}</div>
+        <div class="chips">
+          <span v-for="item in knownItems" :key="`${item.label}-${item.value}`" class="chip">
+            <strong>{{ item.label }}</strong>
+            <span>{{ item.value }}</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="status-block">
+        <div class="block-title">{{ missingTitle }}</div>
+        <div v-if="missingItems.length" class="missing-list">
+          <article v-for="item in missingItems" :key="item.label" class="missing-item">
+            <strong>{{ item.label }}</strong>
+            <p>{{ item.hint }}</p>
+          </article>
+        </div>
+        <p v-else class="complete-note">{{ completedCopy }}</p>
+      </div>
     </div>
   </section>
 </template>
@@ -54,6 +68,10 @@ defineProps<{
   eyebrow: string
   title: string
   summary: string
+  condensedLabel: string
+  expanded: boolean
+  expandLabel: string
+  collapseLabel: string
   knownTitle: string
   missingTitle: string
   nextTitle: string
@@ -63,64 +81,153 @@ defineProps<{
   knownItems: StatusItem[]
   missingItems: MissingItem[]
 }>()
+
+defineEmits<{
+  (event: 'toggle'): void
+}>()
 </script>
 
 <style scoped>
 .status-panel {
   display: grid;
-  gap: 18px;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff, #f6faf7);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.status-panel.expanded {
+  gap: 16px;
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(15, 37, 27, 0.98), rgba(20, 46, 34, 0.96));
+  border-color: transparent;
+  box-shadow: 0 18px 34px rgba(16, 37, 27, 0.18);
+}
+
+.status-header,
+.heading-row,
+.status-actions {
+  display: flex;
+}
+
+.status-header {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.status-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.heading-row {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .status-header h2 {
-  margin: 8px 0 10px;
-  font-size: 1.25rem;
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.state-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .eyebrow {
   margin: 0;
-  color: rgba(239, 255, 245, 0.7);
-  font-size: 0.78rem;
+  color: var(--color-primary-dark);
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.summary,
+.summary {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  font-size: 0.88rem;
+}
+
+.toggle-button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(21, 48, 40, 0.06);
+  color: var(--color-secondary);
+  font-weight: 700;
+  transition:
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.toggle-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.status-primary-action {
+  display: flex;
+}
+
+.status-expanded {
+  display: grid;
+  gap: 14px;
+}
+
+.status-block {
+  display: grid;
+  gap: 8px;
+}
+
+.status-block.compact {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.block-title {
+  color: #d6f7df;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .next-step p,
 .assistant-hint,
 .complete-note {
   margin: 0;
   color: rgba(239, 255, 245, 0.82);
-  line-height: 1.6;
-}
-
-.status-block {
-  display: grid;
-  gap: 10px;
-}
-
-.block-title {
-  color: #d6f7df;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  line-height: 1.5;
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chip {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
   color: #effff5;
+  font-size: 0.86rem;
 }
 
 .chip strong,
@@ -130,13 +237,13 @@ defineProps<{
 
 .missing-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .missing-item {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .missing-item p {
@@ -146,12 +253,46 @@ defineProps<{
 }
 
 .assistant-hint {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .status-actions {
-  display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+}
+
+.status-panel.expanded .status-header h2,
+.status-panel.expanded .state-pill,
+.status-panel.expanded .summary {
+  color: #effff5;
+}
+
+.status-panel.expanded .state-pill {
+  background: rgba(214, 247, 223, 0.14);
+}
+
+.status-panel.expanded .eyebrow {
+  color: rgba(239, 255, 245, 0.7);
+}
+
+.status-panel.expanded .toggle-button {
+  background: rgba(255, 255, 255, 0.08);
+  color: #effff5;
+}
+
+.status-primary-action :deep(.el-button) {
+  min-height: 42px;
+}
+
+@media (max-width: 640px) {
+  .status-header,
+  .status-actions,
+  .status-primary-action {
+    flex-direction: column;
+  }
+
+  .toggle-button {
+    width: 100%;
+  }
 }
 </style>

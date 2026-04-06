@@ -7,8 +7,37 @@ import { AUTH_API_URL } from '@/api/config'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
 
+function decodeJwtPayload(token: string) {
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+
+  try {
+    const normalizedPayload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padding = '='.repeat((4 - (normalizedPayload.length % 4 || 4)) % 4)
+    const decodedPayload = globalThis.atob(`${normalizedPayload}${padding}`)
+    return JSON.parse(decodedPayload) as { exp?: number }
+  } catch {
+    return null
+  }
+}
+
+function readStoredToken() {
+  if (typeof localStorage === 'undefined') return null
+
+  const storedToken = localStorage.getItem('token')
+  if (!storedToken) return null
+
+  const payload = decodeJwtPayload(storedToken)
+  if (!payload || typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) {
+    localStorage.removeItem('token')
+    return null
+  }
+
+  return storedToken
+}
+
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
+  const token = ref<string | null>(readStoredToken())
   const user = ref<any>(null)
   const isAuthenticated = ref(Boolean(token.value))
 

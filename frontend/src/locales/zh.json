@@ -43,12 +43,15 @@
   },
   "meal_plan": {
     "title": "配餐",
-    "subtitle": "告诉系统你的情况，再得到预算内的正式方案。",
-    "chat_title": "营养师对话配餐",
-    "chat_subtitle": "系统会先确认目标、预算和关键信息，再生成一份真正可执行的一日三餐方案。",
+    "subtitle": "先聊清需求，再看正式方案。",
+    "chat_title": "配餐对话",
+    "chat_subtitle": "先补齐关键信息，再生成今天的方案。",
+    "chat_header_title": "用对话完成今天的配餐",
+    "chat_panel_title": "当前对话",
+    "chat_panel_caption": "把还缺的信息补齐，结果就会更稳。",
     "nutritionist": "营养师",
-    "session_tip": "系统会优先读取你的档案，只追问当前还缺的信息。",
-    "goal_summary": "把目标、预算和偏好说清楚后，系统才会给出正式结果。",
+    "session_tip": "系统会先读档案，再追问缺的信息。",
+    "goal_summary": "目标、预算和偏好确认后就能出结果。",
     "new_session": "开始新需求",
     "chat_placeholder": "告诉我你的预算、口味偏好，或直接回答上一轮问题",
     "draft_hint": "按 Enter 发送，Shift + Enter 换行",
@@ -59,6 +62,10 @@
     "crew_title": "系统过程",
     "crew_subtitle": "这是次级信息。只有在你想确认系统如何推进时再展开查看。",
     "trace_toggle": "查看系统过程",
+    "view_process": "查看过程",
+    "process_hint": "这里只放系统过程，不打断主聊天。",
+    "process_ready": "需要时再看系统过程。",
+    "process_empty_hint": "当前还没有过程明细。",
     "crew_empty": "当前还没有可展示的系统过程。",
     "trace_unavailable_locale": "当前系统过程明细仍以中文生成。切换到中文后可查看原始过程记录。",
     "budget_safe_hint": "结果已按你当前预算范围约束。",
@@ -87,6 +94,8 @@
     },
     "profile_progress": "资料进度 {completed}/{total}",
     "status_eyebrow": "当前进展",
+    "expand_status": "展开详情",
+    "collapse_status": "收起详情",
     "known_title": "系统已经知道",
     "missing_title": "还缺哪些信息",
     "next_title": "接下来怎么做",
@@ -94,9 +103,21 @@
     "ready_to_generate": "关键信息已经齐了，可以开始正式生成配餐结果。",
     "next_after_final": "你可以开始新的需求，或把这次结果加入购物清单。",
     "answer_next": "先回答“{field}”这项，系统才能继续往下推进。",
+    "header_summary": {
+      "active": "先把关键信息补齐，聊天就能继续推进。",
+      "missing": "还差 {count} 项关键信息。",
+      "ready": "条件已经齐了，可以直接生成。",
+      "finalized": "今天的正式配餐已经准备好了。"
+    },
+    "status_badges": {
+      "active": "继续补充",
+      "missing": "还差 {count} 项",
+      "ready": "可以生成",
+      "finalized": "结果已准备好"
+    },
     "complete_profile": "去补充资料",
     "result_title": "今天的正式配餐",
-    "result_subtitle": "先看结果本身；如果还想回头核对上下文，再返回聊天即可。",
+    "result_subtitle": "先看结果，需要时再回聊天核对。",
     "result_explanation_title": "方案摘要",
     "result_explanation_summary": "这份结果优先满足你当前的预算、目标和关键营养约束。",
     "alt_title": "备选方向",
@@ -143,10 +164,10 @@
       "finalized": "正式方案已经准备好了"
     },
     "phase_summary": {
-      "discovering": "现在的重点是补齐关键资料，避免系统靠猜测推进。",
-      "negotiating": "系统已经有基础信息，正在确认预算和方案是否可行。",
-      "planning": "关键条件已经足够，系统正在整理最终结果。",
-      "finalized": "这次的正式配餐已经完成，你可以直接查看并继续下一步。"
+      "discovering": "先把关键资料补齐。",
+      "negotiating": "正在确认预算和边界。",
+      "planning": "正在整理正式方案。",
+      "finalized": "结果已经准备好了。"
     },
     "goals": {
       "healthy": "健康饮食",
