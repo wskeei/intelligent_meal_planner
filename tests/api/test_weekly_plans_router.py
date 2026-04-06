@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from intelligent_meal_planner.api.schemas import (
     WeeklyPlanDayResponse,
@@ -173,3 +173,42 @@ def test_attach_negotiated_primary_meal_plan_snapshot_to_weekly_plan(
 
     assert response.status_code == 200
     assert response.json()["days"][0]["meal_plan_snapshot"]["id"] == "plan-001"
+
+
+def test_attach_day_updates_weekly_plan_timestamp(client, auth_header, db_session):
+    seeded_meal_chat_session(db_session, auth_header)
+    plan = models.WeeklyPlan(
+        user_id=(
+            db_session.query(models.User)
+            .filter(models.User.username == "planner_user")
+            .first()
+            .id
+        ),
+        name="时间戳测试",
+        notes=None,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow() - timedelta(days=1),
+    )
+    db_session.add(plan)
+    db_session.commit()
+    db_session.refresh(plan)
+    original_updated_at = plan.updated_at
+
+    response = client.post(
+        f"/api/weekly-plans/{plan.id}/days",
+        headers=auth_header,
+        json={
+            "plan_date": "2026-04-10",
+            "meal_plan_id": "plan-001",
+            "source_session_id": "session-1",
+        },
+    )
+
+    assert response.status_code == 200
+    db_session.expire_all()
+    refreshed = (
+        db_session.query(models.WeeklyPlan)
+        .filter(models.WeeklyPlan.id == plan.id)
+        .first()
+    )
+    assert refreshed.updated_at > original_updated_at

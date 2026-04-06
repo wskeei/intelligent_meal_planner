@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from intelligent_meal_planner.api.schemas import ShoppingListItemResponse
 from intelligent_meal_planner.db import models
@@ -216,3 +216,70 @@ def test_user_can_attach_session_to_weekly_plan_then_generate_shopping_list(
 
     assert generated.status_code == 200
     assert generated.json()["items"]
+
+
+def test_generate_shopping_list_aggregates_repeated_quantities(
+    client, auth_header, db_session
+):
+    plan = seeded_weekly_plan(db_session, auth_header)
+    second_day = models.WeeklyPlanDay(
+        weekly_plan_id=plan.id,
+        plan_date=datetime(2026, 4, 9).date(),
+        source_session_id="session-2",
+        meal_plan_snapshot={
+            **make_final_plan_payload("plan-002"),
+            "meals": [
+                {
+                    **make_final_plan_payload("plan-002")["meals"][0],
+                    "ingredients": [
+                        {"name": "测试鸡胸肉", "amount": "100g"},
+                        {"name": "黑胡椒", "amount": "2g"},
+                    ],
+                }
+            ],
+        },
+        nutrition_snapshot=make_final_plan_payload("plan-002")["nutrition"],
+    )
+    db_session.add(second_day)
+    db_session.commit()
+
+    response = client.post(
+        "/api/shopping-lists/generate",
+        headers=auth_header,
+        json={"weekly_plan_id": plan.id, "name": "第15周采购"},
+    )
+
+    assert response.status_code == 200
+    aggregated_item = next(
+        item for item in response.json()["items"] if item["ingredient_name"] == "测试鸡胸肉"
+    )
+    assert aggregated_item["display_amount"] == "500g"
+    assert len(aggregated_item["sources"]) == 2
+
+
+def test_toggle_shopping_list_item_updates_parent_timestamp(
+    client, auth_header, db_session
+):
+    shopping_list = seeded_shopping_list(db_session, auth_header)
+    item = shopping_list.items[0]
+    original_updated_at = shopping_list.updated_at
+
+    db_session.query(models.ShoppingList).filter_by(id=shopping_list.id).update(
+        {"updated_at": datetime.utcnow() - timedelta(days=1)}
+    )
+    db_session.commit()
+
+    response = client.patch(
+        f"/api/shopping-lists/{shopping_list.id}/items/{item.id}",
+        headers=auth_header,
+        json={"checked": True},
+    )
+
+    assert response.status_code == 200
+    db_session.expire_all()
+    refreshed = (
+        db_session.query(models.ShoppingList)
+        .filter(models.ShoppingList.id == shopping_list.id)
+        .first()
+    )
+    assert refreshed.updated_at > original_updated_at

@@ -138,13 +138,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { ElMessage } from 'element-plus'
 import { Check, Delete, ShoppingCart } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
+import { getApiErrorDetail } from '@/api'
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import { useShoppingStore } from '@/stores/shopping'
 
 const route = useRoute()
+const { t } = useI18n()
 const shoppingStore = useShoppingStore()
 const { activeList, lists, loading, viewMode } = storeToRefs(shoppingStore)
 
@@ -163,40 +167,82 @@ watch(
 )
 
 async function initializeList() {
-  await shoppingStore.loadLists()
+  try {
+    await shoppingStore.loadLists()
 
-  const requestedListId = Number(route.query.list)
-  if (Number.isFinite(requestedListId) && requestedListId > 0) {
-    await shoppingStore.openList(requestedListId)
-    return
-  }
+    const requestedListId = Number(route.query.list)
+    if (Number.isFinite(requestedListId) && requestedListId > 0) {
+      await shoppingStore.openList(requestedListId)
+      return
+    }
 
-  if (!activeList.value && lists.value.length) {
-    await shoppingStore.openList(lists.value[0].id)
+    if (!activeList.value && lists.value.length) {
+      await shoppingStore.openList(lists.value[0].id)
+    }
+  } catch (error) {
+    const detail = getApiErrorDetail(error)
+    if (detail === 'Shopping list not found') {
+      ElMessage.error(t('shopping.errors.resource_missing'))
+      return
+    }
+    ElMessage.error(t('shopping.errors.load_failed'))
   }
 }
 
 async function handleListChange(value: number) {
-  await shoppingStore.openList(value)
+  try {
+    await shoppingStore.openList(value)
+  } catch (error) {
+    const detail = getApiErrorDetail(error)
+    if (detail === 'Shopping list not found') {
+      ElMessage.error(t('shopping.errors.resource_missing'))
+      return
+    }
+    ElMessage.error(t('shopping.errors.load_failed'))
+  }
 }
 
 async function handleAddItem() {
   if (!activeList.value || !newItemName.value.trim()) return
 
-  await shoppingStore.addItem(activeList.value.id, {
-    ingredient_name: newItemName.value.trim(),
-    display_amount: newItemAmount.value.trim()
-  })
-  newItemName.value = ''
-  newItemAmount.value = ''
+  try {
+    await shoppingStore.addItem(activeList.value.id, {
+      ingredient_name: newItemName.value.trim(),
+      display_amount: newItemAmount.value.trim()
+    })
+    newItemName.value = ''
+    newItemAmount.value = ''
+    ElMessage.success(t('shopping.add_success'))
+  } catch (error) {
+    ElMessage.error(t('shopping.errors.add_failed'))
+  }
 }
 
 async function toggleItem(itemId: number, checked: boolean) {
-  await shoppingStore.toggleItem(itemId, checked)
+  try {
+    await shoppingStore.toggleItem(itemId, checked)
+  } catch (error) {
+    const detail = getApiErrorDetail(error)
+    if (detail === 'Shopping list not found' || detail === 'Shopping list item not found') {
+      ElMessage.error(t('shopping.errors.resource_missing'))
+      return
+    }
+    ElMessage.error(t('shopping.errors.update_failed'))
+  }
 }
 
 async function removeItem(itemId: number) {
-  await shoppingStore.deleteItem(itemId)
+  try {
+    await shoppingStore.deleteItem(itemId)
+    ElMessage.success(t('shopping.remove_success'))
+  } catch (error) {
+    const detail = getApiErrorDetail(error)
+    if (detail === 'Shopping list not found' || detail === 'Shopping list item not found') {
+      ElMessage.error(t('shopping.errors.resource_missing'))
+      return
+    }
+    ElMessage.error(t('shopping.errors.delete_failed'))
+  }
 }
 
 onMounted(async () => {

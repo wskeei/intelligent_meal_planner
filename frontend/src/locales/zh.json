@@ -179,7 +179,16 @@
     "no_amount": "未填写数量",
     "checked": "已勾选",
     "pending": "待采购",
-    "manual_trace_empty": "这是手动添加条目，没有来源菜品轨迹。"
+    "manual_trace_empty": "这是手动添加条目，没有来源菜品轨迹。",
+    "add_success": "条目已加入购物清单。",
+    "remove_success": "条目已从购物清单移除。",
+    "errors": {
+      "load_failed": "购物清单加载失败，请稍后重试。",
+      "add_failed": "条目添加失败，请稍后重试。",
+      "update_failed": "条目更新失败，请稍后重试。",
+      "delete_failed": "条目删除失败，请稍后重试。",
+      "resource_missing": "要操作的购物清单或条目不存在。"
+    }
   },
   "weekly_plan": {
     "title": "周计划",
@@ -205,7 +214,17 @@
     "generate_success": "采购清单已生成，正在跳转。",
     "list_name_placeholder": "采购清单名称，可留空自动生成",
     "create_success": "周计划已创建。",
-    "no_notes": "还没有补充备注。"
+    "remove_success": "该天已从周计划移除。",
+    "no_notes": "还没有补充备注。",
+    "errors": {
+      "create_failed": "周计划创建失败，请稍后重试。",
+      "load_failed": "周计划加载失败，请稍后重试。",
+      "attach_failed": "加入周计划失败，请检查日期或稍后重试。",
+      "remove_failed": "移除周计划日期失败，请稍后重试。",
+      "generate_failed": "采购清单生成失败，请稍后重试。",
+      "plan_date_occupied": "这个日期已经有方案了，请换一天或先删除原有安排。",
+      "resource_missing": "目标周计划或来源方案已不存在。"
+    }
   },
   "recipes": {
     "title": "菜谱",

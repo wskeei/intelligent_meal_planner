@@ -11,6 +11,12 @@ export function isUnauthorizedError(error: unknown) {
   return axios.isAxiosError(error) && error.response?.status === 401
 }
 
+export function getApiErrorDetail(error: unknown) {
+  if (!axios.isAxiosError(error)) return ''
+  const detail = error.response?.data?.detail
+  return typeof detail === 'string' ? detail : ''
+}
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   const locale = localStorage.getItem('locale') || 'zh'

@@ -165,6 +165,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
+import { getApiErrorDetail } from '@/api'
 import { useShoppingStore } from '@/stores/shopping'
 import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
 
@@ -178,7 +179,7 @@ const { plans, activePlan, loading } = storeToRefs(weeklyPlanStore)
 
 const newPlanName = ref('')
 const newPlanNotes = ref('')
-const selectedPlanDate = ref(new Date().toISOString().slice(0, 10))
+const selectedPlanDate = ref(getLocalDateInputValue())
 const shoppingListName = ref('')
 const creating = ref(false)
 const attaching = ref(false)
@@ -214,6 +215,26 @@ function formatDate(value: string) {
   return formatter.value.format(new Date(value))
 }
 
+function getLocalDateInputValue(baseDate = new Date()) {
+  const year = baseDate.getFullYear()
+  const month = `${baseDate.getMonth() + 1}`.padStart(2, '0')
+  const day = `${baseDate.getDate()}`.padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function handleWeeklyPlanError(error: unknown, fallbackKey: string) {
+  const detail = getApiErrorDetail(error)
+  if (detail === 'Plan date already occupied') {
+    ElMessage.error(t('weekly_plan.errors.plan_date_occupied'))
+    return
+  }
+  if (detail === 'Weekly plan not found' || detail === 'Meal chat session not found') {
+    ElMessage.error(t('weekly_plan.errors.resource_missing'))
+    return
+  }
+  ElMessage.error(t(fallbackKey))
+}
+
 async function ensureActivePlan() {
   if (activePlan.value || !plans.value.length) return
   await weeklyPlanStore.openPlan(plans.value[0].id)
@@ -228,13 +249,20 @@ async function createPlan() {
     await weeklyPlanStore.createPlan(name, newPlanNotes.value.trim())
     newPlanName.value = ''
     newPlanNotes.value = ''
+    ElMessage.success(t('weekly_plan.create_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.create_failed')
   } finally {
     creating.value = false
   }
 }
 
 async function openPlan(planId: number) {
-  await weeklyPlanStore.openPlan(planId)
+  try {
+    await weeklyPlanStore.openPlan(planId)
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.load_failed')
+  }
 }
 
 async function attachPendingDay() {
@@ -249,6 +277,8 @@ async function attachPendingDay() {
     })
     await router.replace({ path: '/weekly-plan' })
     ElMessage.success(t('weekly_plan.attach_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.attach_failed')
   } finally {
     attaching.value = false
   }
@@ -256,7 +286,12 @@ async function attachPendingDay() {
 
 async function removeDay(dayId: number) {
   if (!activePlan.value) return
-  await weeklyPlanStore.removeDay(activePlan.value.id, dayId)
+  try {
+    await weeklyPlanStore.removeDay(activePlan.value.id, dayId)
+    ElMessage.success(t('weekly_plan.remove_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.remove_failed')
+  }
 }
 
 async function generateShoppingList() {
@@ -273,6 +308,13 @@ async function generateShoppingList() {
       query: { list: String(list.id) }
     })
     ElMessage.success(t('weekly_plan.generate_success'))
+  } catch (error) {
+    const detail = getApiErrorDetail(error)
+    if (detail === 'Weekly plan not found') {
+      ElMessage.error(t('weekly_plan.errors.resource_missing'))
+    } else {
+      ElMessage.error(t('weekly_plan.errors.generate_failed'))
+    }
   } finally {
     generating.value = false
   }

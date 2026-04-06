@@ -179,7 +179,16 @@
     "no_amount": "No amount recorded",
     "checked": "Checked",
     "pending": "Pending",
-    "manual_trace_empty": "This is a manual item, so there is no source trace."
+    "manual_trace_empty": "This is a manual item, so there is no source trace.",
+    "add_success": "Item added to the shopping list.",
+    "remove_success": "Item removed from the shopping list.",
+    "errors": {
+      "load_failed": "Could not load the shopping list. Please try again.",
+      "add_failed": "Could not add the item. Please try again.",
+      "update_failed": "Could not update the item. Please try again.",
+      "delete_failed": "Could not delete the item. Please try again.",
+      "resource_missing": "The shopping list or item no longer exists."
+    }
   },
   "weekly_plan": {
     "title": "Weekly plan",
@@ -205,7 +214,17 @@
     "generate_success": "Shopping list generated. Redirecting now.",
     "list_name_placeholder": "Optional shopping list name",
     "create_success": "Weekly plan created.",
-    "no_notes": "No notes yet."
+    "remove_success": "The day was removed from the weekly plan.",
+    "no_notes": "No notes yet.",
+    "errors": {
+      "create_failed": "Could not create the weekly plan. Please try again.",
+      "load_failed": "Could not load the weekly plan. Please try again.",
+      "attach_failed": "Could not attach this day. Check the date and try again.",
+      "remove_failed": "Could not remove the day from the weekly plan. Please try again.",
+      "generate_failed": "Could not generate the shopping list. Please try again.",
+      "plan_date_occupied": "That date is already occupied. Pick another day or remove the existing one first.",
+      "resource_missing": "The target weekly plan or source meal plan no longer exists."
+    }
   },
   "recipes": {
     "title": "Recipes",

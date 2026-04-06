@@ -2,6 +2,7 @@
 
 import copy
 import json
+import re
 import uuid
 from datetime import date, datetime
 from pathlib import Path
@@ -574,6 +575,9 @@ class MealChatApplication:
 
 
 class WeeklyPlanService:
+    def _touch_plan(self, plan: models.WeeklyPlan) -> None:
+        plan.updated_at = datetime.utcnow()
+
     def _resolve_requested_meal_plan(
         self, final_plan: Dict[str, Any], meal_plan_id: str
     ) -> Dict[str, Any]:
@@ -711,6 +715,8 @@ class WeeklyPlanService:
             nutrition_snapshot=snapshot.get("nutrition", {}),
         )
         db.add(day)
+        self._touch_plan(plan)
+        db.add(plan)
         db.commit()
         return self.get_plan(db, user_id, plan.id)
 
@@ -723,11 +729,51 @@ class WeeklyPlanService:
             raise HTTPException(status_code=404, detail="Weekly plan day not found")
 
         db.delete(day)
+        self._touch_plan(plan)
+        db.add(plan)
         db.commit()
         return self.get_plan(db, user_id, plan.id)
 
 
 class ShoppingListService:
+    AMOUNT_PATTERN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([A-Za-z\u4e00-\u9fff%]+)\s*$")
+
+    def _touch_list(self, shopping_list: models.ShoppingList) -> None:
+        shopping_list.updated_at = datetime.utcnow()
+
+    def _parse_display_amount(self, display_amount: str) -> tuple[float, str] | None:
+        match = self.AMOUNT_PATTERN.match(display_amount)
+        if not match:
+            return None
+        return float(match.group(1)), match.group(2)
+
+    def _format_quantity(self, quantity: float) -> str:
+        if quantity.is_integer():
+            return str(int(quantity))
+        return f"{quantity:.2f}".rstrip("0").rstrip(".")
+
+    def _merge_display_amount(self, current: str, incoming: str) -> str:
+        current = current.strip()
+        incoming = incoming.strip()
+        if not current:
+            return incoming
+        if not incoming or incoming == current:
+            return current
+
+        parsed_current = self._parse_display_amount(current)
+        parsed_incoming = self._parse_display_amount(incoming)
+        if parsed_current and parsed_incoming and parsed_current[1] == parsed_incoming[1]:
+            total = parsed_current[0] + parsed_incoming[0]
+            return f"{self._format_quantity(total)}{parsed_current[1]}"
+
+        parts: list[str] = []
+        for part in current.split(" + "):
+            if part and part not in parts:
+                parts.append(part)
+        if incoming not in parts:
+            parts.append(incoming)
+        return " + ".join(parts)
+
     def _serialize_item(self, item: models.ShoppingListItem) -> Dict[str, Any]:
         return {
             "id": item.id,
@@ -813,8 +859,11 @@ class ShoppingListService:
                 "source_refs": [],
             },
         )
-        if display_amount and not bucket["display_amount"]:
-            bucket["display_amount"] = display_amount.strip()
+        if display_amount:
+            bucket["display_amount"] = self._merge_display_amount(
+                bucket["display_amount"],
+                display_amount.strip(),
+            )
         if category and not bucket["category"]:
             bucket["category"] = category
         bucket["source_refs"].append(source_ref)
@@ -916,6 +965,8 @@ class ShoppingListService:
                 )
             )
 
+        self._touch_list(shopping_list)
+        db.add(shopping_list)
         db.commit()
         return self.get_list(db, user_id, shopping_list.id)
 
@@ -940,6 +991,8 @@ class ShoppingListService:
                 source_refs=[],
             )
         )
+        self._touch_list(shopping_list)
+        db.add(shopping_list)
         db.commit()
         return self.get_list(db, user_id, shopping_list.id)
 
@@ -961,6 +1014,8 @@ class ShoppingListService:
                 setattr(item, field, updates[field])
 
         db.add(item)
+        self._touch_list(shopping_list)
+        db.add(shopping_list)
         db.commit()
         return self.get_list(db, user_id, shopping_list.id)
 
@@ -973,6 +1028,8 @@ class ShoppingListService:
             raise HTTPException(status_code=404, detail="Shopping list item not found")
 
         db.delete(item)
+        self._touch_list(shopping_list)
+        db.add(shopping_list)
         db.commit()
         return self.get_list(db, user_id, shopping_list.id)
 
