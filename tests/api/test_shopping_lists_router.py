@@ -168,3 +168,51 @@ def test_toggle_shopping_list_item_checked_state(
 
     assert response.status_code == 200
     assert response.json()["items"][0]["checked"] is True
+
+
+def test_user_can_attach_session_to_weekly_plan_then_generate_shopping_list(
+    client, auth_header, db_session
+):
+    user = (
+        db_session.query(models.User)
+        .filter(models.User.username == "planner_user")
+        .first()
+    )
+    session = models.MealChatSession(
+        id="session-chain",
+        user_id=user.id,
+        status="finalized",
+        collected_slots={},
+        final_plan=make_final_plan_payload(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db_session.add(session)
+    db_session.commit()
+
+    create_plan = client.post(
+        "/api/weekly-plans",
+        headers=auth_header,
+        json={"name": "第15周"},
+    )
+    plan_id = create_plan.json()["id"]
+
+    attach = client.post(
+        f"/api/weekly-plans/{plan_id}/days",
+        headers=auth_header,
+        json={
+            "plan_date": "2026-04-08",
+            "meal_plan_id": "plan-001",
+            "source_session_id": "session-chain",
+        },
+    )
+    assert attach.status_code == 200
+
+    generated = client.post(
+        "/api/shopping-lists/generate",
+        headers=auth_header,
+        json={"weekly_plan_id": plan_id},
+    )
+
+    assert generated.status_code == 200
+    assert generated.json()["items"]
