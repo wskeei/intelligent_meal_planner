@@ -1,50 +1,82 @@
 <template>
   <div class="shopping-page">
     <header class="page-header">
-      <h1>{{ $t('shopping.title') }}</h1>
-      <p class="subtitle">{{ $t('shopping.subtitle') }}</p>
+      <div>
+        <h1>{{ $t('shopping.title') }}</h1>
+        <p class="subtitle">{{ $t('shopping.subtitle') }}</p>
+      </div>
+      <router-link to="/weekly-plan">
+        <el-button type="primary">{{ $t('shopping.go_weekly_plan') }}</el-button>
+      </router-link>
     </header>
 
-    <div class="shopping-container">
+    <AppEmptyState
+      v-if="!activeList && !loading"
+      :icon="ShoppingCart"
+      :eyebrow="$t('shopping.empty_eyebrow')"
+      :title="$t('shopping.empty_title')"
+      :description="$t('shopping.empty_desc')"
+    >
+      <template #actions>
+        <router-link to="/weekly-plan">
+          <el-button type="primary">{{ $t('shopping.go_weekly_plan') }}</el-button>
+        </router-link>
+      </template>
+    </AppEmptyState>
+
+    <template v-else-if="activeList">
+      <el-card class="control-card" shadow="never">
+        <div class="control-grid">
+          <el-select v-model="selectedListId" class="list-select" @change="handleListChange">
+            <el-option
+              v-for="list in lists"
+              :key="list.id"
+              :label="list.name"
+              :value="list.id"
+            />
+          </el-select>
+
+          <el-radio-group v-model="viewMode" size="large">
+            <el-radio-button label="ingredients">{{ $t('shopping.ingredients_view') }}</el-radio-button>
+            <el-radio-button label="sources">{{ $t('shopping.sources_view') }}</el-radio-button>
+          </el-radio-group>
+        </div>
+      </el-card>
+
       <el-card class="add-card" shadow="never">
-        <div class="input-group">
+        <div class="add-grid">
           <el-input
             v-model="newItemName"
             :placeholder="$t('shopping.add_placeholder')"
             size="large"
             @keyup.enter="handleAddItem"
-          >
-            <template #prefix>
-              <el-icon><Plus /></el-icon>
-            </template>
-          </el-input>
-          <el-button type="primary" size="large" @click="handleAddItem" :disabled="!newItemName.trim()">
+          />
+          <el-input
+            v-model="newItemAmount"
+            :placeholder="$t('shopping.amount_placeholder')"
+            size="large"
+            @keyup.enter="handleAddItem"
+          />
+          <el-button type="primary" size="large" :disabled="!newItemName.trim()" @click="handleAddItem">
             {{ $t('shopping.add_btn') }}
           </el-button>
         </div>
       </el-card>
 
-      <div v-if="items.length" class="list-area">
+      <section class="list-area">
         <div class="options-bar">
-          <span>{{ $t('shopping.items_count', { total: items.length, checked: checkedCount }) }}</span>
-          <div class="actions">
-            <el-button v-if="checkedCount > 0" text type="danger" @click="shoppingStore.clearChecked">
-              {{ $t('shopping.clear_bought') }}
-            </el-button>
-            <el-button text type="danger" @click="shoppingStore.clearAll">
-              {{ $t('shopping.clear_all') }}
-            </el-button>
-          </div>
+          <span>{{ $t('shopping.items_count', { total: activeList.items.length, checked: checkedCount }) }}</span>
+          <span class="muted-copy">{{ activeList.name }}</span>
         </div>
 
-        <transition-group name="list" tag="div" class="item-list">
-          <div
-            v-for="item in items"
+        <div v-if="viewMode === 'ingredients'" class="item-list">
+          <article
+            v-for="item in activeList.items"
             :key="item.id"
             class="shopping-item"
             :class="{ 'is-checked': item.checked }"
           >
-            <button class="check-button" type="button" @click="toggleItem(item.id)">
+            <button class="check-button" type="button" @click="toggleItem(item.id, !item.checked)">
               <span class="check-circle">
                 <el-icon v-if="item.checked"><Check /></el-icon>
               </span>
@@ -52,68 +84,124 @@
 
             <div class="item-content">
               <div class="item-copy">
-                <span class="item-name">{{ item.name }}</span>
-                <span v-if="item.amount" class="item-amount">{{ item.amount }}</span>
+                <span class="item-name">{{ item.ingredient_name }}</span>
+                <span v-if="item.display_amount" class="item-amount">{{ item.display_amount }}</span>
               </div>
-              <span class="source-pill" :class="item.source">
-                {{ item.source === 'meal-plan' ? $t('shopping.from_plan') : $t('shopping.manual_item') }}
-              </span>
+              <div class="item-meta">
+                <span class="source-pill" :class="item.source_kind">
+                  {{
+                    item.source_kind === 'manual'
+                      ? $t('shopping.manual_item')
+                      : $t('shopping.from_plan')
+                  }}
+                </span>
+                <span class="trace-count">
+                  {{ $t('shopping.source_count', { count: item.sources.length }) }}
+                </span>
+              </div>
             </div>
 
             <el-button class="delete-btn" circle text @click="removeItem(item.id)">
               <el-icon><Delete /></el-icon>
             </el-button>
-          </div>
-        </transition-group>
-      </div>
+          </article>
+        </div>
 
-      <AppEmptyState
-        v-else
-        :icon="ShoppingCart"
-        :eyebrow="$t('shopping.empty_eyebrow')"
-        :title="$t('shopping.empty_title')"
-        :description="$t('shopping.empty_desc')"
-      >
-        <template #actions>
-          <el-button type="primary" @click="$router.push('/meal-plan')">
-            {{ $t('shopping.go_plan') }}
-          </el-button>
-        </template>
-      </AppEmptyState>
-    </div>
+        <div v-else class="source-list">
+          <article v-for="item in activeList.items" :key="item.id" class="source-card">
+            <div class="source-card-head">
+              <div>
+                <h3>{{ item.ingredient_name }}</h3>
+                <p>{{ item.display_amount || $t('shopping.no_amount') }}</p>
+              </div>
+              <el-tag :type="item.checked ? 'success' : 'info'">
+                {{ item.checked ? $t('shopping.checked') : $t('shopping.pending') }}
+              </el-tag>
+            </div>
+
+            <ul v-if="item.sources.length" class="source-trace-list">
+              <li
+                v-for="source in item.sources"
+                :key="`${item.id}-${source.plan_date}-${source.recipe_name}-${source.meal_type}`"
+              >
+                {{ source.plan_date }} / {{ source.meal_type }} / {{ source.recipe_name }}
+              </li>
+            </ul>
+            <p v-else class="muted-copy">{{ $t('shopping.manual_trace_empty') }}</p>
+          </article>
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { Check, Delete, Plus, ShoppingCart } from '@element-plus/icons-vue'
+import { Check, Delete, ShoppingCart } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import { useShoppingStore } from '@/stores/shopping'
 
+const route = useRoute()
 const shoppingStore = useShoppingStore()
-const { items } = storeToRefs(shoppingStore)
+const { activeList, lists, loading, viewMode } = storeToRefs(shoppingStore)
 
 const newItemName = ref('')
+const newItemAmount = ref('')
+const selectedListId = ref<number | null>(null)
 
-const checkedCount = computed(() => items.value.filter((item) => item.checked).length)
+const checkedCount = computed(() => activeList.value?.items.filter((item) => item.checked).length ?? 0)
 
-function handleAddItem() {
-  const name = newItemName.value.trim()
-  if (!name) return
+watch(
+  activeList,
+  (value) => {
+    selectedListId.value = value?.id ?? null
+  },
+  { immediate: true }
+)
 
-  shoppingStore.addItem(name)
+async function initializeList() {
+  await shoppingStore.loadLists()
+
+  const requestedListId = Number(route.query.list)
+  if (Number.isFinite(requestedListId) && requestedListId > 0) {
+    await shoppingStore.openList(requestedListId)
+    return
+  }
+
+  if (!activeList.value && lists.value.length) {
+    await shoppingStore.openList(lists.value[0].id)
+  }
+}
+
+async function handleListChange(value: number) {
+  await shoppingStore.openList(value)
+}
+
+async function handleAddItem() {
+  if (!activeList.value || !newItemName.value.trim()) return
+
+  await shoppingStore.addItem(activeList.value.id, {
+    ingredient_name: newItemName.value.trim(),
+    display_amount: newItemAmount.value.trim()
+  })
   newItemName.value = ''
+  newItemAmount.value = ''
 }
 
-function toggleItem(id: string) {
-  shoppingStore.toggleItem(id)
+async function toggleItem(itemId: number, checked: boolean) {
+  await shoppingStore.toggleItem(itemId, checked)
 }
 
-function removeItem(id: string) {
-  shoppingStore.removeItem(id)
+async function removeItem(itemId: number) {
+  await shoppingStore.deleteItem(itemId)
 }
+
+onMounted(async () => {
+  await initializeList()
+})
 </script>
 
 <style scoped>
@@ -122,69 +210,79 @@ function removeItem(id: string) {
   gap: 24px;
 }
 
-.page-header h1 {
-  margin: 0;
-  color: var(--color-secondary);
-  font-size: clamp(2rem, 4vw, 2.6rem);
-}
-
-.subtitle {
-  margin: 8px 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-.shopping-container {
-  display: grid;
-  gap: 18px;
-  max-width: 760px;
-}
-
-.add-card {
-  border-radius: 22px;
-}
-
-.input-group,
+.page-header,
+.control-grid,
+.add-grid,
 .options-bar,
-.actions,
 .shopping-item,
-.item-copy {
+.item-copy,
+.item-meta,
+.source-card-head {
   display: flex;
   gap: 12px;
 }
 
-.input-group,
+.page-header,
 .options-bar,
-.shopping-item {
+.shopping-item,
+.source-card-head {
+  justify-content: space-between;
   align-items: center;
 }
 
-.input-group {
+.page-header {
   flex-wrap: wrap;
 }
 
-.input-group :deep(.el-input) {
-  flex: 1;
-  min-width: 220px;
+.page-header h1,
+.source-card h3,
+.item-name {
+  margin: 0;
+  color: var(--color-secondary);
 }
 
-.options-bar {
-  justify-content: space-between;
-  flex-wrap: wrap;
+.subtitle,
+.muted-copy,
+.source-card p,
+.item-amount,
+.trace-count {
   color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
-.item-list {
+.subtitle,
+.source-card p {
+  margin: 8px 0 0;
+}
+
+.control-grid,
+.add-grid,
+.options-bar {
+  flex-wrap: wrap;
+}
+
+.list-select {
+  width: min(320px, 100%);
+}
+
+.add-grid :deep(.el-input) {
+  flex: 1;
+  min-width: 180px;
+}
+
+.list-area,
+.item-list,
+.source-list {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
-.shopping-item {
-  padding: 14px;
-  border-radius: 18px;
+.shopping-item,
+.source-card {
+  padding: 18px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .shopping-item.is-checked {
@@ -227,25 +325,20 @@ function removeItem(id: string) {
   min-width: 0;
 }
 
-.item-copy {
+.item-copy,
+.item-meta {
   flex-wrap: wrap;
   align-items: center;
 }
 
 .item-name {
   font-weight: 700;
-  color: var(--color-secondary);
   overflow-wrap: break-word;
 }
 
 .shopping-item.is-checked .item-name {
   text-decoration: line-through;
   color: var(--color-text-light);
-}
-
-.item-amount {
-  color: var(--color-text-secondary);
-  font-size: 0.88rem;
 }
 
 .source-pill {
@@ -261,9 +354,22 @@ function removeItem(id: string) {
   color: var(--color-text-secondary);
 }
 
-.source-pill.meal-plan {
+.source-pill.weekly-plan {
   background: rgba(34, 197, 94, 0.14);
   color: var(--color-primary-dark);
+}
+
+.source-card {
+  display: grid;
+  gap: 14px;
+}
+
+.source-trace-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-text-secondary);
+  display: grid;
+  gap: 8px;
 }
 
 .delete-btn {
@@ -275,27 +381,20 @@ function removeItem(id: string) {
   background: rgba(248, 113, 113, 0.12);
 }
 
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.24s ease;
-}
-
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
 @media (max-width: 640px) {
-  .shopping-item {
-    align-items: flex-start;
+  .page-header,
+  .control-grid,
+  .add-grid,
+  .options-bar,
+  .shopping-item,
+  .source-card-head {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .actions {
+  .page-header :deep(.el-button),
+  .add-grid :deep(.el-button) {
     width: 100%;
-  }
-
-  .actions :deep(.el-button) {
     min-height: 44px;
   }
 }

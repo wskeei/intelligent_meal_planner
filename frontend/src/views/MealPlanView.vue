@@ -144,8 +144,8 @@
               >
                 {{ $t('meal_plan.view_result') }}
               </el-button>
-              <el-button v-if="finalPlan" plain @click="addToShoppingList">
-                {{ $t('meal_plan.add_to_list') }}
+              <el-button v-if="finalPlan" plain @click="openWeeklyPlanAttach">
+                {{ $t('weekly_plan.attach_day') }}
               </el-button>
               <el-button v-if="finalPlan" plain @click="restartSession">
                 {{ $t('meal_plan.start_over') }}
@@ -191,7 +191,7 @@
       :crew-trace="crewTrace"
       :preferences="sessionPreferences"
       @return-to-chat="handleReturnToChat"
-      @add-to-list="addToShoppingList"
+      @add-to-list="openWeeklyPlanAttach"
       @start-over="restartSession"
     />
   </div>
@@ -217,14 +217,12 @@ import MealChatGenerationOverlay from '@/components/meal-chat/MealChatGeneration
 import MealChatResultOverlay from '@/components/meal-chat/MealChatResultOverlay.vue'
 import MealChatStatusPanel from '@/components/meal-chat/MealChatStatusPanel.vue'
 import { useAuthStore } from '@/stores/auth'
-import { useShoppingStore } from '@/stores/shopping'
 import { useUserStore } from '@/stores/user'
 
 const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-const shoppingStore = useShoppingStore()
 const userStore = useUserStore()
 const {
   profile,
@@ -720,10 +718,17 @@ async function handleReturnToChat() {
   await updatePresentationState('hidden')
 }
 
-function addToShoppingList() {
-  if (!finalPlan.value) return
-  shoppingStore.addItemsFromMealPlan(finalPlan.value)
-  ElMessage.success(t('shopping.import_success'))
+function openWeeklyPlanAttach() {
+  if (!finalPlan.value || !currentSession.value?.session_id) return
+
+  router.push({
+    path: '/weekly-plan',
+    query: {
+      source_session_id: currentSession.value.session_id,
+      meal_plan_id: finalPlan.value.id,
+      source_label: finalPlan.value.meals.map((meal) => meal.recipe_name).join(' / ')
+    }
+  })
 }
 
 async function restartSession() {

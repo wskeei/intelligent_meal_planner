@@ -118,7 +118,7 @@
 
         <footer class="result-actions">
           <button class="action-button primary" type="button" @click="$emit('add-to-list')">
-            {{ t('meal_plan.add_to_list') }}
+            {{ t('weekly_plan.attach_day') }}
           </button>
           <button class="action-button secondary" type="button" @click="$emit('start-over')">
             {{ t('meal_plan.start_over') }}

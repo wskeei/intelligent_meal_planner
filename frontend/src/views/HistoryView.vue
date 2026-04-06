@@ -74,6 +74,13 @@
           </div>
 
           <div class="actions">
+            <el-button
+              v-if="item.source_session_id"
+              plain
+              @click="attachToWeeklyPlan(item)"
+            >
+              {{ $t('weekly_plan.attach_day') }}
+            </el-button>
             <el-button type="primary" @click="reuse(item)">
               {{ $t('history.reuse') }}
             </el-button>
@@ -157,6 +164,19 @@ function reuse(item: MealPlan) {
       reuse_budget: String(item.target.max_budget),
       reuse_tags: tags || undefined,
       reuse_disliked: disliked || undefined
+    }
+  })
+}
+
+function attachToWeeklyPlan(item: MealPlan) {
+  if (!item.source_session_id) return
+
+  router.push({
+    path: '/weekly-plan',
+    query: {
+      source_session_id: item.source_session_id,
+      meal_plan_id: item.id,
+      source_label: item.meals.map((meal) => meal.recipe_name).join(' / ')
     }
   })
 }

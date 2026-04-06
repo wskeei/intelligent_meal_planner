@@ -37,6 +37,11 @@ const router = createRouter({
       component: () => import('@/views/ShoppingListView.vue')
     },
     {
+      path: '/weekly-plan',
+      name: 'weekly-plan',
+      component: () => import('@/views/WeeklyPlanView.vue')
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfileView.vue')

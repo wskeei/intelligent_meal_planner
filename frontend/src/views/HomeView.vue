@@ -26,6 +26,9 @@
           <router-link to="/meal-plan">
             <el-button type="primary" size="large">{{ $t('dashboard.launch_chat') }}</el-button>
           </router-link>
+          <router-link to="/weekly-plan">
+            <el-button plain size="large">{{ $t('weekly_plan.title') }}</el-button>
+          </router-link>
           <router-link to="/history">
             <el-button plain size="large">{{ $t('dashboard.review_history') }}</el-button>
           </router-link>
@@ -58,6 +61,14 @@
 
           <router-link to="/profile?onboarding=1">
             <el-button plain>{{ $t('dashboard.complete_profile') }}</el-button>
+          </router-link>
+        </article>
+
+        <article class="secondary-card">
+          <h3>{{ $t('weekly_plan.title') }}</h3>
+          <p>{{ $t('weekly_plan.empty_desc') }}</p>
+          <router-link to="/weekly-plan">
+            <el-button text type="primary">{{ $t('weekly_plan.title') }}</el-button>
           </router-link>
         </article>
 

@@ -36,6 +36,9 @@
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item>
+                      <router-link to="/weekly-plan" class="menu-link">{{ $t('weekly_plan.title') }}</router-link>
+                    </el-dropdown-item>
+                    <el-dropdown-item>
                       <router-link to="/recipes" class="menu-link">{{ $t('nav.recipes') }}</router-link>
                     </el-dropdown-item>
                     <el-dropdown-item>

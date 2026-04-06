@@ -49,6 +49,7 @@ export interface MealItem {
   carbs: number
   fat: number
   price: number
+  ingredients?: Array<string | { name?: string; amount?: string; quantity?: string }>
 }
 
 export interface NutritionSummary {
@@ -80,6 +81,75 @@ export interface MealPlan {
   nutrition: NutritionSummary
   target: UserPreferences
   score: number
+  source_session_id?: string | null
+}
+
+export interface WeeklyPlanDay {
+  id: number
+  plan_date: string
+  source_session_id?: string | null
+  meal_plan_snapshot: MealPlan
+  nutrition_snapshot: NutritionSummary
+}
+
+export interface WeeklyPlanSummary {
+  id: number
+  name: string
+  notes?: string | null
+  created_at?: string
+  updated_at?: string
+  day_count: number
+}
+
+export interface WeeklyPlanAttachPayload {
+  plan_date: string
+  meal_plan_id: string
+  source_session_id: string
+}
+
+export interface WeeklyPlan {
+  id: number
+  name: string
+  notes?: string | null
+  days: WeeklyPlanDay[]
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ShoppingListSource {
+  plan_date: string
+  meal_type: string
+  recipe_name: string
+}
+
+export interface ShoppingListItem {
+  id: number
+  ingredient_name: string
+  display_amount: string
+  checked: boolean
+  category?: string | null
+  source_kind: 'weekly-plan' | 'manual'
+  sources: ShoppingListSource[]
+}
+
+export interface ShoppingListSummary {
+  id: number
+  name: string
+  weekly_plan_id: number
+  status: string
+  created_at: string
+  updated_at: string
+  item_count: number
+}
+
+export interface ShoppingList {
+  id: number
+  name: string
+  weekly_plan_id: number
+  status: string
+  created_at: string
+  updated_at: string
+  items: ShoppingListItem[]
 }
 
 export interface ChatMessage {
@@ -197,6 +267,27 @@ export const mealPlanApi = {
   getHistory: (limit = 10) => api.get<MealPlan[]>('/meal-plans', { params: { limit } }),
 
   getById: (id: string) => api.get<MealPlan>(`/meal-plans/${id}`)
+}
+
+export const weeklyPlanApi = {
+  list: () => api.get<WeeklyPlanSummary[]>('/weekly-plans'),
+  create: (payload: { name: string; notes?: string }) => api.post<WeeklyPlan>('/weekly-plans', payload),
+  getById: (id: number) => api.get<WeeklyPlan>(`/weekly-plans/${id}`),
+  attachDay: (id: number, payload: WeeklyPlanAttachPayload) =>
+    api.post<WeeklyPlan>(`/weekly-plans/${id}/days`, payload),
+  removeDay: (id: number, dayId: number) => api.delete<WeeklyPlan>(`/weekly-plans/${id}/days/${dayId}`)
+}
+
+export const shoppingListApi = {
+  list: () => api.get<ShoppingListSummary[]>('/shopping-lists'),
+  generate: (payload: { weekly_plan_id: number; name?: string }) =>
+    api.post<ShoppingList>('/shopping-lists/generate', payload),
+  getById: (id: number) => api.get<ShoppingList>(`/shopping-lists/${id}`),
+  addItem: (id: number, payload: { ingredient_name: string; display_amount?: string }) =>
+    api.post<ShoppingList>(`/shopping-lists/${id}/items`, payload),
+  updateItem: (id: number, itemId: number, payload: { checked?: boolean; display_amount?: string }) =>
+    api.patch<ShoppingList>(`/shopping-lists/${id}/items/${itemId}`, payload),
+  deleteItem: (id: number, itemId: number) => api.delete<ShoppingList>(`/shopping-lists/${id}/items/${itemId}`)
 }
 
 export const mealChatApi = {

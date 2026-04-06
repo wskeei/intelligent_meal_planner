@@ -1,105 +1,90 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
-import type { MealPlan } from '@/api'
-
-export interface ShoppingItem {
-  id: string
-  name: string
-  amount: string
-  checked: boolean
-  category: string
-  source: 'manual' | 'meal-plan'
-}
+import { shoppingListApi, type ShoppingList, type ShoppingListSummary } from '@/api'
 
 export const useShoppingStore = defineStore('shopping', () => {
-  const items = ref<ShoppingItem[]>([])
+  const lists = ref<ShoppingListSummary[]>([])
+  const activeList = ref<ShoppingList | null>(null)
+  const loading = ref(false)
+  const viewMode = ref<'ingredients' | 'sources'>('ingredients')
 
-  if (localStorage.getItem('shoppingList')) {
+  async function loadLists() {
+    loading.value = true
     try {
-      items.value = JSON.parse(localStorage.getItem('shoppingList')!)
-    } catch (error) {
-      console.error('Failed to load shopping list', error)
+      const { data } = await shoppingListApi.list()
+      lists.value = data
+      return data
+    } finally {
+      loading.value = false
     }
   }
 
-  watch(
-    items,
-    (newVal) => {
-      localStorage.setItem('shoppingList', JSON.stringify(newVal))
-    },
-    { deep: true }
-  )
-
-  function buildId() {
-    return `${Date.now()}-${Math.random().toString().slice(2)}`
+  async function openList(id: number) {
+    loading.value = true
+    try {
+      const { data } = await shoppingListApi.getById(id)
+      activeList.value = data
+      return data
+    } finally {
+      loading.value = false
+    }
   }
 
-  function upsertItem(payload: Omit<ShoppingItem, 'id' | 'checked'>) {
-    const existing = items.value.find(
-      (item) => item.name.trim().toLowerCase() === payload.name.trim().toLowerCase()
-    )
+  async function syncAfterMutation(nextList: ShoppingList) {
+    activeList.value = nextList
+    await loadLists()
+    return nextList
+  }
 
-    if (existing) {
-      existing.amount = payload.amount || existing.amount
-      existing.category = payload.category || existing.category
-      existing.source = payload.source
-      return
-    }
-
-    items.value.push({
-      id: buildId(),
-      checked: false,
-      ...payload
+  async function generateFromWeeklyPlan(weeklyPlanId: number, name = '') {
+    const { data } = await shoppingListApi.generate({
+      weekly_plan_id: weeklyPlanId,
+      name: name || undefined
     })
+    return syncAfterMutation(data)
   }
 
-  function addItem(name: string, amount: string = '', category: string = 'manual') {
-    upsertItem({
-      name,
-      amount,
-      category,
-      source: 'manual'
-    })
+  async function addItem(
+    listId: number,
+    payload: { ingredient_name: string; display_amount?: string; category?: string }
+  ) {
+    const { data } = await shoppingListApi.addItem(listId, payload)
+    return syncAfterMutation(data)
   }
 
-  function addItemsFromMealPlan(mealPlan: MealPlan) {
-    for (const meal of mealPlan.meals) {
-      upsertItem({
-        name: meal.recipe_name,
-        amount: '',
-        category: meal.meal_type,
-        source: 'meal-plan'
-      })
-    }
+  async function toggleItem(itemId: number, checked: boolean) {
+    if (!activeList.value) return null
+    const { data } = await shoppingListApi.updateItem(activeList.value.id, itemId, { checked })
+    return syncAfterMutation(data)
   }
 
-  function toggleItem(id: string) {
-    const item = items.value.find((entry) => entry.id === id)
-    if (item) {
-      item.checked = !item.checked
-    }
+  async function updateItem(
+    itemId: number,
+    payload: { checked?: boolean; display_amount?: string; category?: string }
+  ) {
+    if (!activeList.value) return null
+    const { data } = await shoppingListApi.updateItem(activeList.value.id, itemId, payload)
+    return syncAfterMutation(data)
   }
 
-  function removeItem(id: string) {
-    items.value = items.value.filter((entry) => entry.id !== id)
-  }
-
-  function clearChecked() {
-    items.value = items.value.filter((entry) => !entry.checked)
-  }
-
-  function clearAll() {
-    items.value = []
+  async function deleteItem(itemId: number) {
+    if (!activeList.value) return null
+    const { data } = await shoppingListApi.deleteItem(activeList.value.id, itemId)
+    return syncAfterMutation(data)
   }
 
   return {
-    items,
+    lists,
+    activeList,
+    loading,
+    viewMode,
+    loadLists,
+    openList,
+    generateFromWeeklyPlan,
     addItem,
-    addItemsFromMealPlan,
     toggleItem,
-    removeItem,
-    clearChecked,
-    clearAll
+    updateItem,
+    deleteItem
   }
 })
