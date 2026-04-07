@@ -1,4 +1,5 @@
 .agent/
+.agents/
 .claude/
 .worktrees/
 .run/
