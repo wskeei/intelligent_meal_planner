@@ -10,6 +10,13 @@ function readSource(relativePath: string) {
 }
 
 describe('frontend audit regressions', () => {
+  it('keeps dark-mode emphasis text readable on dark emphasis surfaces', () => {
+    const tokens = readSource('./assets/main.css')
+
+    expect(tokens).not.toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*--color-text-emphasis:\s*var\(--color-text-inverse\)/)
+    expect(tokens).not.toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*--color-text-emphasis-muted:\s*color-mix\(in srgb, var\(--color-text-inverse\)/)
+  })
+
   it('uses token-driven, neutral-first hero and status surfaces on key pages', () => {
     const homeView = readSource('./views/HomeView.vue')
     const profileView = readSource('./views/ProfileView.vue')
@@ -37,5 +44,15 @@ describe('frontend audit regressions', () => {
     expect(statusPanel).toContain('.status-primary-action :deep(.el-button)')
     expect(statusPanel).toContain('min-height: 44px;')
     expect(statusPanel).not.toContain('min-height: 42px;')
+  })
+
+  it('uses touch-safe secondary navigation and responsive recipe dialog sizing', () => {
+    const appView = readSource('./App.vue')
+    const recipesView = readSource('./views/RecipesView.vue')
+
+    expect(appView).toContain('<el-dropdown trigger="click" @command="handleMoreCommand">')
+    expect(appView).toContain('void router.push(command)')
+    expect(recipesView).not.toContain('window.innerWidth')
+    expect(recipesView).toContain("const dialogWidth = 'min(680px, calc(100vw - 24px))'")
   })
 })

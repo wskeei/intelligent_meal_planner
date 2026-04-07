@@ -255,8 +255,8 @@ video {
       linear-gradient(148deg, rgba(33, 43, 37, 0.96), rgba(24, 32, 28, 0.98) 72%);
     --gradient-emphasis:
       linear-gradient(150deg, #101613, #17201c 56%, #202b25);
-    --color-text-emphasis: var(--color-text-inverse);
-    --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-inverse) 70%, transparent);
+    --color-text-emphasis: var(--color-text-main);
+    --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-main) 72%, transparent);
     --color-accent-pill-bg: color-mix(in srgb, var(--color-accent-soft) 76%, black);
     --color-accent-pill-text: var(--color-accent-strong);
 

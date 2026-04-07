@@ -188,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { Search, WarningFilled } from '@element-plus/icons-vue'
 
 import { recipeApi, type Recipe } from '@/api'
@@ -207,7 +207,7 @@ const filters = reactive({
   price: [0, 100] as [number, number]
 })
 
-const dialogWidth = computed(() => (window.innerWidth < 640 ? 'calc(100vw - 24px)' : '680px'))
+const dialogWidth = 'min(680px, calc(100vw - 24px))'
 
 async function fetchRecipes() {
   loading.value = true
@@ -386,7 +386,7 @@ onMounted(() => {
   display: grid;
   place-items: center;
   height: 132px;
-  background: #f1f6f1;
+  background: var(--color-surface-muted);
 }
 
 .emoji {
@@ -427,7 +427,7 @@ onMounted(() => {
 .macros {
   padding: 10px 12px;
   border-radius: 14px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
 }
 
 .macro {
@@ -489,7 +489,7 @@ onMounted(() => {
   gap: 4px;
   padding: 14px;
   border-radius: 16px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
 }
 
 .n-val {

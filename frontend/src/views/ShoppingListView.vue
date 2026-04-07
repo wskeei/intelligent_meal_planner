@@ -372,12 +372,12 @@ onMounted(async () => {
 .source-card {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
+  border: 1px solid var(--color-border-soft);
 }
 
 .shopping-item.is-checked {
-  background: #f7faf8;
+  background: var(--color-surface-muted);
 }
 
 .check-button,
@@ -405,9 +405,9 @@ onMounted(async () => {
   place-items: center;
   width: 24px;
   height: 24px;
-  border: 2px solid #cbd5e1;
+  border: 2px solid color-mix(in srgb, var(--color-border-soft) 88%, white);
   border-radius: 50%;
-  color: white;
+  color: var(--color-accent-contrast);
 }
 
 .shopping-item.is-checked .check-circle {
@@ -452,12 +452,12 @@ onMounted(async () => {
 }
 
 .source-pill.manual {
-  background: rgba(15, 23, 42, 0.07);
+  background: color-mix(in srgb, var(--color-border-soft) 52%, transparent);
   color: var(--color-text-secondary);
 }
 
 .source-pill.weekly-plan {
-  background: rgba(34, 197, 94, 0.14);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
@@ -485,8 +485,8 @@ onMounted(async () => {
 }
 
 .delete-btn:hover {
-  color: #b91c1c;
-  background: rgba(248, 113, 113, 0.12);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 @media (max-width: 640px) {

@@ -5,7 +5,7 @@
         <div class="container topbar-inner">
           <router-link to="/" class="brand">
             <div class="logo-icon">
-              <el-icon :size="22" color="white"><Food /></el-icon>
+              <el-icon :size="22" class="brand-icon"><Food /></el-icon>
             </div>
             <div>
               <span class="brand-text">{{ $t('app.brand') }}</span>
@@ -28,22 +28,16 @@
             </el-dropdown>
 
             <template v-if="showPrimaryNav">
-              <el-dropdown>
+              <el-dropdown trigger="click" @command="handleMoreCommand">
                 <span class="utility-link">
                   {{ $t('nav.more') }}
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item>
-                      <router-link to="/weekly-plan" class="menu-link">{{ $t('weekly_plan.title') }}</router-link>
-                    </el-dropdown-item>
-                    <el-dropdown-item>
-                      <router-link to="/recipes" class="menu-link">{{ $t('nav.recipes') }}</router-link>
-                    </el-dropdown-item>
-                    <el-dropdown-item>
-                      <router-link to="/shopping-list" class="menu-link">{{ $t('nav.shopping') }}</router-link>
-                    </el-dropdown-item>
+                    <el-dropdown-item command="/weekly-plan">{{ $t('weekly_plan.title') }}</el-dropdown-item>
+                    <el-dropdown-item command="/recipes">{{ $t('nav.recipes') }}</el-dropdown-item>
+                    <el-dropdown-item command="/shopping-list">{{ $t('nav.shopping') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -113,13 +107,14 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
 const { locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 
 const authPageNames = ['login', 'register']
 const showPrimaryNav = computed(() => !authPageNames.includes(route.name as string))
@@ -131,6 +126,10 @@ function handleLogout() {
 function handleCommand(command: string) {
   locale.value = command
   localStorage.setItem('locale', command)
+}
+
+function handleMoreCommand(command: string) {
+  void router.push(command)
 }
 </script>
 
@@ -189,7 +188,11 @@ function handleCommand(command: string) {
   place-items: center;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-accent-contrast) 22%, transparent);
+}
+
+.brand-icon {
+  color: var(--color-accent-contrast);
 }
 
 .brand-text {
