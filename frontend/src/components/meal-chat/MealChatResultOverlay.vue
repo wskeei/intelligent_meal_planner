@@ -309,8 +309,8 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(12, 24, 18, 0.2), rgba(12, 24, 18, 0.08)),
-    rgba(245, 247, 242, 0.88);
+    linear-gradient(180deg, rgba(11, 16, 14, 0.28), rgba(11, 16, 14, 0.12)),
+    color-mix(in srgb, var(--color-background) 84%, transparent);
   backdrop-filter: blur(18px);
 }
 
@@ -320,11 +320,9 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   padding: clamp(18px, 3vw, 28px);
   border-radius: 32px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 251, 248, 0.96)),
-    #ffffff;
-  border: 1px solid rgba(47, 143, 81, 0.1);
-  box-shadow: 0 32px 90px rgba(21, 48, 40, 0.16);
+  background: var(--gradient-panel);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-lg);
 }
 
 .result-overlay-head,
@@ -350,7 +348,7 @@ summary {
   min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  background: rgba(21, 48, 40, 0.06);
+  background: color-mix(in srgb, var(--color-border-soft) 54%, transparent);
   color: var(--color-secondary);
   font-weight: 700;
 }
@@ -365,7 +363,7 @@ summary {
   gap: 2px;
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(126, 216, 139, 0.18);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
   font-weight: 700;
   text-align: right;
@@ -412,7 +410,8 @@ summary {
 .meal-group {
   padding: 18px;
   border-radius: 24px;
-  background: linear-gradient(180deg, #f8fbf8, #f2f7f3);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
 }
 
 .meal-list,
@@ -456,7 +455,8 @@ summary {
 .crew-event {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--color-surface-raised) 90%, transparent);
+  border: 1px solid var(--color-border-soft);
 }
 
 .meal-item {
@@ -487,7 +487,8 @@ summary {
 .summary-item {
   padding: 14px;
   border-radius: 16px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
 }
 
 .summary-item span {
@@ -526,14 +527,14 @@ summary {
 }
 
 .crew-event {
-  border: 1px solid rgba(34, 197, 94, 0.12);
+  border-color: var(--color-border-accent);
 }
 
 .crew-status {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
   font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -553,11 +554,11 @@ summary {
 
 .action-button.primary {
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-  color: #0d2b1b;
+  color: var(--color-accent-contrast);
 }
 
 .action-button.secondary {
-  background: rgba(21, 48, 40, 0.08);
+  background: color-mix(in srgb, var(--color-border-soft) 56%, transparent);
   color: var(--color-secondary);
 }
 

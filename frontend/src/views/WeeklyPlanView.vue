@@ -408,14 +408,14 @@ onMounted(async () => {
   gap: 6px;
   padding: 16px;
   border-radius: 18px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--color-border-soft);
+  background: var(--gradient-surface);
   text-align: left;
 }
 
 .plan-button.active {
-  border-color: rgba(34, 197, 94, 0.28);
-  background: rgba(34, 197, 94, 0.08);
+  border-color: var(--color-border-accent);
+  background: color-mix(in srgb, var(--color-accent-soft) 84%, var(--color-surface-raised));
 }
 
 .plan-name,
@@ -450,8 +450,9 @@ onMounted(async () => {
   gap: 14px;
   padding: 20px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .eyebrow {
@@ -470,7 +471,8 @@ onMounted(async () => {
 .meal-item {
   padding: 12px 14px;
   border-radius: 14px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
   align-items: flex-start;
 }
 

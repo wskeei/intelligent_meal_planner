@@ -1,18 +1,49 @@
 :root {
-  --color-primary: #7ed88b;
-  --color-primary-dark: #2f8f51;
-  --color-secondary: #153028;
-  --color-secondary-light: #2d4a41;
-  --color-accent: #d97745;
-  --color-background: #f5f7f2;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f7faf8;
+  color-scheme: light;
 
-  --color-text-main: #1f2e28;
-  --color-text-secondary: #5c7168;
-  --color-text-light: #86988f;
+  --color-bg-canvas: #f2f0ea;
+  --color-bg-subtle: #ece9e1;
+  --color-bg-elevated: rgba(255, 253, 249, 0.92);
+  --color-surface: #fbfaf7;
+  --color-surface-raised: #ffffff;
+  --color-surface-muted: #f3f0e9;
+  --color-surface-emphasis: #1f2924;
 
-  --font-family-base: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+  --color-border-soft: rgba(53, 64, 57, 0.11);
+  --color-border-strong: rgba(53, 64, 57, 0.18);
+  --color-border-accent: rgba(92, 125, 97, 0.24);
+
+  --color-accent: #8ba284;
+  --color-accent-strong: #4d6957;
+  --color-accent-soft: rgba(139, 162, 132, 0.16);
+  --color-accent-contrast: #eff7f0;
+  --color-warning: #b6763f;
+  --color-danger: #9d3b3b;
+  --color-danger-soft: rgba(157, 59, 59, 0.12);
+
+  --color-text-main: #1f2520;
+  --color-text-secondary: #5a645d;
+  --color-text-light: #818a83;
+  --color-text-inverse: #eef2ed;
+
+  --color-background: var(--color-bg-canvas);
+  --color-primary: var(--color-accent);
+  --color-primary-dark: var(--color-accent-strong);
+  --color-secondary: #253029;
+  --color-secondary-light: #435149;
+
+  --gradient-surface:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(244, 241, 234, 0.92));
+  --gradient-panel:
+    radial-gradient(circle at top right, rgba(139, 162, 132, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 237, 229, 0.96) 68%);
+  --gradient-emphasis:
+    linear-gradient(150deg, #202924, #2b3930 56%, #34453a);
+
+  --focus-ring: 0 0 0 3px rgba(139, 162, 132, 0.32);
+  --focus-ring-strong: 0 0 0 4px rgba(139, 162, 132, 0.22);
+
+  --font-family-base: "PingFang SC", "Segoe UI", "Hiragino Sans GB", "Microsoft YaHei",
     sans-serif;
 
   --space-2: 8px;
@@ -22,9 +53,9 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  --shadow-sm: 0 10px 20px rgba(21, 48, 40, 0.04);
-  --shadow-md: 0 18px 36px rgba(21, 48, 40, 0.08);
-  --shadow-lg: 0 24px 48px rgba(21, 48, 40, 0.12);
+  --shadow-sm: 0 12px 24px rgba(24, 31, 27, 0.05);
+  --shadow-md: 0 18px 36px rgba(24, 31, 27, 0.08);
+  --shadow-lg: 0 28px 60px rgba(24, 31, 27, 0.14);
 
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -32,6 +63,35 @@
   --overlay-enter-duration: 420ms;
   --overlay-exit-duration: 260ms;
   --overlay-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --el-bg-color: var(--color-surface-raised);
+  --el-bg-color-page: var(--color-bg-canvas);
+  --el-bg-color-overlay: var(--color-surface-raised);
+  --el-fill-color-blank: var(--color-surface-raised);
+  --el-fill-color-light: var(--color-surface-muted);
+  --el-fill-color-lighter: color-mix(in srgb, var(--color-surface-muted) 76%, white);
+  --el-fill-color-extra-light: color-mix(in srgb, var(--color-surface-muted) 48%, white);
+  --el-text-color-primary: var(--color-text-main);
+  --el-text-color-regular: var(--color-text-secondary);
+  --el-text-color-secondary: var(--color-text-light);
+  --el-text-color-placeholder: color-mix(in srgb, var(--color-text-light) 84%, white);
+  --el-border-color: var(--color-border-soft);
+  --el-border-color-light: color-mix(in srgb, var(--color-border-soft) 72%, white);
+  --el-border-color-lighter: color-mix(in srgb, var(--color-border-soft) 52%, white);
+  --el-border-color-extra-light: color-mix(in srgb, var(--color-border-soft) 34%, white);
+  --el-mask-color: rgba(24, 31, 27, 0.45);
+  --el-box-shadow-light: var(--shadow-sm);
+  --el-box-shadow: var(--shadow-md);
+  --el-box-shadow-dark: var(--shadow-lg);
+  --el-color-primary: var(--color-primary-dark);
+  --el-color-primary-light-3: color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  --el-color-primary-light-5: color-mix(in srgb, var(--color-primary-dark) 48%, white);
+  --el-color-primary-light-8: color-mix(in srgb, var(--color-primary-dark) 22%, white);
+  --el-color-primary-light-9: color-mix(in srgb, var(--color-primary-dark) 14%, white);
+  --el-color-primary-dark-2: color-mix(in srgb, var(--color-primary-dark) 82%, black);
+  --el-border-radius-base: 14px;
+  --el-border-radius-small: 10px;
+  --el-border-radius-round: 999px;
 }
 
 * {
@@ -40,6 +100,12 @@
 
 html {
   background: var(--color-background);
+  color-scheme: light dark;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 body {
@@ -61,6 +127,11 @@ a {
   color: inherit;
 }
 
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-text-main);
+}
+
 button,
 input,
 textarea,
@@ -72,6 +143,20 @@ button {
   cursor: pointer;
   border: none;
   background: none;
+}
+
+:where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex="-1"]),
+  [role="button"]
+):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 img,
@@ -91,12 +176,12 @@ video {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c8d2cc;
+  background: color-mix(in srgb, var(--color-text-light) 46%, transparent);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a4b2ab;
+  background: color-mix(in srgb, var(--color-text-secondary) 56%, transparent);
 }
 
 .fade-enter-active,
@@ -113,5 +198,76 @@ video {
   :root {
     --overlay-enter-duration: 1ms;
     --overlay-exit-duration: 1ms;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-bg-canvas: #111613;
+    --color-bg-subtle: #171e1a;
+    --color-bg-elevated: rgba(20, 27, 23, 0.88);
+    --color-surface: #18201c;
+    --color-surface-raised: #1e2823;
+    --color-surface-muted: #25302a;
+    --color-surface-emphasis: #edf1ee;
+
+    --color-border-soft: rgba(215, 223, 218, 0.12);
+    --color-border-strong: rgba(215, 223, 218, 0.2);
+    --color-border-accent: rgba(143, 167, 141, 0.26);
+
+    --color-accent: #97b28f;
+    --color-accent-strong: #b8ceb1;
+    --color-accent-soft: rgba(151, 178, 143, 0.18);
+    --color-accent-contrast: #152019;
+    --color-danger: #f09696;
+    --color-danger-soft: rgba(240, 150, 150, 0.18);
+
+    --color-text-main: #eef1ed;
+    --color-text-secondary: #b3bbb5;
+    --color-text-light: #8b948d;
+    --color-text-inverse: #152019;
+
+    --color-secondary: #f2f5f1;
+    --color-secondary-light: #c6cdc8;
+
+    --gradient-surface:
+      linear-gradient(180deg, rgba(31, 40, 35, 0.94), rgba(22, 29, 25, 0.96));
+    --gradient-panel:
+      radial-gradient(circle at top right, rgba(151, 178, 143, 0.08), transparent 38%),
+      linear-gradient(145deg, rgba(31, 40, 35, 0.96), rgba(20, 27, 23, 0.98) 68%);
+    --gradient-emphasis:
+      linear-gradient(150deg, #101613, #17201c 56%, #202b25);
+
+    --focus-ring: 0 0 0 3px rgba(151, 178, 143, 0.34);
+    --focus-ring-strong: 0 0 0 4px rgba(151, 178, 143, 0.22);
+
+    --shadow-sm: 0 12px 24px rgba(0, 0, 0, 0.24);
+    --shadow-md: 0 18px 36px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 28px 60px rgba(0, 0, 0, 0.36);
+
+    --el-bg-color: var(--color-surface-raised);
+    --el-bg-color-page: var(--color-bg-canvas);
+    --el-bg-color-overlay: var(--color-surface);
+    --el-fill-color-blank: var(--color-surface-raised);
+    --el-fill-color-light: var(--color-surface-muted);
+    --el-fill-color-lighter: color-mix(in srgb, var(--color-surface-muted) 84%, black);
+    --el-fill-color-extra-light: color-mix(in srgb, var(--color-surface-muted) 62%, black);
+    --el-text-color-primary: var(--color-text-main);
+    --el-text-color-regular: var(--color-text-secondary);
+    --el-text-color-secondary: var(--color-text-light);
+    --el-text-color-placeholder: color-mix(in srgb, var(--color-text-light) 82%, black);
+    --el-border-color: var(--color-border-soft);
+    --el-border-color-light: color-mix(in srgb, var(--color-border-soft) 82%, black);
+    --el-border-color-lighter: color-mix(in srgb, var(--color-border-soft) 62%, black);
+    --el-border-color-extra-light: color-mix(in srgb, var(--color-border-soft) 44%, black);
+    --el-mask-color: rgba(5, 8, 7, 0.58);
+    --el-color-primary: var(--color-accent);
+    --el-color-primary-light-3: color-mix(in srgb, var(--color-accent) 78%, white);
+    --el-color-primary-light-5: color-mix(in srgb, var(--color-accent) 58%, white);
+    --el-color-primary-light-8: color-mix(in srgb, var(--color-accent) 28%, white);
+    --el-color-primary-light-9: color-mix(in srgb, var(--color-accent) 18%, white);
+    --el-color-primary-dark-2: color-mix(in srgb, var(--color-accent) 72%, black);
   }
 }

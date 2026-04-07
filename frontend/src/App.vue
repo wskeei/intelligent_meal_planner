@@ -152,7 +152,7 @@ function handleCommand(command: string) {
 .topbar,
 .primary-nav,
 .footer {
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(8px);
 }
 
@@ -160,7 +160,7 @@ function handleCommand(command: string) {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid var(--color-border-soft);
 }
 
 .topbar-inner,
@@ -189,6 +189,7 @@ function handleCommand(command: string) {
   place-items: center;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .brand-text {
@@ -214,7 +215,7 @@ function handleCommand(command: string) {
 }
 
 .primary-nav {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid var(--color-border-soft);
 }
 
 .primary-nav-inner {
@@ -236,7 +237,7 @@ function handleCommand(command: string) {
 
 .nav-item.active,
 .mobile-nav-item.active {
-  background: rgba(34, 197, 94, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
@@ -247,7 +248,7 @@ function handleCommand(command: string) {
 
 .footer {
   padding: 20px 0;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-top: 1px solid var(--color-border-soft);
 }
 
 .mobile-nav {
@@ -258,8 +259,8 @@ function handleCommand(command: string) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
+  border-top: 1px solid var(--color-border-soft);
   backdrop-filter: blur(10px);
 }
 

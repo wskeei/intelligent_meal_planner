@@ -911,11 +911,9 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   padding: clamp(18px, 2.4vw, 26px);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(126, 216, 139, 0.18), transparent 30%),
-    linear-gradient(145deg, #ffffff, #f5faf6 58%, #edf4ef);
-  border: 1px solid rgba(34, 197, 94, 0.12);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+  background: var(--gradient-panel);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-md);
 }
 
 .topbar-copy {
@@ -964,8 +962,8 @@ onBeforeUnmount(() => {
   min-height: 38px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
   font-size: 0.86rem;
   font-weight: 600;
 }
@@ -990,7 +988,8 @@ onBeforeUnmount(() => {
 .chat-card {
   border: none;
   border-radius: 28px;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  background: transparent;
+  box-shadow: var(--shadow-md);
 }
 
 .chat-card :deep(.el-card__body) {
@@ -1019,7 +1018,8 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
   margin-bottom: 18px;
 }
 
@@ -1063,16 +1063,16 @@ onBeforeUnmount(() => {
 .bubble {
   padding: 16px 18px;
   border-radius: 20px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
   color: var(--color-text-main);
   line-height: 1.7;
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--color-border-soft);
   white-space: pre-wrap;
 }
 
 .message-row.user .bubble {
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-  color: #052e16;
+  color: var(--color-accent-contrast);
   border: none;
 }
 
@@ -1102,7 +1102,7 @@ onBeforeUnmount(() => {
 .composer {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 1px solid var(--color-border-soft);
 }
 
 .composer-actions {
@@ -1125,8 +1125,8 @@ onBeforeUnmount(() => {
   gap: 4px;
   padding: 10px 12px;
   border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, #f7faf8);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
   text-align: left;
   cursor: pointer;
 }
@@ -1165,8 +1165,8 @@ onBeforeUnmount(() => {
 .crew-event {
   padding: 12px 14px;
   border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid rgba(34, 197, 94, 0.12);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-accent);
 }
 
 .crew-event-head strong {
@@ -1183,8 +1183,8 @@ onBeforeUnmount(() => {
 .crew-status {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
   font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;

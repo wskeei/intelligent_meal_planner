@@ -216,9 +216,9 @@ onMounted(loadHistory)
   gap: 18px;
   padding: 24px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-md);
 }
 
 .history-head,
@@ -256,13 +256,13 @@ onMounted(loadHistory)
 .meta-pill {
   padding: 10px 14px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.06);
+  background: color-mix(in srgb, var(--color-border-soft) 54%, transparent);
   color: var(--color-text-secondary);
   font-weight: 600;
 }
 
 .meta-pill.accent {
-  background: rgba(34, 197, 94, 0.14);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
@@ -277,7 +277,8 @@ onMounted(loadHistory)
   gap: 12px;
   padding: 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
 }
 
 .meal-group-head {
@@ -301,7 +302,8 @@ onMounted(loadHistory)
   min-width: 0;
   padding: 12px;
   border-radius: 14px;
-  background: var(--color-surface);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-soft);
 }
 
 .meal-name {

@@ -32,8 +32,9 @@ defineProps<{
   gap: 10px;
   padding: 28px;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 245, 0.98));
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .empty-icon {
@@ -42,7 +43,7 @@ defineProps<{
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: rgba(34, 197, 94, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
