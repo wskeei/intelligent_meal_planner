@@ -1,4 +1,4 @@
-# Intelligent Meal Planner Design Context
+# Copilot Instructions
 
 ## Design Context
 
@@ -41,9 +41,3 @@
 5. Lower cognitive load: remove redundant choices, duplicate actions, and decorative framing that does not help a real user finish a meal-planning task.
 6. Mobile-safe by default: no critical hover behavior, no horizontal overflow, and touch targets sized for phones.
 7. Design both themes on purpose: every major surface should have a considered light and dark treatment.
-
-### Remediation Priorities
-1. Trustworthy behavior
-2. Clear first-run path
-3. Lower cognitive load
-4. Consistent, mobile-safe presentation
