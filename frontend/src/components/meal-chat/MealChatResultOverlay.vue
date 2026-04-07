@@ -318,7 +318,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(11, 16, 14, 0.28), rgba(11, 16, 14, 0.12)),
+    linear-gradient(180deg, var(--color-backdrop-scrim), color-mix(in srgb, var(--color-backdrop-scrim) 54%, transparent)),
     color-mix(in srgb, var(--color-background) 84%, transparent);
   backdrop-filter: blur(18px);
 }

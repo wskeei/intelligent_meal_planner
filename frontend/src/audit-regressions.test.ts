@@ -55,4 +55,24 @@ describe('frontend audit regressions', () => {
     expect(recipesView).not.toContain('window.innerWidth')
     expect(recipesView).toContain("const dialogWidth = 'min(680px, calc(100vw - 24px))'")
   })
+
+  it('moves residual overlay and banner surfaces onto semantic tokens', () => {
+    const registerView = readSource('./views/RegisterView.vue')
+    const profileView = readSource('./views/ProfileView.vue')
+    const generationOverlay = readSource('./components/meal-chat/MealChatGenerationOverlay.vue')
+    const resultOverlay = readSource('./components/meal-chat/MealChatResultOverlay.vue')
+
+    expect(registerView).toContain('background: var(--color-surface-muted);')
+    expect(registerView).not.toContain('background: #f7faf8;')
+
+    expect(profileView).toContain("const progressColor = ref('var(--color-accent)')")
+    expect(profileView).not.toContain("#8ba284")
+
+    expect(generationOverlay).toContain('background: var(--gradient-overlay-backdrop);')
+    expect(generationOverlay).toContain('background: var(--color-overlay-surface);')
+    expect(generationOverlay).not.toMatch(/#f7faf8|rgba\(126, 216, 139|rgba\(245, 247, 242|rgba\(47, 143, 81/)
+
+    expect(resultOverlay).toContain('linear-gradient(180deg, var(--color-backdrop-scrim)')
+    expect(resultOverlay).not.toContain('rgba(11, 16, 14, 0.28)')
+  })
 })

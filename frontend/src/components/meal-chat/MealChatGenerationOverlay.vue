@@ -218,9 +218,7 @@ onBeforeUnmount(() => {
 .generation-overlay-backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top center, rgba(126, 216, 139, 0.2), transparent 34%),
-    linear-gradient(180deg, rgba(245, 247, 242, 0.9), rgba(239, 244, 240, 0.96));
+  background: var(--gradient-overlay-backdrop);
   backdrop-filter: blur(18px);
 }
 
@@ -229,9 +227,9 @@ onBeforeUnmount(() => {
   width: min(720px, calc(100vw - 48px));
   padding: clamp(32px, 5vw, 56px);
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(47, 143, 81, 0.12);
-  box-shadow: 0 28px 80px rgba(21, 48, 40, 0.14);
+  background: var(--color-overlay-surface);
+  border: 1px solid var(--color-overlay-border);
+  box-shadow: var(--shadow-lg);
 }
 
 .back-link {
@@ -243,8 +241,8 @@ onBeforeUnmount(() => {
   min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(21, 48, 40, 0.08);
-  background: rgba(21, 48, 40, 0.06);
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-overlay-control);
   color: var(--color-secondary);
   font-weight: 700;
 }
@@ -292,7 +290,7 @@ onBeforeUnmount(() => {
   gap: 14px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-overlay-step);
   color: var(--color-text-secondary);
   transition:
     transform var(--overlay-enter-duration) var(--overlay-ease),
@@ -303,7 +301,7 @@ onBeforeUnmount(() => {
 
 .generation-step.active {
   transform: translateX(4px);
-  background: rgba(126, 216, 139, 0.18);
+  background: var(--color-overlay-step-active);
   color: var(--color-secondary);
 }
 
@@ -316,7 +314,7 @@ onBeforeUnmount(() => {
   height: 10px;
   flex: none;
   border-radius: 999px;
-  background: rgba(47, 143, 81, 0.3);
+  background: var(--color-overlay-dot);
   transition:
     transform var(--overlay-enter-duration) var(--overlay-ease),
     opacity var(--overlay-enter-duration) var(--overlay-ease),

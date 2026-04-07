@@ -126,7 +126,8 @@ h1 {
   margin-bottom: 20px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
 }
 
 .info-banner strong {

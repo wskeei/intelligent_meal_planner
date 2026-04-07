@@ -45,6 +45,16 @@
     linear-gradient(148deg, rgba(255, 255, 255, 0.94), rgba(236, 232, 223, 0.96) 72%);
   --gradient-emphasis:
     linear-gradient(150deg, #202924, #2b3930 56%, #34453a);
+  --gradient-overlay-backdrop:
+    radial-gradient(circle at top center, color-mix(in srgb, var(--color-accent-soft) 92%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-background) 92%, transparent), color-mix(in srgb, var(--color-bg-subtle) 96%, transparent));
+  --color-overlay-surface: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
+  --color-overlay-border: color-mix(in srgb, var(--color-border-accent) 72%, transparent);
+  --color-overlay-control: color-mix(in srgb, var(--color-border-soft) 56%, transparent);
+  --color-overlay-step: var(--color-surface-muted);
+  --color-overlay-step-active: color-mix(in srgb, var(--color-accent-soft) 92%, white);
+  --color-overlay-dot: color-mix(in srgb, var(--color-primary-dark) 30%, transparent);
+  --color-backdrop-scrim: color-mix(in srgb, var(--color-text-main) 20%, transparent);
   --color-text-emphasis: var(--color-text-inverse);
   --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-inverse) 74%, transparent);
   --color-accent-pill-bg: color-mix(in srgb, var(--color-accent-soft) 84%, white);
@@ -255,6 +265,16 @@ video {
       linear-gradient(148deg, rgba(33, 43, 37, 0.96), rgba(24, 32, 28, 0.98) 72%);
     --gradient-emphasis:
       linear-gradient(150deg, #101613, #17201c 56%, #202b25);
+    --gradient-overlay-backdrop:
+      radial-gradient(circle at top center, color-mix(in srgb, var(--color-accent-soft) 88%, transparent), transparent 36%),
+      linear-gradient(180deg, color-mix(in srgb, var(--color-bg-canvas) 74%, transparent), color-mix(in srgb, var(--color-bg-subtle) 84%, transparent));
+    --color-overlay-surface: color-mix(in srgb, var(--color-surface-raised) 92%, transparent);
+    --color-overlay-border: color-mix(in srgb, var(--color-border-accent) 82%, transparent);
+    --color-overlay-control: color-mix(in srgb, var(--color-surface-raised) 14%, transparent);
+    --color-overlay-step: color-mix(in srgb, var(--color-surface-muted) 88%, black);
+    --color-overlay-step-active: color-mix(in srgb, var(--color-accent-soft) 62%, black);
+    --color-overlay-dot: color-mix(in srgb, var(--color-accent-strong) 34%, transparent);
+    --color-backdrop-scrim: color-mix(in srgb, black 42%, transparent);
     --color-text-emphasis: var(--color-text-main);
     --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-main) 72%, transparent);
     --color-accent-pill-bg: color-mix(in srgb, var(--color-accent-soft) 76%, black);

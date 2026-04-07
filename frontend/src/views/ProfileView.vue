@@ -157,7 +157,7 @@ const {
 const saving = ref(false)
 const saveError = ref('')
 const onboardingMode = route.query.onboarding === '1'
-const progressColor = ref('#8ba284')
+const progressColor = ref('var(--color-accent)')
 const localProfile = reactive<UserProfile>({
   username: '',
   age: null,
@@ -182,7 +182,7 @@ let onColorSchemeChange: ((event: MediaQueryListEvent) => void) | null = null
 function syncProgressColor() {
   if (typeof window === 'undefined') return
   const color = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
-  progressColor.value = color || '#8ba284'
+  progressColor.value = color || 'var(--color-accent)'
 }
 
 async function save() {
