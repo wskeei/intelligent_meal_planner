@@ -22,7 +22,8 @@
     "edit": "编辑",
     "close": "关闭",
     "retry": "重试",
-    "you": "你"
+    "you": "你",
+    "not_available": "暂无"
   },
   "dashboard": {
     "welcome": "欢迎回来",
@@ -85,6 +86,7 @@
     "return_to_chat": "返回聊天",
     "start_over": "开始新需求",
     "use_prefill": "填入到输入框",
+    "source_label_more": "另 {count} 道",
     "reuse_prefill": "我想沿用上次的设定：{details}。",
     "reuse_parts": {
       "goal": "健康目标是{value}",
@@ -190,6 +192,10 @@
     "empty_eyebrow": "还没有待办采购",
     "empty_title": "先从周计划生成一份采购清单",
     "empty_desc": "先把满意的单日方案加入周计划，再从周计划生成可持续维护的采购清单。",
+    "load_failed_eyebrow": "清单暂不可用",
+    "load_failed_title": "暂时无法加载这份购物清单",
+    "list_empty_title": "这份购物清单现在还是空的",
+    "list_empty_desc": "你可以先手动添加条目，或回到周计划重新生成它。",
     "go_plan": "先去配餐",
     "go_weekly_plan": "去周计划",
     "ingredients_view": "按食材看",
@@ -200,9 +206,14 @@
     "no_amount": "未填写数量",
     "checked": "已勾选",
     "pending": "待采购",
+    "unnamed_item": "未命名条目",
     "manual_trace_empty": "这是手动添加条目，没有来源菜品轨迹。",
     "add_success": "条目已加入购物清单。",
     "remove_success": "条目已从购物清单移除。",
+    "actions": {
+      "toggle_item": "切换“{item}”的勾选状态",
+      "remove_item": "从购物清单移除“{item}”"
+    },
     "errors": {
       "load_failed": "购物清单加载失败，请稍后重试。",
       "add_failed": "条目添加失败，请稍后重试。",
@@ -220,6 +231,8 @@
     "notes_placeholder": "补充这周的目标、预算提醒或执行备注",
     "saved_plans": "已有周计划",
     "saved_desc": "先选中一个周计划，再把当前单日方案挂进去。",
+    "load_failed_eyebrow": "周计划暂不可用",
+    "load_failed_title": "暂时无法加载周计划",
     "empty_title": "先建一个周计划",
     "empty_desc": "先创建一个周计划，再把单日正式方案按日期挂进去。",
     "attach_day": "加入周计划",
@@ -262,6 +275,7 @@
     "empty_eyebrow": "没有匹配结果",
     "empty_title": "换一个更宽松的筛选试试",
     "no_recipes": "当前筛选下没有找到合适的菜谱。",
+    "open_details_for": "查看“{name}”的详情",
     "details_pending": "这道菜目前还没有补充更详细的说明。",
     "ingredients": "食材",
     "instructions": "做法",

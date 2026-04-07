@@ -22,7 +22,8 @@
     "edit": "Edit",
     "close": "Close",
     "retry": "Retry",
-    "you": "You"
+    "you": "You",
+    "not_available": "Not available"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -85,6 +86,7 @@
     "return_to_chat": "Return to chat",
     "start_over": "Start a new request",
     "use_prefill": "Fill input",
+    "source_label_more": "+{count} more",
     "reuse_prefill": "I want to reuse the last setup: {details}.",
     "reuse_parts": {
       "goal": "goal is {value}",
@@ -190,6 +192,10 @@
     "empty_eyebrow": "Nothing to buy yet",
     "empty_title": "Generate your first shopping list from a weekly plan",
     "empty_desc": "Add finalized daily plans into the weekly plan first, then generate a persisted shopping list from that plan.",
+    "load_failed_eyebrow": "List unavailable",
+    "load_failed_title": "We couldn't load this shopping list",
+    "list_empty_title": "This shopping list is empty right now",
+    "list_empty_desc": "Add a manual item or regenerate the list from the weekly plan to populate it.",
     "go_plan": "Plan meals first",
     "go_weekly_plan": "Open weekly plan",
     "ingredients_view": "Ingredients",
@@ -200,9 +206,14 @@
     "no_amount": "No amount recorded",
     "checked": "Checked",
     "pending": "Pending",
+    "unnamed_item": "Unnamed item",
     "manual_trace_empty": "This is a manual item, so there is no source trace.",
     "add_success": "Item added to the shopping list.",
     "remove_success": "Item removed from the shopping list.",
+    "actions": {
+      "toggle_item": "Toggle checked status for {item}",
+      "remove_item": "Remove {item} from shopping list"
+    },
     "errors": {
       "load_failed": "Could not load the shopping list. Please try again.",
       "add_failed": "Could not add the item. Please try again.",
@@ -220,6 +231,8 @@
     "notes_placeholder": "Add a short note for the goal, budget, or execution focus",
     "saved_plans": "Saved weekly plans",
     "saved_desc": "Select one plan, then attach the finalized day to it.",
+    "load_failed_eyebrow": "Plan unavailable",
+    "load_failed_title": "We couldn't load your weekly plans",
     "empty_title": "Create a weekly plan first",
     "empty_desc": "Create a weekly plan, then attach finalized daily plans into dated slots.",
     "attach_day": "Add to weekly plan",
@@ -262,6 +275,7 @@
     "empty_eyebrow": "No matching recipes",
     "empty_title": "Try broader filters",
     "no_recipes": "No recipes match the current filters.",
+    "open_details_for": "Open details for {name}",
     "details_pending": "This recipe does not have more detailed notes yet.",
     "ingredients": "Ingredients",
     "instructions": "Instructions",

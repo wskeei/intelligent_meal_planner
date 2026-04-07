@@ -89,7 +89,11 @@
                 :key="recipe.id"
                 class="recipe-card"
                 shadow="hover"
+                role="button"
+                tabindex="0"
+                :aria-label="$t('recipes.open_details_for', { name: recipe.name })"
                 @click="openDetails(recipe)"
+                @keydown="onRecipeCardKeydown($event, recipe)"
               >
                 <div class="card-image-placeholder">
                   <span class="emoji">{{ getEmoji(recipe.category) }}</span>
@@ -184,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { Search, WarningFilled } from '@element-plus/icons-vue'
 
 import { recipeApi, type Recipe } from '@/api'
@@ -203,7 +207,7 @@ const filters = reactive({
   price: [0, 100] as [number, number]
 })
 
-const dialogWidth = computed(() => (window.innerWidth < 640 ? 'calc(100vw - 24px)' : '680px'))
+const dialogWidth = 'min(680px, calc(100vw - 24px))'
 
 async function fetchRecipes() {
   loading.value = true
@@ -254,6 +258,13 @@ function resetFilters() {
 function openDetails(recipe: Recipe) {
   selected.value = recipe
   detailVisible.value = true
+}
+
+function onRecipeCardKeydown(event: KeyboardEvent, recipe: Recipe) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    openDetails(recipe)
+  }
 }
 
 function getEmoji(category: string) {
@@ -360,13 +371,22 @@ onMounted(() => {
   border: none;
   border-radius: 22px;
   overflow: hidden;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.recipe-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
+  transform: translateY(-1px);
 }
 
 .card-image-placeholder {
   display: grid;
   place-items: center;
   height: 132px;
-  background: #f1f6f1;
+  background: var(--color-surface-muted);
 }
 
 .emoji {
@@ -407,7 +427,7 @@ onMounted(() => {
 .macros {
   padding: 10px 12px;
   border-radius: 14px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
 }
 
 .macro {
@@ -469,7 +489,7 @@ onMounted(() => {
   gap: 4px;
   padding: 14px;
   border-radius: 16px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
 }
 
 .n-val {

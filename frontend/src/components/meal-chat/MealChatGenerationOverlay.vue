@@ -3,15 +3,24 @@
     <section
       v-if="visible"
       class="generation-overlay-root"
-      aria-live="polite"
       aria-modal="true"
-      role="status"
+      role="dialog"
+      aria-labelledby="meal-chat-generation-title"
+      aria-describedby="meal-chat-generation-summary"
     >
       <div class="generation-overlay-backdrop" />
-      <div class="generation-stage">
+      <div ref="shellRef" class="generation-stage" tabindex="-1">
+        <button
+          ref="returnButtonRef"
+          class="back-link"
+          type="button"
+          @click="$emit('return-to-chat')"
+        >
+          {{ t('meal_plan.return_to_chat') }}
+        </button>
         <p class="eyebrow">{{ t('meal_plan.generation.eyebrow') }}</p>
-        <h2>{{ t('meal_plan.generation.title') }}</h2>
-        <p class="summary">{{ t('meal_plan.generation.summary') }}</p>
+        <h2 id="meal-chat-generation-title">{{ t('meal_plan.generation.title') }}</h2>
+        <p id="meal-chat-generation-summary" class="summary">{{ t('meal_plan.generation.summary') }}</p>
 
         <ul class="generation-steps">
           <li
@@ -32,17 +41,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
   visible: boolean
 }>()
 
+const emit = defineEmits<{
+  (event: 'return-to-chat'): void
+}>()
+
 const { t } = useI18n()
+const shellRef = ref<HTMLElement | null>(null)
+const returnButtonRef = ref<HTMLButtonElement | null>(null)
 
 const activeIndex = ref(0)
 const timerIds = ref<number[]>([])
+let lastFocusedElement: HTMLElement | null = null
 
 const steps = computed(() => {
   const labels = [
@@ -72,6 +88,82 @@ function clearTimers() {
   timerIds.value = []
 }
 
+function getFocusableElements() {
+  if (!shellRef.value) return []
+
+  const selector = [
+    'button:not([disabled])',
+    '[href]',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])'
+  ].join(', ')
+
+  return Array.from(shellRef.value.querySelectorAll<HTMLElement>(selector)).filter(
+    (element) => !element.hasAttribute('disabled') && element.tabIndex !== -1
+  )
+}
+
+function restoreFocus() {
+  if (lastFocusedElement) {
+    lastFocusedElement.focus()
+    lastFocusedElement = null
+  }
+}
+
+function onKeydown(event: KeyboardEvent) {
+  if (!props.visible) return
+
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    emit('return-to-chat')
+    return
+  }
+
+  if (event.key !== 'Tab') return
+
+  const focusable = getFocusableElements()
+  if (!focusable.length) return
+
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement as HTMLElement | null
+
+  if (!active || !focusable.includes(active)) {
+    event.preventDefault()
+    first.focus()
+    return
+  }
+
+  if (event.shiftKey && active === first) {
+    event.preventDefault()
+    last.focus()
+    return
+  }
+
+  if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+async function activateModalBehavior() {
+  lastFocusedElement = document.activeElement as HTMLElement | null
+  document.addEventListener('keydown', onKeydown)
+  await nextTick()
+  if (returnButtonRef.value) {
+    returnButtonRef.value.focus()
+    return
+  }
+  shellRef.value?.focus()
+}
+
+function deactivateModalBehavior() {
+  document.removeEventListener('keydown', onKeydown)
+  restoreFocus()
+}
+
 function startSequence() {
   clearTimers()
   activeIndex.value = prefersReducedMotion() ? 2 : 0
@@ -94,18 +186,21 @@ function startSequence() {
 
 watch(
   () => props.visible,
-  (visible) => {
+  async (visible) => {
     if (visible) {
       startSequence()
+      await activateModalBehavior()
       return
     }
     clearTimers()
     activeIndex.value = 0
+    deactivateModalBehavior()
   },
   { immediate: true }
 )
 
 onBeforeUnmount(() => {
+  deactivateModalBehavior()
   clearTimers()
 })
 </script>
@@ -123,9 +218,7 @@ onBeforeUnmount(() => {
 .generation-overlay-backdrop {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at top center, rgba(126, 216, 139, 0.2), transparent 34%),
-    linear-gradient(180deg, rgba(245, 247, 242, 0.9), rgba(239, 244, 240, 0.96));
+  background: var(--gradient-overlay-backdrop);
   backdrop-filter: blur(18px);
 }
 
@@ -134,9 +227,29 @@ onBeforeUnmount(() => {
   width: min(720px, calc(100vw - 48px));
   padding: clamp(32px, 5vw, 56px);
   border-radius: 32px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(47, 143, 81, 0.12);
-  box-shadow: 0 28px 80px rgba(21, 48, 40, 0.14);
+  background: var(--color-overlay-surface);
+  border: 1px solid var(--color-overlay-border);
+  box-shadow: var(--shadow-lg);
+}
+
+.back-link {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-overlay-control);
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.back-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
 }
 
 .eyebrow {
@@ -177,7 +290,7 @@ onBeforeUnmount(() => {
   gap: 14px;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-overlay-step);
   color: var(--color-text-secondary);
   transition:
     transform var(--overlay-enter-duration) var(--overlay-ease),
@@ -188,7 +301,7 @@ onBeforeUnmount(() => {
 
 .generation-step.active {
   transform: translateX(4px);
-  background: rgba(126, 216, 139, 0.18);
+  background: var(--color-overlay-step-active);
   color: var(--color-secondary);
 }
 
@@ -201,7 +314,7 @@ onBeforeUnmount(() => {
   height: 10px;
   flex: none;
   border-radius: 999px;
-  background: rgba(47, 143, 81, 0.3);
+  background: var(--color-overlay-dot);
   transition:
     transform var(--overlay-enter-duration) var(--overlay-ease),
     opacity var(--overlay-enter-duration) var(--overlay-ease),
@@ -238,6 +351,11 @@ onBeforeUnmount(() => {
     width: min(100vw - 24px, 720px);
     padding: 28px 22px;
     border-radius: 26px;
+  }
+
+  .back-link {
+    position: static;
+    margin-bottom: 18px;
   }
 
   .generation-stage h2 {

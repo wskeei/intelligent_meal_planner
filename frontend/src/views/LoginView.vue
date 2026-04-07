@@ -97,13 +97,18 @@ async function handleLogin() {
   justify-content: center;
   align-items: center;
   min-height: calc(100vh - 160px);
+  padding: 20px 0;
 }
 
 .auth-card {
   width: 100%;
   max-width: 440px;
+  min-width: 0;
   padding: 24px;
   border-radius: 24px;
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-md);
 }
 
 .eyebrow {
@@ -125,6 +130,7 @@ h1 {
   margin: 12px 0 24px;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  max-width: 42ch;
 }
 
 .full-width {
@@ -140,10 +146,25 @@ h1 {
   margin-top: 16px;
   font-size: 0.9rem;
   color: var(--color-text-secondary);
+  line-height: 1.6;
 }
 
 .auth-links a {
   color: var(--color-primary-dark);
   font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-primary-dark) 36%, transparent);
+  text-underline-offset: 0.18em;
+}
+
+.auth-links a:hover,
+.auth-links a:focus-visible {
+  color: var(--color-secondary);
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 20px;
+  }
 }
 </style>

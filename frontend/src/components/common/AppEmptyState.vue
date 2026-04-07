@@ -32,8 +32,10 @@ defineProps<{
   gap: 10px;
   padding: 28px;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 249, 245, 0.98));
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .empty-icon {
@@ -42,7 +44,7 @@ defineProps<{
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: rgba(34, 197, 94, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
@@ -53,18 +55,21 @@ defineProps<{
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 h3 {
   margin: 0;
   color: var(--color-secondary);
   font-size: 1.15rem;
+  overflow-wrap: anywhere;
 }
 
 .empty-description {
   margin: 0;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .empty-actions {
@@ -72,5 +77,16 @@ h3 {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .empty-actions {
+    width: 100%;
+  }
+
+  .empty-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
+  }
 }
 </style>

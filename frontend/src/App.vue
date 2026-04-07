@@ -5,7 +5,7 @@
         <div class="container topbar-inner">
           <router-link to="/" class="brand">
             <div class="logo-icon">
-              <el-icon :size="22" color="white"><Food /></el-icon>
+              <el-icon :size="22" class="brand-icon"><Food /></el-icon>
             </div>
             <div>
               <span class="brand-text">{{ $t('app.brand') }}</span>
@@ -28,22 +28,16 @@
             </el-dropdown>
 
             <template v-if="showPrimaryNav">
-              <el-dropdown>
+              <el-dropdown trigger="click" @command="handleMoreCommand">
                 <span class="utility-link">
                   {{ $t('nav.more') }}
                   <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </span>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item>
-                      <router-link to="/weekly-plan" class="menu-link">{{ $t('weekly_plan.title') }}</router-link>
-                    </el-dropdown-item>
-                    <el-dropdown-item>
-                      <router-link to="/recipes" class="menu-link">{{ $t('nav.recipes') }}</router-link>
-                    </el-dropdown-item>
-                    <el-dropdown-item>
-                      <router-link to="/shopping-list" class="menu-link">{{ $t('nav.shopping') }}</router-link>
-                    </el-dropdown-item>
+                    <el-dropdown-item command="/weekly-plan">{{ $t('weekly_plan.title') }}</el-dropdown-item>
+                    <el-dropdown-item command="/recipes">{{ $t('nav.recipes') }}</el-dropdown-item>
+                    <el-dropdown-item command="/shopping-list">{{ $t('nav.shopping') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -113,13 +107,14 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 
 const { locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 
 const authPageNames = ['login', 'register']
 const showPrimaryNav = computed(() => !authPageNames.includes(route.name as string))
@@ -131,6 +126,10 @@ function handleLogout() {
 function handleCommand(command: string) {
   locale.value = command
   localStorage.setItem('locale', command)
+}
+
+function handleMoreCommand(command: string) {
+  void router.push(command)
 }
 </script>
 
@@ -152,7 +151,7 @@ function handleCommand(command: string) {
 .topbar,
 .primary-nav,
 .footer {
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--color-bg-elevated);
   backdrop-filter: blur(8px);
 }
 
@@ -160,7 +159,7 @@ function handleCommand(command: string) {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid var(--color-border-soft);
 }
 
 .topbar-inner,
@@ -180,6 +179,11 @@ function handleCommand(command: string) {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  border-radius: 16px;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
 }
 
 .logo-icon {
@@ -189,6 +193,11 @@ function handleCommand(command: string) {
   place-items: center;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-accent-contrast) 22%, transparent);
+}
+
+.brand-icon {
+  color: var(--color-accent-contrast);
 }
 
 .brand-text {
@@ -196,6 +205,7 @@ function handleCommand(command: string) {
   color: var(--color-secondary);
   font-size: 1.08rem;
   font-weight: 800;
+  line-height: 1.1;
 }
 
 .brand-subtitle,
@@ -214,7 +224,7 @@ function handleCommand(command: string) {
 }
 
 .primary-nav {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid var(--color-border-soft);
 }
 
 .primary-nav-inner {
@@ -232,11 +242,40 @@ function handleCommand(command: string) {
   border-radius: 14px;
   color: var(--color-text-secondary);
   font-weight: 600;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.brand:hover,
+.brand:focus-visible,
+.nav-item:hover,
+.utility-link:hover,
+.menu-link:hover,
+.mobile-nav-item:hover {
+  transform: translateY(-1px);
+}
+
+.nav-item:hover,
+.utility-link:hover,
+.menu-link:hover,
+.mobile-nav-item:hover {
+  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  color: var(--color-secondary);
+}
+
+.brand:focus-visible,
+.nav-item:focus-visible,
+.utility-link:focus-visible,
+.menu-link:focus-visible,
+.mobile-nav-item:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .nav-item.active,
 .mobile-nav-item.active {
-  background: rgba(34, 197, 94, 0.12);
+  background: var(--color-accent-soft);
   color: var(--color-primary-dark);
 }
 
@@ -247,7 +286,7 @@ function handleCommand(command: string) {
 
 .footer {
   padding: 20px 0;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-top: 1px solid var(--color-border-soft);
 }
 
 .mobile-nav {
@@ -258,8 +297,8 @@ function handleCommand(command: string) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
+  border-top: 1px solid var(--color-border-soft);
   backdrop-filter: blur(10px);
 }
 
@@ -273,6 +312,10 @@ function handleCommand(command: string) {
   color: var(--color-text-secondary);
   font-size: 0.78rem;
   font-weight: 600;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 @media (max-width: 720px) {

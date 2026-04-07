@@ -208,7 +208,10 @@
       </div>
     </el-drawer>
 
-    <MealChatGenerationOverlay :visible="overlayMode === 'generating'" />
+    <MealChatGenerationOverlay
+      :visible="overlayMode === 'generating'"
+      @return-to-chat="handleReturnToChat"
+    />
     <MealChatResultOverlay
       :visible="overlayMode === 'result' && Boolean(finalPlan)"
       :meal-plan="finalPlan"
@@ -243,6 +246,14 @@ import MealChatResultOverlay from '@/components/meal-chat/MealChatResultOverlay.
 import MealChatStatusPanel from '@/components/meal-chat/MealChatStatusPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import {
+  compactList,
+  formatCurrencyAmount,
+  safeStorageGet,
+  safeStorageRemove,
+  safeStorageSet,
+  splitAndTrimList
+} from '@/utils/resilience'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -333,8 +344,8 @@ const isConversationActive = computed(() => {
 })
 
 const reuseSeed = computed(() => {
-  const goal = typeof route.query.reuse_goal === 'string' ? route.query.reuse_goal : ''
-  const budget = typeof route.query.reuse_budget === 'string' ? route.query.reuse_budget : ''
+  const goal = typeof route.query.reuse_goal === 'string' ? route.query.reuse_goal.trim() : ''
+  const budget = typeof route.query.reuse_budget === 'string' ? route.query.reuse_budget.trim() : ''
   const tags = typeof route.query.reuse_tags === 'string' ? route.query.reuse_tags : ''
   const disliked = typeof route.query.reuse_disliked === 'string' ? route.query.reuse_disliked : ''
 
@@ -343,8 +354,8 @@ const reuseSeed = computed(() => {
   return {
     goal,
     budget,
-    tags: tags ? tags.split(',').filter(Boolean) : [],
-    disliked: disliked ? disliked.split(',').filter(Boolean) : []
+    tags: splitAndTrimList(tags),
+    disliked: splitAndTrimList(disliked)
   }
 })
 
@@ -394,7 +405,10 @@ const reuseSummary = computed(() => {
     parts.push(t(`meal_plan.goals.${reuseSeed.value.goal}`))
   }
   if (reuseSeed.value.budget) {
-    parts.push(`¥${reuseSeed.value.budget}`)
+    const formattedBudget = formatCurrencyAmount(reuseSeed.value.budget, locale.value, 0, '')
+    if (formattedBudget) {
+      parts.push(formattedBudget)
+    }
   }
   if (reuseSeed.value.tags.length) {
     parts.push(reuseSeed.value.tags.join(' / '))
@@ -582,7 +596,7 @@ function goalText(goal: unknown) {
 }
 
 function budgetText(budget: unknown) {
-  return budget ? `¥${budget}` : ''
+  return formatCurrencyAmount(budget, locale.value, 0, '')
 }
 
 function optionText(type: 'gender' | 'activity_level', value: unknown) {
@@ -653,20 +667,16 @@ async function scrollToBottom() {
 }
 
 function persistSessionId(value: string | null) {
-  if (typeof window === 'undefined') return
-
   if (value) {
-    window.localStorage.setItem(SESSION_STORAGE_KEY, value)
+    safeStorageSet(SESSION_STORAGE_KEY, value)
     return
   }
 
-  window.localStorage.removeItem(SESSION_STORAGE_KEY)
+  safeStorageRemove(SESSION_STORAGE_KEY)
 }
 
 async function restoreSession() {
-  if (typeof window === 'undefined') return 'not_restored' as const
-
-  const savedSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  const savedSessionId = safeStorageGet(SESSION_STORAGE_KEY)
   if (!savedSessionId) return 'not_restored' as const
 
   try {
@@ -826,12 +836,21 @@ async function handleReturnToChat() {
 function openWeeklyPlanAttach() {
   if (!finalPlan.value || !currentSession.value?.session_id) return
 
+  const sourceLabel = compactList(
+    finalPlan.value.meals.map((meal) => meal.recipe_name ?? ''),
+    {
+      limit: 3,
+      separator: ' / ',
+      overflowLabel: (count) => t('meal_plan.source_label_more', { count })
+    }
+  )
+
   router.push({
     path: '/weekly-plan',
     query: {
       source_session_id: currentSession.value.session_id,
       meal_plan_id: finalPlan.value.id,
-      source_label: finalPlan.value.meals.map((meal) => meal.recipe_name).join(' / ')
+      source_label: sourceLabel
     }
   })
 }
@@ -911,17 +930,16 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   padding: clamp(18px, 2.4vw, 26px);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(126, 216, 139, 0.18), transparent 30%),
-    linear-gradient(145deg, #ffffff, #f5faf6 58%, #edf4ef);
-  border: 1px solid rgba(34, 197, 94, 0.12);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+  background: var(--gradient-panel);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-md);
 }
 
 .topbar-copy {
   display: grid;
   gap: 8px;
   max-width: 52rem;
+  min-width: 0;
 }
 
 .topbar-kicker,
@@ -964,10 +982,11 @@ onBeforeUnmount(() => {
   min-height: 38px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
   font-size: 0.86rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .chat-layout {
@@ -990,7 +1009,8 @@ onBeforeUnmount(() => {
 .chat-card {
   border: none;
   border-radius: 28px;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  background: transparent;
+  box-shadow: var(--shadow-md);
 }
 
 .chat-card :deep(.el-card__body) {
@@ -1005,11 +1025,18 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
+.chat-card-head > div,
+.reuse-banner > div,
+.crew-event-head strong {
+  min-width: 0;
+}
+
 .thread-caption {
   margin: 6px 0 0;
   color: var(--color-text-secondary);
   font-size: 0.94rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .reuse-banner {
@@ -1019,7 +1046,8 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   padding: 14px 16px;
   border-radius: 18px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
   margin-bottom: 18px;
 }
 
@@ -1031,6 +1059,7 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .messages {
@@ -1048,6 +1077,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 6px;
   max-width: 80%;
+  min-width: 0;
 }
 
 .message-row.user {
@@ -1063,16 +1093,17 @@ onBeforeUnmount(() => {
 .bubble {
   padding: 16px 18px;
   border-radius: 20px;
-  background: #f7faf8;
+  background: var(--color-surface-muted);
   color: var(--color-text-main);
   line-height: 1.7;
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--color-border-soft);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .message-row.user .bubble {
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-  color: #052e16;
+  color: var(--color-accent-contrast);
   border: none;
 }
 
@@ -1102,7 +1133,7 @@ onBeforeUnmount(() => {
 .composer {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 1px solid var(--color-border-soft);
 }
 
 .composer-actions {
@@ -1125,8 +1156,8 @@ onBeforeUnmount(() => {
   gap: 4px;
   padding: 10px 12px;
   border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, #f7faf8);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
   text-align: left;
   cursor: pointer;
 }
@@ -1144,6 +1175,7 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   line-height: 1.4;
   font-size: 0.84rem;
+  overflow-wrap: anywhere;
 }
 
 .process-drawer-body {
@@ -1165,8 +1197,8 @@ onBeforeUnmount(() => {
 .crew-event {
   padding: 12px 14px;
   border-radius: 14px;
-  background: #ffffff;
-  border: 1px solid rgba(34, 197, 94, 0.12);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-accent);
 }
 
 .crew-event-head strong {
@@ -1178,13 +1210,14 @@ onBeforeUnmount(() => {
   margin: 4px 0 0;
   color: var(--color-text-secondary);
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .crew-status {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-dark);
   font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
