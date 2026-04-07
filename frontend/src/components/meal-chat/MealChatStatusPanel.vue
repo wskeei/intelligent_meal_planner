@@ -93,18 +93,18 @@ defineEmits<{
   gap: 12px;
   padding: 14px;
   border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff, #f6faf7);
-  border: 1px solid rgba(34, 197, 94, 0.12);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .status-panel.expanded {
   gap: 16px;
   padding: 18px;
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(15, 37, 27, 0.98), rgba(20, 46, 34, 0.96));
-  border-color: transparent;
-  box-shadow: 0 18px 34px rgba(16, 37, 27, 0.18);
+  background: var(--gradient-emphasis);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
 }
 
 .status-header,
@@ -138,8 +138,8 @@ defineEmits<{
 .state-pill {
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
+  background: var(--color-accent-pill-bg);
+  color: var(--color-accent-pill-text);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -165,7 +165,7 @@ defineEmits<{
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: rgba(21, 48, 40, 0.06);
+  background: color-mix(in srgb, var(--color-border-soft) 56%, transparent);
   color: var(--color-secondary);
   font-weight: 700;
   transition:
@@ -174,7 +174,7 @@ defineEmits<{
 }
 
 .toggle-button:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--color-accent-soft) 72%, transparent);
   transform: translateY(-1px);
 }
 
@@ -200,11 +200,11 @@ defineEmits<{
 .status-block.compact {
   padding: 12px 14px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--color-surface-raised) 12%, transparent);
 }
 
 .block-title {
-  color: #d6f7df;
+  color: var(--color-text-emphasis);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -215,7 +215,7 @@ defineEmits<{
 .assistant-hint,
 .complete-note {
   margin: 0;
-  color: rgba(239, 255, 245, 0.82);
+  color: var(--color-text-emphasis-muted);
   line-height: 1.5;
 }
 
@@ -231,8 +231,8 @@ defineEmits<{
   gap: 6px;
   padding: 9px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  color: #effff5;
+  background: color-mix(in srgb, var(--color-surface-raised) 14%, transparent);
+  color: var(--color-text-emphasis);
   font-size: 0.86rem;
 }
 
@@ -249,12 +249,12 @@ defineEmits<{
 .missing-item {
   padding: 10px 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.07);
+  background: color-mix(in srgb, var(--color-surface-raised) 10%, transparent);
 }
 
 .missing-item p {
   margin: 4px 0 0;
-  color: rgba(239, 255, 245, 0.76);
+  color: var(--color-text-emphasis-muted);
   line-height: 1.5;
 }
 
@@ -270,24 +270,24 @@ defineEmits<{
 .status-panel.expanded .status-header h2,
 .status-panel.expanded .state-pill,
 .status-panel.expanded .summary {
-  color: #effff5;
+  color: var(--color-text-emphasis);
 }
 
 .status-panel.expanded .state-pill {
-  background: rgba(214, 247, 223, 0.14);
+  background: color-mix(in srgb, var(--color-accent-soft) 76%, transparent);
 }
 
 .status-panel.expanded .eyebrow {
-  color: rgba(239, 255, 245, 0.7);
+  color: var(--color-text-emphasis-muted);
 }
 
 .status-panel.expanded .toggle-button {
-  background: rgba(255, 255, 255, 0.08);
-  color: #effff5;
+  background: color-mix(in srgb, var(--color-surface-raised) 12%, transparent);
+  color: var(--color-text-emphasis);
 }
 
 .status-primary-action :deep(.el-button) {
-  min-height: 42px;
+  min-height: 44px;
 }
 
 @media (max-width: 640px) {

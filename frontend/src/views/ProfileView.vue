@@ -102,7 +102,7 @@
               :width="96"
               :stroke-width="10"
               :show-text="false"
-              color="#4ade80"
+              :color="progressColor"
             />
           </div>
 
@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -157,6 +157,7 @@ const {
 const saving = ref(false)
 const saveError = ref('')
 const onboardingMode = route.query.onboarding === '1'
+const progressColor = ref('#8ba284')
 const localProfile = reactive<UserProfile>({
   username: '',
   age: null,
@@ -175,6 +176,15 @@ watch(
   { immediate: true, deep: true }
 )
 
+let colorSchemeQuery: MediaQueryList | null = null
+let onColorSchemeChange: ((event: MediaQueryListEvent) => void) | null = null
+
+function syncProgressColor() {
+  if (typeof window === 'undefined') return
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
+  progressColor.value = color || '#8ba284'
+}
+
 async function save() {
   saving.value = true
   saveError.value = ''
@@ -189,6 +199,21 @@ async function save() {
     saving.value = false
   }
 }
+
+onMounted(() => {
+  syncProgressColor()
+  colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  onColorSchemeChange = () => {
+    syncProgressColor()
+  }
+  colorSchemeQuery.addEventListener('change', onColorSchemeChange)
+})
+
+onBeforeUnmount(() => {
+  if (colorSchemeQuery && onColorSchemeChange) {
+    colorSchemeQuery.removeEventListener('change', onColorSchemeChange)
+  }
+})
 </script>
 
 <style scoped>
@@ -220,7 +245,7 @@ async function save() {
 .status-card {
   border: none;
   border-radius: 24px;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
@@ -263,13 +288,14 @@ async function save() {
 }
 
 .status-card {
-  background: linear-gradient(155deg, #10251a, #173728 62%, #214c35);
-  color: #f0fff5;
+  background: var(--gradient-emphasis);
+  color: var(--color-text-emphasis);
+  border: 1px solid var(--color-border-accent);
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: rgba(240, 255, 245, 0.72);
+  color: var(--color-text-emphasis-muted);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -292,18 +318,19 @@ async function save() {
 .status-copy,
 .missing-item p {
   margin: 6px 0 0;
-  color: rgba(240, 255, 245, 0.78);
+  color: var(--color-text-emphasis-muted);
   line-height: 1.6;
 }
 
 .missing-item {
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--color-surface-raised) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border-soft) 72%, transparent);
 }
 
 .missing-item strong {
-  color: #f0fff5;
+  color: var(--color-text-emphasis);
 }
 
 @media (max-width: 960px) {

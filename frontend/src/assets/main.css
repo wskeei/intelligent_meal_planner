@@ -37,8 +37,18 @@
   --gradient-panel:
     radial-gradient(circle at top right, rgba(139, 162, 132, 0.12), transparent 36%),
     linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 237, 229, 0.96) 68%);
+  --gradient-hero:
+    radial-gradient(circle at top right, rgba(139, 162, 132, 0.1), transparent 42%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.92), rgba(240, 236, 228, 0.94) 64%);
+  --gradient-feature:
+    radial-gradient(circle at bottom left, rgba(139, 162, 132, 0.08), transparent 36%),
+    linear-gradient(148deg, rgba(255, 255, 255, 0.94), rgba(236, 232, 223, 0.96) 72%);
   --gradient-emphasis:
     linear-gradient(150deg, #202924, #2b3930 56%, #34453a);
+  --color-text-emphasis: var(--color-text-inverse);
+  --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-inverse) 74%, transparent);
+  --color-accent-pill-bg: color-mix(in srgb, var(--color-accent-soft) 84%, white);
+  --color-accent-pill-text: var(--color-primary-dark);
 
   --focus-ring: 0 0 0 3px rgba(139, 162, 132, 0.32);
   --focus-ring-strong: 0 0 0 4px rgba(139, 162, 132, 0.22);
@@ -237,8 +247,18 @@ video {
     --gradient-panel:
       radial-gradient(circle at top right, rgba(151, 178, 143, 0.08), transparent 38%),
       linear-gradient(145deg, rgba(31, 40, 35, 0.96), rgba(20, 27, 23, 0.98) 68%);
+    --gradient-hero:
+      radial-gradient(circle at top right, rgba(151, 178, 143, 0.08), transparent 42%),
+      linear-gradient(140deg, rgba(31, 40, 35, 0.96), rgba(23, 30, 26, 0.98) 64%);
+    --gradient-feature:
+      radial-gradient(circle at bottom left, rgba(151, 178, 143, 0.08), transparent 36%),
+      linear-gradient(148deg, rgba(33, 43, 37, 0.96), rgba(24, 32, 28, 0.98) 72%);
     --gradient-emphasis:
       linear-gradient(150deg, #101613, #17201c 56%, #202b25);
+    --color-text-emphasis: var(--color-text-inverse);
+    --color-text-emphasis-muted: color-mix(in srgb, var(--color-text-inverse) 70%, transparent);
+    --color-accent-pill-bg: color-mix(in srgb, var(--color-accent-soft) 76%, black);
+    --color-accent-pill-text: var(--color-accent-strong);
 
     --focus-ring: 0 0 0 3px rgba(151, 178, 143, 0.34);
     --focus-ring-strong: 0 0 0 4px rgba(151, 178, 143, 0.22);

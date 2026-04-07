@@ -111,10 +111,9 @@ const {
   gap: 20px;
   padding: clamp(24px, 4vw, 36px);
   border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%),
-    linear-gradient(135deg, #f6fff7, #ffffff 58%, #eef8f0);
-  border: 1px solid rgba(34, 197, 94, 0.14);
+  background: var(--gradient-hero);
+  border: 1px solid var(--color-border-accent);
+  box-shadow: var(--shadow-md);
 }
 
 .eyebrow,
@@ -129,6 +128,7 @@ const {
 
 .hero-copy {
   max-width: 680px;
+  min-width: 0;
 }
 
 .hero-copy h1 {
@@ -136,6 +136,7 @@ const {
   color: var(--color-secondary);
   font-size: clamp(2rem, 3.8vw, 3rem);
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .subtitle,
@@ -144,6 +145,7 @@ const {
 .status-copy {
   color: var(--color-text-secondary);
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .subtitle {
@@ -175,13 +177,14 @@ const {
   gap: 14px;
   padding: 24px;
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+  background: var(--gradient-surface);
+  border: 1px solid var(--color-border-soft);
+  box-shadow: var(--shadow-sm);
 }
 
 .primary-panel {
-  background: linear-gradient(145deg, #10251a, #173728 60%, #1f5137);
+  background: var(--gradient-feature);
+  border-color: var(--color-border-accent);
 }
 
 .primary-panel h2,
@@ -190,15 +193,13 @@ const {
   margin: 0;
 }
 
-.primary-panel h2,
-.primary-panel p,
-.primary-panel .panel-eyebrow {
-  color: #effff5;
-}
-
 .primary-panel p {
   margin: 0;
   max-width: 560px;
+}
+
+.primary-panel .panel-eyebrow {
+  color: var(--color-primary-dark);
 }
 
 .primary-actions {
