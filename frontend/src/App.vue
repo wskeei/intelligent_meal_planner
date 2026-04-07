@@ -179,6 +179,11 @@ function handleMoreCommand(command: string) {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  border-radius: 16px;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease;
 }
 
 .logo-icon {
@@ -200,6 +205,7 @@ function handleMoreCommand(command: string) {
   color: var(--color-secondary);
   font-size: 1.08rem;
   font-weight: 800;
+  line-height: 1.1;
 }
 
 .brand-subtitle,
@@ -236,6 +242,35 @@ function handleMoreCommand(command: string) {
   border-radius: 14px;
   color: var(--color-text-secondary);
   font-weight: 600;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.brand:hover,
+.brand:focus-visible,
+.nav-item:hover,
+.utility-link:hover,
+.menu-link:hover,
+.mobile-nav-item:hover {
+  transform: translateY(-1px);
+}
+
+.nav-item:hover,
+.utility-link:hover,
+.menu-link:hover,
+.mobile-nav-item:hover {
+  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  color: var(--color-secondary);
+}
+
+.brand:focus-visible,
+.nav-item:focus-visible,
+.utility-link:focus-visible,
+.menu-link:focus-visible,
+.mobile-nav-item:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .nav-item.active,
@@ -277,6 +312,10 @@ function handleMoreCommand(command: string) {
   color: var(--color-text-secondary);
   font-size: 0.78rem;
   font-weight: 600;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
 }
 
 @media (max-width: 720px) {

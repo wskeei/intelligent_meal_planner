@@ -78,4 +78,15 @@ h3 {
   gap: 12px;
   margin-top: 6px;
 }
+
+@media (max-width: 640px) {
+  .empty-actions {
+    width: 100%;
+  }
+
+  .empty-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
+  }
+}
 </style>
