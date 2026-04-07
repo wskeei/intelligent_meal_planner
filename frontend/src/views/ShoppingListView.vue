@@ -5,9 +5,9 @@
         <h1>{{ $t('shopping.title') }}</h1>
         <p class="subtitle">{{ $t('shopping.subtitle') }}</p>
       </div>
-      <router-link to="/weekly-plan">
-        <el-button type="primary">{{ $t('shopping.go_weekly_plan') }}</el-button>
-      </router-link>
+      <el-button type="primary" tag="router-link" to="/weekly-plan">
+        {{ $t('shopping.go_weekly_plan') }}
+      </el-button>
     </header>
 
     <AppEmptyState
@@ -18,9 +18,9 @@
       :description="$t('shopping.empty_desc')"
     >
       <template #actions>
-        <router-link to="/weekly-plan">
-          <el-button type="primary">{{ $t('shopping.go_weekly_plan') }}</el-button>
-        </router-link>
+        <el-button type="primary" tag="router-link" to="/weekly-plan">
+          {{ $t('shopping.go_weekly_plan') }}
+        </el-button>
       </template>
     </AppEmptyState>
 
@@ -76,7 +76,12 @@
             class="shopping-item"
             :class="{ 'is-checked': item.checked }"
           >
-            <button class="check-button" type="button" @click="toggleItem(item.id, !item.checked)">
+            <button
+              class="check-button"
+              type="button"
+              :aria-label="$t('shopping.actions.toggle_item', { item: item.ingredient_name })"
+              @click="toggleItem(item.id, !item.checked)"
+            >
               <span class="check-circle">
                 <el-icon v-if="item.checked"><Check /></el-icon>
               </span>
@@ -101,7 +106,13 @@
               </div>
             </div>
 
-            <el-button class="delete-btn" circle text @click="removeItem(item.id)">
+            <el-button
+              class="delete-btn"
+              circle
+              text
+              :aria-label="$t('shopping.actions.remove_item', { item: item.ingredient_name })"
+              @click="removeItem(item.id)"
+            >
               <el-icon><Delete /></el-icon>
             </el-button>
           </article>
@@ -347,6 +358,12 @@ onMounted(async () => {
 
 .check-button {
   background: transparent;
+}
+
+.check-button:focus-visible,
+.delete-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
 }
 
 .check-circle {

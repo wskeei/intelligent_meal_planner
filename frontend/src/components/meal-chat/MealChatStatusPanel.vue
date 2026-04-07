@@ -161,9 +161,10 @@ defineEmits<{
 }
 
 .toggle-button {
-  min-height: 36px;
+  min-height: 44px;
   padding: 0 12px;
   border-radius: 999px;
+  border: 1px solid transparent;
   background: rgba(21, 48, 40, 0.06);
   color: var(--color-secondary);
   font-weight: 700;
@@ -175,6 +176,11 @@ defineEmits<{
 .toggle-button:hover {
   background: rgba(255, 255, 255, 0.14);
   transform: translateY(-1px);
+}
+
+.toggle-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
 }
 
 .status-primary-action {

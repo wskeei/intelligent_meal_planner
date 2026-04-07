@@ -203,6 +203,10 @@
     "manual_trace_empty": "This is a manual item, so there is no source trace.",
     "add_success": "Item added to the shopping list.",
     "remove_success": "Item removed from the shopping list.",
+    "actions": {
+      "toggle_item": "Toggle checked status for {item}",
+      "remove_item": "Remove {item} from shopping list"
+    },
     "errors": {
       "load_failed": "Could not load the shopping list. Please try again.",
       "add_failed": "Could not add the item. Please try again.",
@@ -262,6 +266,7 @@
     "empty_eyebrow": "No matching recipes",
     "empty_title": "Try broader filters",
     "no_recipes": "No recipes match the current filters.",
+    "open_details_for": "Open details for {name}",
     "details_pending": "This recipe does not have more detailed notes yet.",
     "ingredients": "Ingredients",
     "instructions": "Instructions",

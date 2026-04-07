@@ -89,7 +89,11 @@
                 :key="recipe.id"
                 class="recipe-card"
                 shadow="hover"
+                role="button"
+                tabindex="0"
+                :aria-label="$t('recipes.open_details_for', { name: recipe.name })"
                 @click="openDetails(recipe)"
+                @keydown="onRecipeCardKeydown($event, recipe)"
               >
                 <div class="card-image-placeholder">
                   <span class="emoji">{{ getEmoji(recipe.category) }}</span>
@@ -256,6 +260,13 @@ function openDetails(recipe: Recipe) {
   detailVisible.value = true
 }
 
+function onRecipeCardKeydown(event: KeyboardEvent, recipe: Recipe) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    openDetails(recipe)
+  }
+}
+
 function getEmoji(category: string) {
   if (!category) return '🥘'
   if (category.includes('Chicken')) return '🍗'
@@ -360,6 +371,15 @@ onMounted(() => {
   border: none;
   border-radius: 22px;
   overflow: hidden;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.recipe-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
+  transform: translateY(-1px);
 }
 
 .card-image-placeholder {

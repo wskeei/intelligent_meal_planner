@@ -8,12 +8,12 @@
       </div>
 
       <div class="hero-actions">
-        <router-link to="/meal-plan">
-          <el-button type="primary" size="large">{{ $t('dashboard.start_planning') }}</el-button>
-        </router-link>
-        <router-link to="/profile">
-          <el-button plain size="large">{{ $t('dashboard.complete_profile') }}</el-button>
-        </router-link>
+        <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
+          {{ $t('dashboard.start_planning') }}
+        </el-button>
+        <el-button plain size="large" tag="router-link" to="/profile">
+          {{ $t('dashboard.complete_profile') }}
+        </el-button>
       </div>
     </section>
 
@@ -23,15 +23,15 @@
         <h2>{{ $t('dashboard.generate_plan') }}</h2>
         <p>{{ $t('dashboard.generate_desc') }}</p>
         <div class="primary-actions">
-          <router-link to="/meal-plan">
-            <el-button type="primary" size="large">{{ $t('dashboard.launch_chat') }}</el-button>
-          </router-link>
-          <router-link to="/weekly-plan">
-            <el-button plain size="large">{{ $t('weekly_plan.title') }}</el-button>
-          </router-link>
-          <router-link to="/history">
-            <el-button plain size="large">{{ $t('dashboard.review_history') }}</el-button>
-          </router-link>
+          <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
+            {{ $t('dashboard.launch_chat') }}
+          </el-button>
+          <el-button plain size="large" tag="router-link" to="/weekly-plan">
+            {{ $t('weekly_plan.title') }}
+          </el-button>
+          <el-button plain size="large" tag="router-link" to="/history">
+            {{ $t('dashboard.review_history') }}
+          </el-button>
         </div>
       </article>
 
@@ -59,25 +59,25 @@
             </li>
           </ul>
 
-          <router-link to="/profile?onboarding=1">
-            <el-button plain>{{ $t('dashboard.complete_profile') }}</el-button>
-          </router-link>
+          <el-button plain tag="router-link" to="/profile?onboarding=1">
+            {{ $t('dashboard.complete_profile') }}
+          </el-button>
         </article>
 
         <article class="secondary-card">
           <h3>{{ $t('weekly_plan.title') }}</h3>
           <p>{{ $t('weekly_plan.empty_desc') }}</p>
-          <router-link to="/weekly-plan">
-            <el-button text type="primary">{{ $t('weekly_plan.title') }}</el-button>
-          </router-link>
+          <el-button text type="primary" tag="router-link" to="/weekly-plan">
+            {{ $t('weekly_plan.title') }}
+          </el-button>
         </article>
 
         <article class="secondary-card">
           <h3>{{ $t('history.title') }}</h3>
           <p>{{ $t('dashboard.history_cta') }}</p>
-          <router-link to="/history">
-            <el-button text type="primary">{{ $t('dashboard.review_history') }}</el-button>
-          </router-link>
+          <el-button text type="primary" tag="router-link" to="/history">
+            {{ $t('dashboard.review_history') }}
+          </el-button>
         </article>
       </aside>
     </section>

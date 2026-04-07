@@ -203,6 +203,10 @@
     "manual_trace_empty": "这是手动添加条目，没有来源菜品轨迹。",
     "add_success": "条目已加入购物清单。",
     "remove_success": "条目已从购物清单移除。",
+    "actions": {
+      "toggle_item": "切换“{item}”的勾选状态",
+      "remove_item": "从购物清单移除“{item}”"
+    },
     "errors": {
       "load_failed": "购物清单加载失败，请稍后重试。",
       "add_failed": "条目添加失败，请稍后重试。",
@@ -262,6 +266,7 @@
     "empty_eyebrow": "没有匹配结果",
     "empty_title": "换一个更宽松的筛选试试",
     "no_recipes": "当前筛选下没有找到合适的菜谱。",
+    "open_details_for": "查看“{name}”的详情",
     "details_pending": "这道菜目前还没有补充更详细的说明。",
     "ingredients": "食材",
     "instructions": "做法",

@@ -81,9 +81,9 @@
             <el-button type="primary" :loading="saving" @click="save">
               {{ $t('common.save') }}
             </el-button>
-            <router-link to="/meal-plan">
-              <el-button plain>{{ $t('profile.open_chat') }}</el-button>
-            </router-link>
+            <el-button plain tag="router-link" to="/meal-plan">
+              {{ $t('profile.open_chat') }}
+            </el-button>
           </div>
         </el-form>
       </el-card>
