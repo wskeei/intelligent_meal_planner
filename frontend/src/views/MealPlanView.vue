@@ -208,7 +208,10 @@
       </div>
     </el-drawer>
 
-    <MealChatGenerationOverlay :visible="overlayMode === 'generating'" />
+    <MealChatGenerationOverlay
+      :visible="overlayMode === 'generating'"
+      @return-to-chat="handleReturnToChat"
+    />
     <MealChatResultOverlay
       :visible="overlayMode === 'result' && Boolean(finalPlan)"
       :meal-plan="finalPlan"
