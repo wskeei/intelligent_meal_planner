@@ -6,6 +6,7 @@ import { authApi } from '@/api'
 import { AUTH_API_URL } from '@/api/config'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
+import { safeStorageGet, safeStorageRemove, safeStorageSet } from '@/utils/resilience'
 
 function decodeJwtPayload(token: string) {
   const parts = token.split('.')
@@ -22,14 +23,12 @@ function decodeJwtPayload(token: string) {
 }
 
 function readStoredToken() {
-  if (typeof localStorage === 'undefined') return null
-
-  const storedToken = localStorage.getItem('token')
+  const storedToken = safeStorageGet('token')
   if (!storedToken) return null
 
   const payload = decodeJwtPayload(storedToken)
   if (!payload || typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) {
-    localStorage.removeItem('token')
+    safeStorageRemove('token')
     return null
   }
 
@@ -66,7 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await axios.post(`${AUTH_API_URL}/token`, formData)
       token.value = data.access_token
-      localStorage.setItem('token', data.access_token)
+      safeStorageSet('token', data.access_token)
       isAuthenticated.value = true
 
       await requestCurrentUser()
@@ -109,7 +108,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     isAuthenticated.value = false
-    localStorage.removeItem('token')
+    safeStorageRemove('token')
     useUserStore().resetProfile()
     router.push('/login')
   }

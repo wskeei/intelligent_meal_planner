@@ -25,7 +25,7 @@
           </div>
           <div class="price-pill">
             <span>{{ t('meal_plan.total_cost') }}</span>
-            <strong>¥{{ mealPlan.nutrition.total_price.toFixed(1) }}</strong>
+            <strong>{{ formatPrice(mealPlan.nutrition.total_price) }}</strong>
           </div>
         </header>
 
@@ -41,11 +41,11 @@
             </div>
             <div class="summary-item">
               <span>{{ t('meal_plan.calories') }}</span>
-              <strong>{{ mealPlan.nutrition.total_calories.toFixed(0) }} kcal</strong>
+              <strong>{{ formatMetric(mealPlan.nutrition.total_calories, 'kcal') }}</strong>
             </div>
             <div class="summary-item">
               <span>{{ t('meal_plan.protein') }}</span>
-              <strong>{{ mealPlan.nutrition.total_protein.toFixed(0) }} g</strong>
+              <strong>{{ formatMetric(mealPlan.nutrition.total_protein, 'g') }}</strong>
             </div>
           </section>
 
@@ -63,12 +63,12 @@
                   class="meal-item"
                 >
                   <div>
-                    <p class="meal-name">{{ meal.recipe_name }}</p>
+                    <p class="meal-name">{{ meal.recipe_name || t('common.not_available') }}</p>
                     <p class="meal-metrics">
-                      {{ meal.calories.toFixed(0) }} kcal · {{ meal.protein.toFixed(0) }}g P
+                      {{ formatMetric(meal.calories, 'kcal') }} · {{ formatMetric(meal.protein, 'g P') }}
                     </p>
                   </div>
-                  <strong>¥{{ meal.price.toFixed(1) }}</strong>
+                  <strong>{{ formatPrice(meal.price) }}</strong>
                 </article>
               </div>
             </section>
@@ -92,7 +92,7 @@
                     <p class="alternative-title">{{ alternative.title }}</p>
                     <p class="alternative-rationale">{{ alternative.rationale }}</p>
                   </div>
-                  <strong>¥{{ alternative.meal_plan.nutrition.total_price.toFixed(1) }}</strong>
+                  <strong>{{ formatPrice(alternative.meal_plan.nutrition.total_price) }}</strong>
                 </article>
               </div>
             </details>
@@ -141,6 +141,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import type { CrewTraceEvent, MealPlan, NegotiatedMealPlanAlternative } from '@/api'
+import { formatCurrencyAmount, formatNumberValue } from '@/utils/resilience'
 
 const props = defineProps<{
   visible: boolean
@@ -181,12 +182,12 @@ const groupedMeals = computed(() => {
 
 const goalLabel = computed(() => {
   const goal = props.preferences.health_goal
-  return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : '...'
+  return typeof goal === 'string' ? t(`meal_plan.goals.${goal}`) : t('common.not_available')
 })
 
 const budgetLabel = computed(() => {
   const budget = props.preferences.budget ?? props.mealPlan?.target.max_budget
-  return budget ? `¥${budget}` : '...'
+  return formatCurrencyAmount(budget, locale.value, 0, t('common.not_available'))
 })
 
 const traceUnavailableMessage = computed(() =>
@@ -201,6 +202,14 @@ const hasTraceSection = computed(
 
 function mealLabel(type: string) {
   return t(`recipes.${type}`)
+}
+
+function formatPrice(value: unknown) {
+  return formatCurrencyAmount(value, locale.value)
+}
+
+function formatMetric(value: unknown, suffix: string) {
+  return `${formatNumberValue(value, locale.value, 0, '--')} ${suffix}`
 }
 
 function getFocusableElements() {
@@ -369,6 +378,13 @@ summary {
   text-align: right;
 }
 
+.price-pill,
+.meal-item > div,
+.alternative-card > div,
+.crew-event-head strong {
+  min-width: 0;
+}
+
 .price-pill span {
   font-size: 0.75rem;
   letter-spacing: 0.08em;
@@ -399,6 +415,7 @@ summary {
   color: var(--color-secondary);
   font-size: clamp(2rem, 4vw, 3.2rem);
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .meal-groups {
@@ -428,6 +445,7 @@ summary {
 .crew-event-head strong,
 .summary-item strong {
   color: var(--color-secondary);
+  overflow-wrap: anywhere;
 }
 
 .meal-label,
@@ -472,6 +490,7 @@ summary {
 .crew-event p {
   margin: 4px 0 0;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .result-secondary {

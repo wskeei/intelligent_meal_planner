@@ -35,6 +35,7 @@ defineProps<{
   background: var(--gradient-surface);
   border: 1px solid var(--color-border-soft);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .empty-icon {
@@ -54,18 +55,21 @@ defineProps<{
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 h3 {
   margin: 0;
   color: var(--color-secondary);
   font-size: 1.15rem;
+  overflow-wrap: anywhere;
 }
 
 .empty-description {
   margin: 0;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .empty-actions {

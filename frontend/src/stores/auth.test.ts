@@ -82,4 +82,25 @@ describe('useAuthStore', () => {
     expect(localStorage.getItem('token')).toBeNull()
     expect(authMe).not.toHaveBeenCalled()
   })
+
+  it('does not crash when localStorage access is unavailable', async () => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('storage unavailable')
+      },
+      setItem: () => {
+        throw new Error('storage unavailable')
+      },
+      removeItem: () => {
+        throw new Error('storage unavailable')
+      },
+      clear: () => undefined
+    })
+
+    const { useAuthStore } = await import('./auth')
+
+    expect(() => useAuthStore()).not.toThrow()
+    expect(useAuthStore().token).toBeNull()
+    expect(useAuthStore().isAuthenticated).toBe(false)
+  })
 })

@@ -96,7 +96,20 @@
         </el-card>
 
         <AppEmptyState
-          v-if="!activePlan && !loading"
+          v-if="loadError && !loading && !activePlan && !plans.length"
+          :eyebrow="$t('weekly_plan.load_failed_eyebrow')"
+          :title="$t('weekly_plan.load_failed_title')"
+          :description="loadError"
+        >
+          <template #actions>
+            <el-button type="primary" @click="loadInitialState">
+              {{ $t('common.retry') }}
+            </el-button>
+          </template>
+        </AppEmptyState>
+
+        <AppEmptyState
+          v-else-if="!activePlan && !loading"
           :title="$t('weekly_plan.empty_title')"
           :description="$t('weekly_plan.empty_desc')"
         />
@@ -136,10 +149,10 @@
                     class="meal-item"
                   >
                     <div>
-                      <p class="meal-name">{{ meal.recipe_name }}</p>
+                      <p class="meal-name">{{ meal.recipe_name || $t('common.not_available') }}</p>
                       <p class="meal-meta">{{ meal.meal_type }} · {{ meal.calories }} kcal</p>
                     </div>
-                    <strong>¥{{ Number(meal.price).toFixed(1) }}</strong>
+                    <strong>{{ formatPrice(meal.price) }}</strong>
                   </article>
                 </div>
               </article>
@@ -168,6 +181,7 @@ import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import { getApiErrorDetail } from '@/api'
 import { useShoppingStore } from '@/stores/shopping'
 import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
+import { formatCurrencyAmount, formatDisplayDate } from '@/utils/resilience'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -184,6 +198,7 @@ const shoppingListName = ref('')
 const creating = ref(false)
 const attaching = ref(false)
 const generating = ref(false)
+const loadError = ref('')
 
 const pendingAttach = computed(() => {
   const sourceSessionId =
@@ -204,15 +219,12 @@ const attachSourceLabel = computed(() =>
   pendingAttach.value?.source_label || t('weekly_plan.pending_attach_desc')
 )
 
-const formatter = computed(
-  () =>
-    new Intl.DateTimeFormat(locale.value === 'zh' ? 'zh-CN' : 'en-US', {
-      dateStyle: 'medium'
-    })
-)
-
 function formatDate(value: string) {
-  return formatter.value.format(new Date(value))
+  return formatDisplayDate(value, locale.value)
+}
+
+function formatPrice(value: unknown) {
+  return formatCurrencyAmount(value, locale.value)
 }
 
 function getLocalDateInputValue(baseDate = new Date()) {
@@ -258,9 +270,22 @@ async function createPlan() {
 }
 
 async function openPlan(planId: number) {
+  loadError.value = ''
   try {
     await weeklyPlanStore.openPlan(planId)
   } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.load_failed')
+  }
+}
+
+async function loadInitialState() {
+  loadError.value = ''
+
+  try {
+    await weeklyPlanStore.loadPlans()
+    await ensureActivePlan()
+  } catch (error) {
+    loadError.value = t('weekly_plan.errors.load_failed')
     handleWeeklyPlanError(error, 'weekly_plan.errors.load_failed')
   }
 }
@@ -321,8 +346,7 @@ async function generateShoppingList() {
 }
 
 onMounted(async () => {
-  await weeklyPlanStore.loadPlans()
-  await ensureActivePlan()
+  await loadInitialState()
 })
 </script>
 
@@ -370,6 +394,7 @@ onMounted(async () => {
 .plan-meta {
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .subtitle,
@@ -402,6 +427,13 @@ onMounted(async () => {
   min-width: 0;
 }
 
+.section-head,
+.plan-shell-head > div,
+.day-head > div,
+.meal-item > div {
+  min-width: 0;
+}
+
 .plan-button {
   width: 100%;
   display: grid;
@@ -411,6 +443,7 @@ onMounted(async () => {
   border: 1px solid var(--color-border-soft);
   background: var(--gradient-surface);
   text-align: left;
+  min-width: 0;
 }
 
 .plan-button.active {
@@ -421,6 +454,7 @@ onMounted(async () => {
 .plan-name,
 .meal-name {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .attach-grid {
@@ -474,6 +508,11 @@ onMounted(async () => {
   background: var(--color-surface-muted);
   border: 1px solid var(--color-border-soft);
   align-items: flex-start;
+}
+
+.meal-item strong {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 @media (max-width: 960px) {

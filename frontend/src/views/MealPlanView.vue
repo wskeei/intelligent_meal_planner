@@ -246,6 +246,14 @@ import MealChatResultOverlay from '@/components/meal-chat/MealChatResultOverlay.
 import MealChatStatusPanel from '@/components/meal-chat/MealChatStatusPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
+import {
+  compactList,
+  formatCurrencyAmount,
+  safeStorageGet,
+  safeStorageRemove,
+  safeStorageSet,
+  splitAndTrimList
+} from '@/utils/resilience'
 
 const { t, locale } = useI18n()
 const route = useRoute()
@@ -336,8 +344,8 @@ const isConversationActive = computed(() => {
 })
 
 const reuseSeed = computed(() => {
-  const goal = typeof route.query.reuse_goal === 'string' ? route.query.reuse_goal : ''
-  const budget = typeof route.query.reuse_budget === 'string' ? route.query.reuse_budget : ''
+  const goal = typeof route.query.reuse_goal === 'string' ? route.query.reuse_goal.trim() : ''
+  const budget = typeof route.query.reuse_budget === 'string' ? route.query.reuse_budget.trim() : ''
   const tags = typeof route.query.reuse_tags === 'string' ? route.query.reuse_tags : ''
   const disliked = typeof route.query.reuse_disliked === 'string' ? route.query.reuse_disliked : ''
 
@@ -346,8 +354,8 @@ const reuseSeed = computed(() => {
   return {
     goal,
     budget,
-    tags: tags ? tags.split(',').filter(Boolean) : [],
-    disliked: disliked ? disliked.split(',').filter(Boolean) : []
+    tags: splitAndTrimList(tags),
+    disliked: splitAndTrimList(disliked)
   }
 })
 
@@ -397,7 +405,10 @@ const reuseSummary = computed(() => {
     parts.push(t(`meal_plan.goals.${reuseSeed.value.goal}`))
   }
   if (reuseSeed.value.budget) {
-    parts.push(`¥${reuseSeed.value.budget}`)
+    const formattedBudget = formatCurrencyAmount(reuseSeed.value.budget, locale.value, 0, '')
+    if (formattedBudget) {
+      parts.push(formattedBudget)
+    }
   }
   if (reuseSeed.value.tags.length) {
     parts.push(reuseSeed.value.tags.join(' / '))
@@ -585,7 +596,7 @@ function goalText(goal: unknown) {
 }
 
 function budgetText(budget: unknown) {
-  return budget ? `¥${budget}` : ''
+  return formatCurrencyAmount(budget, locale.value, 0, '')
 }
 
 function optionText(type: 'gender' | 'activity_level', value: unknown) {
@@ -656,20 +667,16 @@ async function scrollToBottom() {
 }
 
 function persistSessionId(value: string | null) {
-  if (typeof window === 'undefined') return
-
   if (value) {
-    window.localStorage.setItem(SESSION_STORAGE_KEY, value)
+    safeStorageSet(SESSION_STORAGE_KEY, value)
     return
   }
 
-  window.localStorage.removeItem(SESSION_STORAGE_KEY)
+  safeStorageRemove(SESSION_STORAGE_KEY)
 }
 
 async function restoreSession() {
-  if (typeof window === 'undefined') return 'not_restored' as const
-
-  const savedSessionId = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  const savedSessionId = safeStorageGet(SESSION_STORAGE_KEY)
   if (!savedSessionId) return 'not_restored' as const
 
   try {
@@ -829,12 +836,21 @@ async function handleReturnToChat() {
 function openWeeklyPlanAttach() {
   if (!finalPlan.value || !currentSession.value?.session_id) return
 
+  const sourceLabel = compactList(
+    finalPlan.value.meals.map((meal) => meal.recipe_name ?? ''),
+    {
+      limit: 3,
+      separator: ' / ',
+      overflowLabel: (count) => t('meal_plan.source_label_more', { count })
+    }
+  )
+
   router.push({
     path: '/weekly-plan',
     query: {
       source_session_id: currentSession.value.session_id,
       meal_plan_id: finalPlan.value.id,
-      source_label: finalPlan.value.meals.map((meal) => meal.recipe_name).join(' / ')
+      source_label: sourceLabel
     }
   })
 }
@@ -923,6 +939,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 8px;
   max-width: 52rem;
+  min-width: 0;
 }
 
 .topbar-kicker,
@@ -969,6 +986,7 @@ onBeforeUnmount(() => {
   color: var(--color-primary-dark);
   font-size: 0.86rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .chat-layout {
@@ -1007,11 +1025,18 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
+.chat-card-head > div,
+.reuse-banner > div,
+.crew-event-head strong {
+  min-width: 0;
+}
+
 .thread-caption {
   margin: 6px 0 0;
   color: var(--color-text-secondary);
   font-size: 0.94rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .reuse-banner {
@@ -1034,6 +1059,7 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .messages {
@@ -1051,6 +1077,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 6px;
   max-width: 80%;
+  min-width: 0;
 }
 
 .message-row.user {
@@ -1071,6 +1098,7 @@ onBeforeUnmount(() => {
   line-height: 1.7;
   border: 1px solid var(--color-border-soft);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .message-row.user .bubble {
@@ -1147,6 +1175,7 @@ onBeforeUnmount(() => {
   color: var(--color-text-secondary);
   line-height: 1.4;
   font-size: 0.84rem;
+  overflow-wrap: anywhere;
 }
 
 .process-drawer-body {
@@ -1181,6 +1210,7 @@ onBeforeUnmount(() => {
   margin: 4px 0 0;
   color: var(--color-text-secondary);
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .crew-status {

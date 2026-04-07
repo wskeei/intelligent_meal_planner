@@ -11,7 +11,23 @@
     </header>
 
     <AppEmptyState
-      v-if="!activeList && !loading"
+      v-if="loadError && !loading && !activeList"
+      :eyebrow="$t('shopping.load_failed_eyebrow')"
+      :title="$t('shopping.load_failed_title')"
+      :description="loadError"
+    >
+      <template #actions>
+        <el-button type="primary" @click="initializeList">
+          {{ $t('common.retry') }}
+        </el-button>
+        <el-button plain tag="router-link" to="/weekly-plan">
+          {{ $t('shopping.go_weekly_plan') }}
+        </el-button>
+      </template>
+    </AppEmptyState>
+
+    <AppEmptyState
+      v-else-if="!activeList && !loading"
       :icon="ShoppingCart"
       :eyebrow="$t('shopping.empty_eyebrow')"
       :title="$t('shopping.empty_title')"
@@ -69,7 +85,13 @@
           <span class="muted-copy">{{ activeList.name }}</span>
         </div>
 
-        <div v-if="viewMode === 'ingredients'" class="item-list">
+        <AppEmptyState
+          v-if="!activeList.items.length"
+          :title="$t('shopping.list_empty_title')"
+          :description="$t('shopping.list_empty_desc')"
+        />
+
+        <div v-else-if="viewMode === 'ingredients'" class="item-list">
           <article
             v-for="item in activeList.items"
             :key="item.id"
@@ -79,7 +101,7 @@
             <button
               class="check-button"
               type="button"
-              :aria-label="$t('shopping.actions.toggle_item', { item: item.ingredient_name })"
+              :aria-label="$t('shopping.actions.toggle_item', { item: getItemName(item.ingredient_name) })"
               @click="toggleItem(item.id, !item.checked)"
             >
               <span class="check-circle">
@@ -89,7 +111,7 @@
 
             <div class="item-content">
               <div class="item-copy">
-                <span class="item-name">{{ item.ingredient_name }}</span>
+                <span class="item-name">{{ getItemName(item.ingredient_name) }}</span>
                 <span v-if="item.display_amount" class="item-amount">{{ item.display_amount }}</span>
               </div>
               <div class="item-meta">
@@ -110,7 +132,7 @@
               class="delete-btn"
               circle
               text
-              :aria-label="$t('shopping.actions.remove_item', { item: item.ingredient_name })"
+              :aria-label="$t('shopping.actions.remove_item', { item: getItemName(item.ingredient_name) })"
               @click="removeItem(item.id)"
             >
               <el-icon><Delete /></el-icon>
@@ -122,7 +144,7 @@
           <article v-for="item in activeList.items" :key="item.id" class="source-card">
             <div class="source-card-head">
               <div>
-                <h3>{{ item.ingredient_name }}</h3>
+                <h3>{{ getItemName(item.ingredient_name) }}</h3>
                 <p>{{ item.display_amount || $t('shopping.no_amount') }}</p>
               </div>
               <el-tag :type="item.checked ? 'success' : 'info'">
@@ -166,6 +188,7 @@ const { activeList, lists, loading, viewMode } = storeToRefs(shoppingStore)
 const newItemName = ref('')
 const newItemAmount = ref('')
 const selectedListId = ref<number | null>(null)
+const loadError = ref('')
 
 const checkedCount = computed(() => activeList.value?.items.filter((item) => item.checked).length ?? 0)
 
@@ -177,7 +200,13 @@ watch(
   { immediate: true }
 )
 
+function getItemName(name: unknown) {
+  return typeof name === 'string' && name.trim() ? name.trim() : t('shopping.unnamed_item')
+}
+
 async function initializeList() {
+  loadError.value = ''
+
   try {
     await shoppingStore.loadLists()
 
@@ -193,14 +222,18 @@ async function initializeList() {
   } catch (error) {
     const detail = getApiErrorDetail(error)
     if (detail === 'Shopping list not found') {
-      ElMessage.error(t('shopping.errors.resource_missing'))
+      loadError.value = t('shopping.errors.resource_missing')
+      ElMessage.error(loadError.value)
       return
     }
-    ElMessage.error(t('shopping.errors.load_failed'))
+    loadError.value = t('shopping.errors.load_failed')
+    ElMessage.error(loadError.value)
   }
 }
 
 async function handleListChange(value: number) {
+  loadError.value = ''
+
   try {
     await shoppingStore.openList(value)
   } catch (error) {
@@ -305,6 +338,7 @@ onMounted(async () => {
 .trace-count {
   color: var(--color-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .subtitle,
@@ -394,9 +428,14 @@ onMounted(async () => {
   align-items: center;
 }
 
+.options-bar > span,
+.source-card-head > div {
+  min-width: 0;
+}
+
 .item-name {
   font-weight: 700;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .shopping-item.is-checked .item-name {
@@ -425,6 +464,7 @@ onMounted(async () => {
 .source-card {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .source-trace-list {
@@ -433,6 +473,11 @@ onMounted(async () => {
   color: var(--color-text-secondary);
   display: grid;
   gap: 8px;
+}
+
+.source-card h3,
+.source-trace-list li {
+  overflow-wrap: anywhere;
 }
 
 .delete-btn {
