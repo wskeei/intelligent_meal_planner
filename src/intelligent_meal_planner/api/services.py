@@ -734,6 +734,29 @@ class WeeklyPlanService:
         db.commit()
         return self.get_plan(db, user_id, plan.id)
 
+    def update_plan(
+        self,
+        db: Session,
+        user_id: int,
+        plan_id: int,
+        name: str | None,
+        notes: str | None,
+    ) -> Dict[str, Any]:
+        plan = self.get_owned_plan(db, user_id, plan_id)
+        if name is not None:
+            plan.name = name
+        if notes is not None:
+            plan.notes = notes
+        self._touch_plan(plan)
+        db.add(plan)
+        db.commit()
+        return self.get_plan(db, user_id, plan.id)
+
+    def delete_plan(self, db: Session, user_id: int, plan_id: int) -> None:
+        plan = self.get_owned_plan(db, user_id, plan_id)
+        db.delete(plan)
+        db.commit()
+
 
 class ShoppingListService:
     AMOUNT_PATTERN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([A-Za-z\u4e00-\u9fff%]+)\s*$")

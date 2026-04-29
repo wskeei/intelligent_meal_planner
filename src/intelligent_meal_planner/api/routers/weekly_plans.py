@@ -8,6 +8,7 @@ from ..schemas import (
     WeeklyPlanCreateRequest,
     WeeklyPlanResponse,
     WeeklyPlanSummaryResponse,
+    WeeklyPlanUpdateRequest,
 )
 from ..services import weekly_plan_service
 from .auth import get_current_user
@@ -44,6 +45,32 @@ async def get_weekly_plan(
     current_user: User = Depends(get_current_user),
 ):
     return weekly_plan_service.get_plan(db, current_user.id, plan_id)
+
+
+@router.patch("/{plan_id}", response_model=WeeklyPlanResponse)
+async def update_weekly_plan(
+    plan_id: int,
+    payload: WeeklyPlanUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return weekly_plan_service.update_plan(
+        db,
+        current_user.id,
+        plan_id,
+        payload.name,
+        payload.notes,
+    )
+
+
+@router.delete("/{plan_id}")
+async def delete_weekly_plan(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    weekly_plan_service.delete_plan(db, current_user.id, plan_id)
+    return {"success": True}
 
 
 @router.post("/{plan_id}/days", response_model=WeeklyPlanResponse)

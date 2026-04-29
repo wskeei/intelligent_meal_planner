@@ -53,17 +53,38 @@
           </template>
 
           <div v-if="plans.length" class="plan-list">
-            <button
+            <div
               v-for="plan in plans"
               :key="plan.id"
-              type="button"
-              class="plan-button"
+              class="plan-row"
               :class="{ active: activePlan?.id === plan.id }"
               @click="openPlan(plan.id)"
             >
-              <span class="plan-name">{{ plan.name }}</span>
-              <span class="plan-meta">{{ $t('weekly_plan.days_count', { count: plan.day_count }) }}</span>
-            </button>
+              <div class="plan-copy">
+                <span class="plan-name">{{ plan.name }}</span>
+                <span class="plan-meta">{{ $t('weekly_plan.days_count', { count: plan.day_count }) }}</span>
+              </div>
+              <div class="plan-actions">
+                <el-button
+                  class="plan-edit-btn"
+                  circle
+                  text
+                  :aria-label="$t('weekly_plan.edit_plan')"
+                  @click.stop="openEditDialog(plan.id)"
+                >
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+                <el-button
+                  class="plan-delete-btn"
+                  circle
+                  text
+                  :aria-label="$t('weekly_plan.delete_plan')"
+                  @click.stop="deletePlan(plan.id)"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+            </div>
           </div>
 
           <p v-else class="muted-copy">{{ $t('weekly_plan.empty_desc') }}</p>
@@ -137,8 +158,14 @@
                     <p class="eyebrow">{{ formatDate(day.plan_date) }}</p>
                     <h3>{{ $t('weekly_plan.day_snapshot') }}</h3>
                   </div>
-                  <el-button text type="danger" @click="removeDay(day.id)">
-                    {{ $t('common.delete') }}
+                  <el-button
+                    class="day-delete-btn"
+                    circle
+                    text
+                    :aria-label="$t('common.delete')"
+                    @click="removeDay(day.id)"
+                  >
+                    <el-icon><Delete /></el-icon>
                   </el-button>
                 </div>
 
@@ -167,16 +194,41 @@
         </template>
       </section>
     </section>
+
+    <el-dialog
+      v-model="editDialogVisible"
+      :title="$t('weekly_plan.edit_plan')"
+      width="420px"
+      :close-on-click-modal="false"
+    >
+      <div class="edit-form">
+        <el-input v-model="editPlanName" :placeholder="$t('weekly_plan.create_placeholder')" />
+        <el-input
+          v-model="editPlanNotes"
+          type="textarea"
+          :rows="3"
+          resize="none"
+          :placeholder="$t('weekly_plan.notes_placeholder')"
+        />
+      </div>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :disabled="!editPlanName.trim()" @click="saveEditPlan">
+          {{ $t('common.save') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
+import { Edit, Delete } from '@element-plus/icons-vue'
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import { getApiErrorDetail } from '@/api'
 import { useShoppingStore } from '@/stores/shopping'
@@ -199,6 +251,10 @@ const creating = ref(false)
 const attaching = ref(false)
 const generating = ref(false)
 const loadError = ref('')
+const editDialogVisible = ref(false)
+const editPlanName = ref('')
+const editPlanNotes = ref('')
+const editingPlanId = ref<number | null>(null)
 
 const pendingAttach = computed(() => {
   const sourceSessionId =
@@ -319,6 +375,53 @@ async function removeDay(dayId: number) {
   }
 }
 
+function openEditDialog(planId: number) {
+  const plan = plans.value.find((p) => p.id === planId)
+  if (!plan) return
+  editingPlanId.value = planId
+  editPlanName.value = plan.name
+  editPlanNotes.value = plan.notes || ''
+  editDialogVisible.value = true
+}
+
+async function saveEditPlan() {
+  if (!editingPlanId.value || !editPlanName.value.trim()) return
+
+  try {
+    await weeklyPlanStore.updatePlan(editingPlanId.value, {
+      name: editPlanName.value.trim(),
+      notes: editPlanNotes.value.trim()
+    })
+    editDialogVisible.value = false
+    ElMessage.success(t('weekly_plan.edit_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.edit_failed')
+  }
+}
+
+async function deletePlan(planId: number) {
+  try {
+    await ElMessageBox.confirm(
+      t('weekly_plan.delete_confirm_message'),
+      t('weekly_plan.delete_confirm_title'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await weeklyPlanStore.deletePlan(planId)
+    ElMessage.success(t('weekly_plan.delete_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.delete_failed')
+  }
+}
+
 async function generateShoppingList() {
   if (!activePlan.value) return
 
@@ -434,21 +537,99 @@ onMounted(async () => {
   min-width: 0;
 }
 
-.plan-button {
-  width: 100%;
-  display: grid;
-  gap: 6px;
-  padding: 16px;
-  border-radius: 18px;
+.plan-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-soft);
   background: var(--gradient-surface);
-  text-align: left;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.plan-row:hover {
+  border-color: color-mix(in srgb, var(--color-border-accent) 40%, transparent);
+}
+
+.plan-row.active {
+  border-color: var(--color-border-accent);
+  background: color-mix(in srgb, var(--color-accent-soft) 84%, var(--color-surface-raised));
+}
+
+.plan-copy {
+  flex: 1;
+  display: grid;
+  gap: 6px;
   min-width: 0;
 }
 
-.plan-button.active {
-  border-color: var(--color-border-accent);
-  background: color-mix(in srgb, var(--color-accent-soft) 84%, var(--color-surface-raised));
+.plan-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.plan-row:hover .plan-actions,
+.plan-row:focus-within .plan-actions {
+  opacity: 1;
+}
+
+.plan-edit-btn,
+.plan-delete-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.plan-edit-btn:hover {
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+}
+
+.plan-edit-btn:focus-visible,
+.plan-delete-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
+}
+
+.plan-delete-btn:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.day-delete-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 10px;
+  color: var(--color-text-light);
+  transition: color 180ms ease, background 180ms ease;
+}
+
+.day-delete-btn:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.day-delete-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline-offset: 2px;
+}
+
+.edit-form {
+  display: grid;
+  gap: var(--space-5);
 }
 
 .plan-name,
@@ -540,6 +721,16 @@ onMounted(async () => {
   .page-header :deep(.el-button) {
     width: 100%;
     min-height: 44px;
+  }
+
+  .plan-actions {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .plan-actions {
+    opacity: 1;
   }
 }
 </style>

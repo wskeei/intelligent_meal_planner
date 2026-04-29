@@ -59,6 +59,19 @@ export const useWeeklyPlanStore = defineStore('weekly-plan', () => {
     return syncAfterMutation(data)
   }
 
+  async function updatePlan(planId: number, payload: { name?: string; notes?: string }) {
+    const { data } = await weeklyPlanApi.update(planId, payload)
+    return syncAfterMutation(data)
+  }
+
+  async function deletePlan(planId: number) {
+    await weeklyPlanApi.delete(planId)
+    if (activePlan.value?.id === planId) {
+      activePlan.value = null
+    }
+    await loadPlans()
+  }
+
   return {
     plans,
     activePlan,
@@ -66,6 +79,8 @@ export const useWeeklyPlanStore = defineStore('weekly-plan', () => {
     loadPlans,
     openPlan,
     createPlan,
+    updatePlan,
+    deletePlan,
     attachDay,
     removeDay
   }

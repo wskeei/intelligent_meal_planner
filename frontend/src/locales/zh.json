@@ -250,12 +250,20 @@
     "create_success": "周计划已创建。",
     "remove_success": "该天已从周计划移除。",
     "no_notes": "还没有补充备注。",
+    "edit_plan": "编辑计划",
+    "edit_success": "周计划已更新。",
+    "delete_plan": "删除计划",
+    "delete_confirm_title": "确认删除这个周计划？",
+    "delete_confirm_message": "删除后将同时移除该计划下所有已安排的日期和关联的采购清单，此操作不可撤销。",
+    "delete_success": "周计划已删除。",
     "errors": {
       "create_failed": "周计划创建失败，请稍后重试。",
       "load_failed": "周计划加载失败，请稍后重试。",
       "attach_failed": "加入周计划失败，请检查日期或稍后重试。",
       "remove_failed": "移除周计划日期失败，请稍后重试。",
       "generate_failed": "采购清单生成失败，请稍后重试。",
+      "edit_failed": "周计划更新失败，请稍后重试。",
+      "delete_failed": "周计划删除失败，请稍后重试。",
       "plan_date_occupied": "这个日期已经有方案了，请换一天或先删除原有安排。",
       "resource_missing": "目标周计划或来源方案已不存在。"
     }

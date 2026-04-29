@@ -250,12 +250,20 @@
     "create_success": "Weekly plan created.",
     "remove_success": "The day was removed from the weekly plan.",
     "no_notes": "No notes yet.",
+    "edit_plan": "Edit plan",
+    "edit_success": "Weekly plan updated.",
+    "delete_plan": "Delete plan",
+    "delete_confirm_title": "Delete this weekly plan?",
+    "delete_confirm_message": "This will permanently remove the plan and all its scheduled days and shopping lists. This action cannot be undone.",
+    "delete_success": "Weekly plan deleted.",
     "errors": {
       "create_failed": "Could not create the weekly plan. Please try again.",
       "load_failed": "Could not load the weekly plan. Please try again.",
       "attach_failed": "Could not attach this day. Check the date and try again.",
       "remove_failed": "Could not remove the day from the weekly plan. Please try again.",
       "generate_failed": "Could not generate the shopping list. Please try again.",
+      "edit_failed": "Could not update the weekly plan. Please try again.",
+      "delete_failed": "Could not delete the weekly plan. Please try again.",
       "plan_date_occupied": "That date is already occupied. Pick another day or remove the existing one first.",
       "resource_missing": "The target weekly plan or source meal plan no longer exists."
     }

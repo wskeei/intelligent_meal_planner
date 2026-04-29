@@ -224,6 +224,11 @@ class WeeklyPlanCreateRequest(BaseModel):
     notes: str | None = None
 
 
+class WeeklyPlanUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    notes: str | None = None
+
+
 class WeeklyPlanAttachDayRequest(BaseModel):
     plan_date: date
     meal_plan_id: str
