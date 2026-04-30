@@ -5,12 +5,13 @@
     "footer": "智能配餐 · 让今天该吃什么变得更清楚。"
   },
   "nav": {
+    "home": "首页",
     "planner": "配餐",
-    "shopping": "购物清单",
+    "weekly_plan": "周计划",
     "recipes": "菜谱",
-    "profile": "档案",
     "history": "历史",
-    "more": "更多",
+    "profile": "档案",
+    "shopping_cart": "购物清单",
     "exit": "退出登录"
   },
   "common": {
