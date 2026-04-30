@@ -1,255 +1,355 @@
 <template>
   <div class="home-page">
-    <section class="hero-card">
-      <div class="hero-copy">
-        <p class="eyebrow">{{ $t('dashboard.welcome') }}</p>
-        <h1>{{ $t('dashboard.hello') }}, {{ profile.username || $t('dashboard.guest') }}</h1>
-        <p class="subtitle">{{ $t('dashboard.ready_msg') }}</p>
-      </div>
+    <!-- Greeting -->
+    <section class="greeting">
+      <h1>{{ greetingText }}，{{ profile.username || $t('dashboard.guest') }}</h1>
+      <p class="action-prompt">{{ $t('dashboard.action_prompt') }}</p>
+      <el-button type="primary" size="large" tag="router-link" to="/meal-plan" class="cta">
+        {{ $t('dashboard.start_planning') }}
+      </el-button>
+    </section>
 
-      <div class="hero-actions">
-        <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
-          {{ $t('dashboard.start_planning') }}
+    <!-- Continue session banner -->
+    <section v-if="hasActiveSession" class="continue-banner">
+      <div class="continue-text">
+        <span class="continue-label">{{ $t('dashboard.continue_session') }}</span>
+        <span class="continue-hint">{{ $t('dashboard.continue_session_hint') }}</span>
+      </div>
+      <div class="continue-actions">
+        <el-button text type="primary" tag="router-link" to="/meal-plan">
+          {{ $t('dashboard.continue_session') }}
         </el-button>
-        <el-button plain size="large" tag="router-link" to="/profile">
-          {{ $t('dashboard.complete_profile') }}
+        <el-button text @click="dismissSession">
+          {{ $t('dashboard.dismiss') }}
         </el-button>
       </div>
     </section>
 
-    <section class="home-grid">
-      <article class="primary-panel">
-        <p class="panel-eyebrow">{{ $t('dashboard.primary_label') }}</p>
-        <h2>{{ $t('dashboard.generate_plan') }}</h2>
-        <p>{{ $t('dashboard.generate_desc') }}</p>
-        <div class="primary-actions">
-          <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
-            {{ $t('dashboard.launch_chat') }}
-          </el-button>
-          <el-button plain size="large" tag="router-link" to="/weekly-plan">
-            {{ $t('weekly_plan.title') }}
-          </el-button>
-          <el-button plain size="large" tag="router-link" to="/history">
-            {{ $t('dashboard.review_history') }}
-          </el-button>
-        </div>
-      </article>
+    <!-- Loading skeleton -->
+    <template v-if="loading">
+      <div v-for="n in 3" :key="n" class="skeleton-row">
+        <div class="skeleton-line skeleton-line--wide" />
+        <div class="skeleton-line skeleton-line--narrow" />
+      </div>
+    </template>
 
-      <aside class="side-stack">
-        <article class="status-card">
-          <div class="status-head">
-            <div>
-              <p class="panel-eyebrow">{{ $t('dashboard.profile_complete') }}</p>
-              <h3>{{ profileCompletionPercent }}%</h3>
+    <!-- Activity stream -->
+    <template v-else>
+      <!-- Recent plans -->
+      <section v-if="recentPlans.length" class="activity-section">
+        <h2 class="section-heading">{{ $t('dashboard.recent_plans') }}</h2>
+        <div class="activity-list">
+          <div v-for="plan in recentPlans" :key="plan.id" class="activity-row">
+            <div class="activity-info">
+              <span class="activity-date">{{ formatRelativeDate(plan.created_at) }}</span>
+              <span class="activity-detail">
+                {{ Math.round(plan.nutrition.total_calories) }} kcal
+                · ¥{{ plan.nutrition.total_price.toFixed(0) }}
+                · {{ $t('dashboard.meal_count_hint', { count: plan.meals.length }) }}
+              </span>
             </div>
-            <span>{{ profileCompletionCompleted }}/{{ profileCompletionTotal }}</span>
+            <el-button text type="primary" @click="reusePlan(plan)">
+              {{ $t('dashboard.reuse') }}
+            </el-button>
           </div>
+        </div>
+      </section>
 
-          <p class="status-copy">
-            {{
-              missingProfileFields.length
-                ? $t('dashboard.profile_missing_detail', { count: missingProfileFields.length })
-                : $t('dashboard.profile_ready')
-            }}
-          </p>
+      <!-- Active weekly plans -->
+      <section v-if="weeklyPlans.length" class="activity-section">
+        <h2 class="section-heading">{{ $t('dashboard.active_weekly_plans') }}</h2>
+        <div class="activity-list">
+          <router-link
+            v-for="wp in weeklyPlans"
+            :key="wp.id"
+            to="/weekly-plan"
+            class="activity-row activity-row--link"
+          >
+            <div class="activity-info">
+              <span class="activity-name">{{ wp.name }}</span>
+              <span class="activity-detail">{{ wp.day_count }}天</span>
+            </div>
+          </router-link>
+        </div>
+      </section>
 
-          <ul v-if="missingProfileFields.length" class="missing-list">
-            <li v-for="field in missingProfileFields" :key="field">
-              {{ $t(`profile.field_labels.${field}`) }}
-            </li>
-          </ul>
-
-          <el-button plain tag="router-link" to="/profile?onboarding=1">
-            {{ $t('dashboard.complete_profile') }}
-          </el-button>
-        </article>
-
-        <article class="secondary-card">
-          <h3>{{ $t('weekly_plan.title') }}</h3>
-          <p>{{ $t('weekly_plan.empty_desc') }}</p>
-          <el-button text type="primary" tag="router-link" to="/weekly-plan">
-            {{ $t('weekly_plan.title') }}
-          </el-button>
-        </article>
-
-        <article class="secondary-card">
-          <h3>{{ $t('history.title') }}</h3>
-          <p>{{ $t('dashboard.history_cta') }}</p>
-          <el-button text type="primary" tag="router-link" to="/history">
-            {{ $t('dashboard.review_history') }}
-          </el-button>
-        </article>
-      </aside>
-    </section>
+      <!-- Empty state -->
+      <section v-if="!recentPlans.length && !weeklyPlans.length" class="empty-state">
+        <h2 class="empty-title">{{ $t('dashboard.empty_title') }}</h2>
+        <p class="empty-desc">{{ $t('dashboard.empty_desc') }}</p>
+      </section>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+import { mealPlanApi, type MealPlan } from '@/api'
 import { useUserStore } from '@/stores/user'
+import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
+
+const { t } = useI18n()
+const router = useRouter()
 
 const userStore = useUserStore()
-const {
-  profile,
-  missingProfileFields,
-  profileCompletionCompleted,
-  profileCompletionPercent,
-  profileCompletionTotal
-} = storeToRefs(userStore)
+const { profile } = storeToRefs(userStore)
+
+const weeklyPlanStore = useWeeklyPlanStore()
+
+const recentPlans = ref<MealPlan[]>([])
+const loading = ref(true)
+
+const weeklyPlans = computed(() => weeklyPlanStore.plans)
+
+const activeSessionKey = 'meal-chat-active-session-id'
+const hasActiveSession = ref(!!localStorage.getItem(activeSessionKey))
+
+const greetingText = computed(() => {
+  const hour = new Date().getHours()
+  if (hour < 12) return t('dashboard.greeting_morning')
+  if (hour < 18) return t('dashboard.greeting_afternoon')
+  return t('dashboard.greeting_evening')
+})
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return t('dashboard.today')
+  if (diffDays === 1) return t('dashboard.yesterday')
+  return t('dashboard.days_ago', { n: diffDays })
+}
+
+function reusePlan(plan: MealPlan) {
+  const target = plan.target
+  const params = new URLSearchParams()
+  if (target.health_goal) params.set('reuse_goal', target.health_goal)
+  if (target.max_budget) params.set('reuse_budget', String(target.max_budget))
+  if (target.preferred_tags?.length) params.set('reuse_tags', target.preferred_tags.join(','))
+  if (target.disliked_foods?.length) params.set('reuse_disliked', target.disliked_foods.join(','))
+  router.push(`/meal-plan?${params.toString()}`)
+}
+
+function dismissSession() {
+  localStorage.removeItem(activeSessionKey)
+  hasActiveSession.value = false
+}
+
+onMounted(async () => {
+  try {
+    const [plans] = await Promise.all([
+      mealPlanApi.getHistory(5),
+      weeklyPlanStore.loadPlans()
+    ])
+    recentPlans.value = plans.data
+  } catch {
+    // silent — empty state will show
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
 .home-page {
   display: grid;
-  gap: 24px;
+  gap: 28px;
+  max-width: 640px;
 }
 
-.hero-card {
+.greeting {
+  display: grid;
+  gap: 10px;
+}
+
+.greeting h1 {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.action-prompt {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+}
+
+.cta {
+  margin-top: 4px;
+  justify-self: start;
+}
+
+/* Continue session banner */
+.continue-banner {
   display: flex;
   justify-content: space-between;
-  gap: 20px;
-  padding: clamp(24px, 4vw, 36px);
-  border-radius: 28px;
-  background: var(--gradient-hero);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
   border: 1px solid var(--color-border-accent);
-  box-shadow: var(--shadow-md);
 }
 
-.eyebrow,
-.panel-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary-dark);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero-copy {
-  max-width: 680px;
+.continue-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
-.hero-copy h1 {
-  margin: 0;
-  color: var(--color-secondary);
-  font-size: clamp(2rem, 3.8vw, 3rem);
-  line-height: 1.05;
-  overflow-wrap: anywhere;
+.continue-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-strong);
 }
 
-.subtitle,
-.primary-panel p,
-.secondary-card p,
-.status-copy {
+.continue-hint {
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: 1.7;
-  overflow-wrap: anywhere;
 }
 
-.subtitle {
-  margin: 14px 0 0;
+.continue-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.hero-actions,
-.primary-actions,
-.side-stack,
-.missing-list {
+/* Activity sections */
+.activity-section {
   display: grid;
   gap: 12px;
 }
 
-.hero-actions {
-  align-content: center;
-}
-
-.home-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-  gap: 20px;
-}
-
-.primary-panel,
-.status-card,
-.secondary-card {
-  display: grid;
-  gap: 14px;
-  padding: 24px;
-  border-radius: 24px;
-  background: var(--gradient-surface);
-  border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-sm);
-}
-
-.primary-panel {
-  background: var(--gradient-feature);
-  border-color: var(--color-border-accent);
-}
-
-.primary-panel h2,
-.secondary-card h3,
-.status-card h3 {
+.section-heading {
   margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-light);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
 }
 
-.primary-panel p {
-  margin: 0;
-  max-width: 560px;
+.activity-list {
+  display: grid;
+  gap: 2px;
 }
 
-.primary-panel .panel-eyebrow {
-  color: var(--color-primary-dark);
-}
-
-.primary-actions {
-  grid-auto-flow: column;
-  justify-content: start;
-}
-
-.status-head {
+.activity-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  transition: background-color 160ms ease;
 }
 
-.status-head h3 {
+.activity-row:hover {
+  background: var(--color-surface-raised);
+}
+
+.activity-row--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.activity-date,
+.activity-name {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
   color: var(--color-secondary);
-  font-size: 2rem;
 }
 
-.status-head span {
+.activity-detail {
+  font-size: var(--text-sm);
   color: var(--color-text-light);
 }
 
-.missing-list {
-  padding-left: 18px;
+/* Empty state */
+.empty-state {
+  display: grid;
+  gap: 8px;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-secondary);
+}
+
+.empty-desc {
+  margin: 0;
+  font-size: var(--text-base);
   color: var(--color-text-secondary);
+  max-width: 40ch;
+  justify-self: center;
 }
 
-@media (max-width: 960px) {
-  .hero-card,
-  .home-grid {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
-  .hero-actions {
-    justify-items: start;
-  }
+/* Skeleton loading */
+.skeleton-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--color-surface-raised);
 }
 
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: var(--color-border-soft);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-line--wide {
+  width: 60%;
+}
+
+.skeleton-line--narrow {
+  width: 35%;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Mobile */
 @media (max-width: 640px) {
-  .hero-actions :deep(.el-button),
-  .primary-actions :deep(.el-button),
-  .status-card :deep(.el-button) {
+  .cta {
     width: 100%;
-    min-height: 44px;
   }
 
-  .primary-actions {
-    grid-auto-flow: row;
+  .continue-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .continue-actions {
+    width: 100%;
   }
 }
 </style>
