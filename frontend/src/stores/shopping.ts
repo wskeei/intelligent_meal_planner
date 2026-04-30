@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { shoppingListApi, type ShoppingList, type ShoppingListSummary } from '@/api'
 
@@ -8,6 +8,7 @@ export const useShoppingStore = defineStore('shopping', () => {
   const activeList = ref<ShoppingList | null>(null)
   const loading = ref(false)
   const viewMode = ref<'ingredients' | 'sources'>('ingredients')
+  const listCount = computed(() => lists.value.length)
 
   async function loadLists() {
     loading.value = true
@@ -79,6 +80,7 @@ export const useShoppingStore = defineStore('shopping', () => {
     activeList,
     loading,
     viewMode,
+    listCount,
     loadLists,
     openList,
     generateFromWeeklyPlan,

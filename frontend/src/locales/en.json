@@ -6,11 +6,11 @@
   },
   "nav": {
     "planner": "Planner",
-    "shopping": "Shopping List",
+    "weekly_plan": "Weekly Plan",
     "recipes": "Recipes",
-    "profile": "Profile",
     "history": "History",
-    "more": "More",
+    "profile": "Profile",
+    "shopping_cart": "Shopping List",
     "exit": "Log out"
   },
   "common": {
