@@ -41,13 +41,11 @@
           <!-- Utility nav -->
           <div class="utility-nav">
             <!-- Shopping cart with badge -->
-            <template v-if="showPrimaryNav">
-              <router-link to="/shopping-list" class="utility-link cart-link" :aria-label="$t('nav.shopping_cart')">
-                <el-badge :value="shoppingListCount" :hidden="shoppingListCount === 0" :max="9">
-                  <el-icon :size="20"><ShoppingCart /></el-icon>
-                </el-badge>
-              </router-link>
-            </template>
+            <router-link v-if="showPrimaryNav" to="/shopping-list" class="utility-link cart-link" :aria-label="$t('nav.shopping_cart')">
+              <el-badge :value="shoppingListCount" :hidden="shoppingListCount === 0" :max="9">
+                <el-icon :size="20"><ShoppingCart /></el-icon>
+              </el-badge>
+            </router-link>
 
             <!-- Language switcher -->
             <el-dropdown @command="handleCommand">
@@ -117,7 +115,7 @@
 import { ArrowDown, Calendar, Clock, Food, MagicStick, ShoppingCart, User } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
-import { computed, onMounted } from 'vue'
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
@@ -134,11 +132,9 @@ const showPrimaryNav = computed(() => !authPageNames.includes(route.name as stri
 const shoppingStore = useShoppingStore()
 const shoppingListCount = computed(() => shoppingStore.listCount)
 
-onMounted(() => {
-  if (showPrimaryNav.value) {
-    shoppingStore.loadLists()
-  }
-})
+watch(showPrimaryNav, (visible) => {
+  if (visible) shoppingStore.loadLists().catch(() => {})
+}, { immediate: true })
 
 function handleLogout() {
   auth.logout()
