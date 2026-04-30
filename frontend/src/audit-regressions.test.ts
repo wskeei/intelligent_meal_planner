@@ -46,12 +46,13 @@ describe('frontend audit regressions', () => {
     expect(statusPanel).not.toContain('min-height: 42px;')
   })
 
-  it('uses touch-safe secondary navigation and responsive recipe dialog sizing', () => {
+  it('uses touch-safe flat navigation and responsive recipe dialog sizing', () => {
     const appView = readSource('./App.vue')
     const recipesView = readSource('./views/RecipesView.vue')
 
-    expect(appView).toContain('<el-dropdown trigger="click" @command="handleMoreCommand">')
-    expect(appView).toContain('void router.push(command)')
+    expect(appView).toContain('class="primary-nav"')
+    expect(appView).toContain('/weekly-plan')
+    expect(appView).toContain('<el-badge')
     expect(recipesView).not.toContain('window.innerWidth')
     expect(recipesView).toContain("const dialogWidth = 'min(680px, calc(100vw - 24px))'")
   })
