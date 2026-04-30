@@ -22,8 +22,8 @@ describe('frontend audit regressions', () => {
     const profileView = readSource('./views/ProfileView.vue')
     const statusPanel = readSource('./components/meal-chat/MealChatStatusPanel.vue')
 
-    expect(homeView).toContain('var(--gradient-hero)')
-    expect(homeView).toContain('var(--gradient-feature)')
+    expect(homeView).toContain('var(--color-accent-soft)')
+    expect(homeView).toContain('var(--color-surface-raised)')
     expect(homeView).not.toMatch(/#10251a|#173728|#1f5137|#f6fff7|#eef8f0/)
     expect(homeView).not.toContain('rgba(34, 197, 94')
 
