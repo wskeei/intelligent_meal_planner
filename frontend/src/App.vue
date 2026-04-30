@@ -3,6 +3,7 @@
     <div class="layout">
       <header class="topbar">
         <div class="container topbar-inner">
+          <!-- Brand -->
           <router-link to="/" class="brand">
             <div class="logo-icon">
               <el-icon :size="22" class="brand-icon"><Food /></el-icon>
@@ -13,7 +14,42 @@
             </div>
           </router-link>
 
+          <!-- Primary nav (inline, visible on auth pages only) -->
+          <nav v-if="showPrimaryNav" class="primary-nav">
+            <router-link to="/meal-plan" class="nav-item" active-class="active">
+              <el-icon><MagicStick /></el-icon>
+              <span>{{ $t('nav.planner') }}</span>
+            </router-link>
+            <router-link to="/weekly-plan" class="nav-item" active-class="active">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ $t('nav.weekly_plan') }}</span>
+            </router-link>
+            <router-link to="/recipes" class="nav-item" active-class="active">
+              <el-icon><Food /></el-icon>
+              <span>{{ $t('nav.recipes') }}</span>
+            </router-link>
+            <router-link to="/history" class="nav-item" active-class="active">
+              <el-icon><Clock /></el-icon>
+              <span>{{ $t('nav.history') }}</span>
+            </router-link>
+            <router-link to="/profile" class="nav-item" active-class="active">
+              <el-icon><User /></el-icon>
+              <span>{{ $t('nav.profile') }}</span>
+            </router-link>
+          </nav>
+
+          <!-- Utility nav -->
           <div class="utility-nav">
+            <!-- Shopping cart with badge -->
+            <template v-if="showPrimaryNav">
+              <router-link to="/shopping-list" class="utility-link cart-link" :aria-label="$t('nav.shopping_cart')">
+                <el-badge :value="shoppingListCount" :hidden="shoppingListCount === 0" :max="9">
+                  <el-icon :size="20"><ShoppingCart /></el-icon>
+                </el-badge>
+              </router-link>
+            </template>
+
+            <!-- Language switcher -->
             <el-dropdown @command="handleCommand">
               <span class="utility-link">
                 {{ locale === 'zh' ? '中文' : 'English' }}
@@ -27,45 +63,13 @@
               </template>
             </el-dropdown>
 
-            <template v-if="showPrimaryNav">
-              <el-dropdown trigger="click" @command="handleMoreCommand">
-                <span class="utility-link">
-                  {{ $t('nav.more') }}
-                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </span>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="/weekly-plan">{{ $t('weekly_plan.title') }}</el-dropdown-item>
-                    <el-dropdown-item command="/recipes">{{ $t('nav.recipes') }}</el-dropdown-item>
-                    <el-dropdown-item command="/shopping-list">{{ $t('nav.shopping') }}</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-
-              <button class="utility-link" type="button" @click="handleLogout">
-                {{ $t('nav.exit') }}
-              </button>
-            </template>
+            <!-- Logout -->
+            <button v-if="showPrimaryNav" class="utility-link" type="button" @click="handleLogout">
+              {{ $t('nav.exit') }}
+            </button>
           </div>
         </div>
       </header>
-
-      <nav v-if="showPrimaryNav" class="primary-nav">
-        <div class="container primary-nav-inner">
-          <router-link to="/meal-plan" class="nav-item" active-class="active">
-            <el-icon><MagicStick /></el-icon>
-            <span>{{ $t('nav.planner') }}</span>
-          </router-link>
-          <router-link to="/profile" class="nav-item" active-class="active">
-            <el-icon><User /></el-icon>
-            <span>{{ $t('nav.profile') }}</span>
-          </router-link>
-          <router-link to="/history" class="nav-item" active-class="active">
-            <el-icon><Clock /></el-icon>
-            <span>{{ $t('nav.history') }}</span>
-          </router-link>
-        </div>
-      </nav>
 
       <main class="main-content" :class="{ 'with-mobile-nav': showPrimaryNav }">
         <div class="container">
@@ -88,13 +92,21 @@
           <el-icon><MagicStick /></el-icon>
           <span>{{ $t('nav.planner') }}</span>
         </router-link>
-        <router-link to="/profile" class="mobile-nav-item" active-class="active">
-          <el-icon><User /></el-icon>
-          <span>{{ $t('nav.profile') }}</span>
+        <router-link to="/weekly-plan" class="mobile-nav-item" active-class="active">
+          <el-icon><Calendar /></el-icon>
+          <span>{{ $t('nav.weekly_plan') }}</span>
+        </router-link>
+        <router-link to="/recipes" class="mobile-nav-item" active-class="active">
+          <el-icon><Food /></el-icon>
+          <span>{{ $t('nav.recipes') }}</span>
         </router-link>
         <router-link to="/history" class="mobile-nav-item" active-class="active">
           <el-icon><Clock /></el-icon>
           <span>{{ $t('nav.history') }}</span>
+        </router-link>
+        <router-link to="/profile" class="mobile-nav-item" active-class="active">
+          <el-icon><User /></el-icon>
+          <span>{{ $t('nav.profile') }}</span>
         </router-link>
       </nav>
     </div>
@@ -102,22 +114,31 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, Clock, Food, MagicStick, User } from '@element-plus/icons-vue'
+import { ArrowDown, Calendar, Clock, Food, MagicStick, ShoppingCart, User } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
+import { useShoppingStore } from '@/stores/shopping'
 
 const { locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
-const router = useRouter()
 
 const authPageNames = ['login', 'register']
 const showPrimaryNav = computed(() => !authPageNames.includes(route.name as string))
+
+const shoppingStore = useShoppingStore()
+const shoppingListCount = computed(() => shoppingStore.listCount)
+
+onMounted(() => {
+  if (showPrimaryNav.value) {
+    shoppingStore.loadLists()
+  }
+})
 
 function handleLogout() {
   auth.logout()
@@ -126,10 +147,6 @@ function handleLogout() {
 function handleCommand(command: string) {
   locale.value = command
   localStorage.setItem('locale', command)
-}
-
-function handleMoreCommand(command: string) {
-  void router.push(command)
 }
 </script>
 
@@ -149,7 +166,6 @@ function handleMoreCommand(command: string) {
 }
 
 .topbar,
-.primary-nav,
 .footer {
   background: var(--color-bg-elevated);
   backdrop-filter: blur(8px);
@@ -162,17 +178,19 @@ function handleMoreCommand(command: string) {
   border-bottom: 1px solid var(--color-border-soft);
 }
 
-.topbar-inner,
-.primary-nav-inner,
+.topbar-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  min-height: 72px;
+}
+
 .footer-inner {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-}
-
-.topbar-inner {
-  min-height: 72px;
 }
 
 .brand {
@@ -215,25 +233,24 @@ function handleMoreCommand(command: string) {
   font-size: 0.86rem;
 }
 
-.utility-nav,
-.primary-nav-inner {
+.primary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.utility-nav {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
 }
 
-.primary-nav {
-  border-bottom: 1px solid var(--color-border-soft);
-}
-
-.primary-nav-inner {
-  min-height: 58px;
-}
-
 .nav-item,
-.utility-link,
-.menu-link {
+.utility-link {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -252,14 +269,12 @@ function handleMoreCommand(command: string) {
 .brand:focus-visible,
 .nav-item:hover,
 .utility-link:hover,
-.menu-link:hover,
 .mobile-nav-item:hover {
   transform: translateY(-1px);
 }
 
 .nav-item:hover,
 .utility-link:hover,
-.menu-link:hover,
 .mobile-nav-item:hover {
   background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
   color: var(--color-secondary);
@@ -268,7 +283,6 @@ function handleMoreCommand(command: string) {
 .brand:focus-visible,
 .nav-item:focus-visible,
 .utility-link:focus-visible,
-.menu-link:focus-visible,
 .mobile-nav-item:focus-visible {
   box-shadow: var(--focus-ring);
 }
@@ -277,6 +291,23 @@ function handleMoreCommand(command: string) {
 .mobile-nav-item.active {
   background: var(--color-accent-soft);
   color: var(--color-primary-dark);
+}
+
+.cart-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.cart-link:hover {
+  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  color: var(--color-secondary);
 }
 
 .main-content {
@@ -294,7 +325,7 @@ function handleMoreCommand(command: string) {
   bottom: 0;
   z-index: 45;
   display: none;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
