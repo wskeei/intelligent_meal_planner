@@ -53,6 +53,7 @@
     "today": "今天",
     "yesterday": "昨天",
     "days_ago": "{n}天前",
+    "days_count": "{n}天",
     "meal_count_hint": "{count}餐",
     "empty_title": "还没有配餐记录",
     "empty_desc": "开始第一次配餐后，这里会显示你的历史方案，方便快速复用。",

@@ -53,6 +53,7 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "days_ago": "{n} days ago",
+    "days_count": "{n} days",
     "meal_count_hint": "{count} meals",
     "empty_title": "No plans yet",
     "empty_desc": "Once you create your first meal plan, it will show up here for quick reuse.",

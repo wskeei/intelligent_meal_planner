@@ -67,20 +67,24 @@
           >
             <div class="activity-info">
               <span class="activity-name">{{ wp.name }}</span>
-              <span class="activity-detail">{{ wp.day_count }}天</span>
+              <span class="activity-detail">{{ $t('dashboard.days_count', { n: wp.day_count }) }}</span>
             </div>
           </router-link>
         </div>
       </section>
 
       <!-- Empty state -->
-      <section v-if="!recentPlans.length && !weeklyPlans.length" class="empty-state">
-        <h2 class="empty-title">{{ $t('dashboard.empty_title') }}</h2>
-        <p class="empty-desc">{{ $t('dashboard.empty_desc') }}</p>
-        <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
-          {{ $t('dashboard.start_planning') }}
-        </el-button>
-      </section>
+      <AppEmptyState
+        v-if="!recentPlans.length && !weeklyPlans.length"
+        :title="$t('dashboard.empty_title')"
+        :description="$t('dashboard.empty_desc')"
+      >
+        <template #actions>
+          <el-button type="primary" tag="router-link" to="/meal-plan">
+            {{ $t('dashboard.start_planning') }}
+          </el-button>
+        </template>
+      </AppEmptyState>
     </template>
   </div>
 </template>
@@ -92,6 +96,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 import { mealPlanApi, type MealPlan } from '@/api'
+import AppEmptyState from '@/components/common/AppEmptyState.vue'
 import { useUserStore } from '@/stores/user'
 import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
 
@@ -131,12 +136,16 @@ function formatRelativeDate(dateStr: string): string {
 
 function reusePlan(plan: MealPlan) {
   const target = plan.target
-  const params = new URLSearchParams()
-  if (target.health_goal) params.set('reuse_goal', target.health_goal)
-  if (target.max_budget) params.set('reuse_budget', String(target.max_budget))
-  if (target.preferred_tags?.length) params.set('reuse_tags', target.preferred_tags.join(','))
-  if (target.disliked_foods?.length) params.set('reuse_disliked', target.disliked_foods.join(','))
-  router.push(`/meal-plan?${params.toString()}`)
+  router.push({
+    path: '/meal-plan',
+    query: {
+      reuse_source: 'home',
+      reuse_goal: target.health_goal || undefined,
+      reuse_budget: target.max_budget ? String(target.max_budget) : undefined,
+      reuse_tags: target.preferred_tags?.length ? target.preferred_tags.join(',') : undefined,
+      reuse_disliked: target.disliked_foods?.length ? target.disliked_foods.join(',') : undefined
+    }
+  })
 }
 
 function dismissSession() {
@@ -151,8 +160,8 @@ onMounted(async () => {
       weeklyPlanStore.loadPlans()
     ])
     recentPlans.value = plans.data
-  } catch {
-    // silent — empty state will show
+  } catch (e) {
+    console.error('[HomeView] Failed to load activity data:', e)
   } finally {
     loading.value = false
   }
@@ -285,29 +294,6 @@ onMounted(async () => {
 .activity-detail {
   font-size: var(--text-sm);
   color: var(--color-text-light);
-}
-
-/* Empty state */
-.empty-state {
-  display: grid;
-  gap: 8px;
-  padding: 48px 0;
-  text-align: center;
-}
-
-.empty-title {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  color: var(--color-secondary);
-}
-
-.empty-desc {
-  margin: 0;
-  font-size: var(--text-base);
-  color: var(--color-text-secondary);
-  max-width: 40ch;
-  justify-self: center;
 }
 
 /* Skeleton loading */
