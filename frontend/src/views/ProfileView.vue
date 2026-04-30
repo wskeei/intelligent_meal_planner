@@ -243,9 +243,8 @@ onBeforeUnmount(() => {
 
 .settings-card,
 .status-card {
-  border: none;
-  border-radius: 24px;
-  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 14px;
 }
 
 .card-header {

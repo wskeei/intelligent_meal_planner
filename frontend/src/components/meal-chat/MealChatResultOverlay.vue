@@ -426,7 +426,7 @@ summary {
 
 .meal-group {
   padding: 18px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--gradient-surface);
   border: 1px solid var(--color-border-soft);
 }
@@ -572,7 +572,7 @@ summary {
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  background: var(--color-accent-strong);
   color: var(--color-accent-contrast);
 }
 
@@ -608,7 +608,7 @@ summary {
 @media (max-width: 640px) {
   .result-overlay-shell {
     padding: 16px;
-    border-radius: 26px;
+    border-radius: 14px;
   }
 
   .result-overlay-head,

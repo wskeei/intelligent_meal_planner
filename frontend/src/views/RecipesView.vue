@@ -317,7 +317,7 @@ onMounted(() => {
 .filter-panel {
   position: sticky;
   top: 88px;
-  border-radius: 22px;
+  border-radius: 12px;
 }
 
 .filters-form {
@@ -369,7 +369,7 @@ onMounted(() => {
 .recipe-card {
   cursor: pointer;
   border: none;
-  border-radius: 22px;
+  border-radius: 12px;
   overflow: hidden;
   transition:
     box-shadow 180ms ease,
@@ -377,9 +377,8 @@ onMounted(() => {
 }
 
 .recipe-card:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 50%, transparent);
   outline-offset: 2px;
-  transform: translateY(-1px);
 }
 
 .card-image-placeholder {

@@ -929,7 +929,7 @@ onBeforeUnmount(() => {
   gap: 20px;
   align-items: flex-start;
   padding: clamp(18px, 2.4vw, 26px);
-  border-radius: 28px;
+  border-radius: 16px;
   background: var(--gradient-panel);
   border: 1px solid var(--color-border-soft);
   box-shadow: var(--shadow-md);
@@ -1008,7 +1008,7 @@ onBeforeUnmount(() => {
 
 .chat-card {
   border: none;
-  border-radius: 28px;
+  border-radius: 16px;
   background: transparent;
   box-shadow: var(--shadow-md);
 }
@@ -1092,7 +1092,7 @@ onBeforeUnmount(() => {
 
 .bubble {
   padding: 16px 18px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--color-surface-muted);
   color: var(--color-text-main);
   line-height: 1.7;
@@ -1102,7 +1102,7 @@ onBeforeUnmount(() => {
 }
 
 .message-row.user .bubble {
-  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  background: var(--color-accent-strong);
   color: var(--color-accent-contrast);
   border: none;
 }
@@ -1277,11 +1277,11 @@ onBeforeUnmount(() => {
 
   .chat-topbar {
     padding: 16px;
-    border-radius: 22px;
+    border-radius: 12px;
   }
 
   .chat-card {
-    border-radius: 22px;
+    border-radius: 12px;
   }
 
   .message-row {

@@ -1,90 +1,47 @@
 <template>
   <div class="home-page">
-    <section class="hero-card">
-      <div class="hero-copy">
-        <p class="eyebrow">{{ $t('dashboard.welcome') }}</p>
-        <h1>{{ $t('dashboard.hello') }}, {{ profile.username || $t('dashboard.guest') }}</h1>
-        <p class="subtitle">{{ $t('dashboard.ready_msg') }}</p>
-      </div>
-
-      <div class="hero-actions">
-        <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
-          {{ $t('dashboard.start_planning') }}
-        </el-button>
-        <el-button plain size="large" tag="router-link" to="/profile">
-          {{ $t('dashboard.complete_profile') }}
-        </el-button>
-      </div>
+    <section class="hero">
+      <p class="hero-eyebrow">{{ $t('dashboard.welcome') }}</p>
+      <h1>{{ $t('dashboard.hello') }}, {{ profile.username || $t('dashboard.guest') }}</h1>
+      <p class="hero-sub">{{ $t('dashboard.ready_msg') }}</p>
+      <el-button type="primary" size="large" tag="router-link" to="/meal-plan" class="hero-cta">
+        {{ $t('dashboard.start_planning') }}
+      </el-button>
     </section>
 
-    <section class="home-grid">
-      <article class="primary-panel">
-        <p class="panel-eyebrow">{{ $t('dashboard.primary_label') }}</p>
-        <h2>{{ $t('dashboard.generate_plan') }}</h2>
-        <p>{{ $t('dashboard.generate_desc') }}</p>
-        <div class="primary-actions">
-          <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
-            {{ $t('dashboard.launch_chat') }}
-          </el-button>
-          <el-button plain size="large" tag="router-link" to="/weekly-plan">
-            {{ $t('weekly_plan.title') }}
-          </el-button>
-          <el-button plain size="large" tag="router-link" to="/history">
-            {{ $t('dashboard.review_history') }}
-          </el-button>
-        </div>
-      </article>
+    <section v-if="missingProfileFields.length" class="profile-banner">
+      <div class="banner-text">
+        <span class="banner-label">{{ $t('dashboard.profile_complete') }} · {{ profileCompletionPercent }}%</span>
+        <span class="banner-detail">{{ $t('dashboard.profile_missing_detail', { count: missingProfileFields.length }) }}</span>
+      </div>
+      <el-button text type="primary" tag="router-link" to="/profile?onboarding=1">
+        {{ $t('dashboard.complete_profile') }}
+      </el-button>
+    </section>
 
-      <aside class="side-stack">
-        <article class="status-card">
-          <div class="status-head">
-            <div>
-              <p class="panel-eyebrow">{{ $t('dashboard.profile_complete') }}</p>
-              <h3>{{ profileCompletionPercent }}%</h3>
-            </div>
-            <span>{{ profileCompletionCompleted }}/{{ profileCompletionTotal }}</span>
-          </div>
-
-          <p class="status-copy">
-            {{
-              missingProfileFields.length
-                ? $t('dashboard.profile_missing_detail', { count: missingProfileFields.length })
-                : $t('dashboard.profile_ready')
-            }}
-          </p>
-
-          <ul v-if="missingProfileFields.length" class="missing-list">
-            <li v-for="field in missingProfileFields" :key="field">
-              {{ $t(`profile.field_labels.${field}`) }}
-            </li>
-          </ul>
-
-          <el-button plain tag="router-link" to="/profile?onboarding=1">
-            {{ $t('dashboard.complete_profile') }}
-          </el-button>
-        </article>
-
-        <article class="secondary-card">
-          <h3>{{ $t('weekly_plan.title') }}</h3>
-          <p>{{ $t('weekly_plan.empty_desc') }}</p>
-          <el-button text type="primary" tag="router-link" to="/weekly-plan">
-            {{ $t('weekly_plan.title') }}
-          </el-button>
-        </article>
-
-        <article class="secondary-card">
-          <h3>{{ $t('history.title') }}</h3>
-          <p>{{ $t('dashboard.history_cta') }}</p>
-          <el-button text type="primary" tag="router-link" to="/history">
-            {{ $t('dashboard.review_history') }}
-          </el-button>
-        </article>
-      </aside>
+    <section class="quick-links">
+      <router-link to="/weekly-plan" class="quick-link">
+        <el-icon :size="20"><Calendar /></el-icon>
+        <span>{{ $t('weekly_plan.title') }}</span>
+      </router-link>
+      <router-link to="/recipes" class="quick-link">
+        <el-icon :size="20"><Food /></el-icon>
+        <span>{{ $t('nav.recipes') }}</span>
+      </router-link>
+      <router-link to="/history" class="quick-link">
+        <el-icon :size="20"><Clock /></el-icon>
+        <span>{{ $t('history.title') }}</span>
+      </router-link>
+      <router-link to="/shopping-list" class="quick-link">
+        <el-icon :size="20"><ShoppingCart /></el-icon>
+        <span>{{ $t('nav.shopping_cart') }}</span>
+      </router-link>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Calendar, Clock, Food, ShoppingCart } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 
 import { useUserStore } from '@/stores/user'
@@ -93,163 +50,119 @@ const userStore = useUserStore()
 const {
   profile,
   missingProfileFields,
-  profileCompletionCompleted,
-  profileCompletionPercent,
-  profileCompletionTotal
+  profileCompletionPercent
 } = storeToRefs(userStore)
 </script>
 
 <style scoped>
 .home-page {
   display: grid;
-  gap: 24px;
+  gap: 28px;
+  max-width: 640px;
 }
 
-.hero-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: clamp(24px, 4vw, 36px);
-  border-radius: 28px;
-  background: var(--gradient-hero);
-  border: 1px solid var(--color-border-accent);
-  box-shadow: var(--shadow-md);
+.hero {
+  display: grid;
+  gap: 10px;
 }
 
-.eyebrow,
-.panel-eyebrow {
-  margin: 0 0 10px;
-  color: var(--color-primary-dark);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+.hero-eyebrow {
+  margin: 0;
+  color: var(--color-accent-strong);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
 }
 
-.hero-copy {
-  max-width: 680px;
+.hero h1 {
+  margin: 0;
+  color: var(--color-secondary);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.hero-sub {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  max-width: 48ch;
+}
+
+.hero-cta {
+  margin-top: 8px;
+  justify-self: start;
+}
+
+.profile-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-border-accent);
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
-.hero-copy h1 {
-  margin: 0;
-  color: var(--color-secondary);
-  font-size: clamp(2rem, 3.8vw, 3rem);
-  line-height: 1.05;
-  overflow-wrap: anywhere;
+.banner-label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-strong);
 }
 
-.subtitle,
-.primary-panel p,
-.secondary-card p,
-.status-copy {
+.banner-detail {
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: 1.7;
-  overflow-wrap: anywhere;
 }
 
-.subtitle {
-  margin: 14px 0 0;
-}
-
-.hero-actions,
-.primary-actions,
-.side-stack,
-.missing-list {
+.quick-links {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.hero-actions {
-  align-content: center;
-}
-
-.home-grid {
+.quick-link {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-  gap: 20px;
-}
-
-.primary-panel,
-.status-card,
-.secondary-card {
-  display: grid;
-  gap: 14px;
-  padding: 24px;
-  border-radius: 24px;
-  background: var(--gradient-surface);
+  justify-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 12px;
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-sm);
-}
-
-.primary-panel {
-  background: var(--gradient-feature);
-  border-color: var(--color-border-accent);
-}
-
-.primary-panel h2,
-.secondary-card h3,
-.status-card h3 {
-  margin: 0;
-}
-
-.primary-panel p {
-  margin: 0;
-  max-width: 560px;
-}
-
-.primary-panel .panel-eyebrow {
-  color: var(--color-primary-dark);
-}
-
-.primary-actions {
-  grid-auto-flow: column;
-  justify-content: start;
-}
-
-.status-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.status-head h3 {
-  color: var(--color-secondary);
-  font-size: 2rem;
-}
-
-.status-head span {
-  color: var(--color-text-light);
-}
-
-.missing-list {
-  padding-left: 18px;
   color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: border-color 160ms ease, color 160ms ease;
 }
 
-@media (max-width: 960px) {
-  .hero-card,
-  .home-grid {
-    grid-template-columns: 1fr;
-    display: grid;
-  }
-
-  .hero-actions {
-    justify-items: start;
-  }
+.quick-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
 }
 
 @media (max-width: 640px) {
-  .hero-actions :deep(.el-button),
-  .primary-actions :deep(.el-button),
-  .status-card :deep(.el-button) {
-    width: 100%;
-    min-height: 44px;
+  .quick-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .primary-actions {
-    grid-auto-flow: row;
+  .hero-cta {
+    width: 100%;
+  }
+
+  .profile-banner {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

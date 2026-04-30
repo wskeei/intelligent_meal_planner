@@ -664,10 +664,9 @@ onMounted(async () => {
   display: grid;
   gap: 14px;
   padding: 20px;
-  border-radius: 22px;
-  background: var(--gradient-surface);
+  border-radius: 12px;
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-sm);
 }
 
 .eyebrow {

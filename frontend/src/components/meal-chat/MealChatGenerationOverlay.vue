@@ -350,7 +350,7 @@ onBeforeUnmount(() => {
   .generation-stage {
     width: min(100vw - 24px, 720px);
     padding: 28px 22px;
-    border-radius: 26px;
+    border-radius: 16px;
   }
 
   .back-link {

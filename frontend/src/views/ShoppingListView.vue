@@ -371,7 +371,7 @@ onMounted(async () => {
 .shopping-item,
 .source-card {
   padding: 18px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
   border: 1px solid var(--color-border-soft);
 }

@@ -215,10 +215,9 @@ onMounted(loadHistory)
   display: grid;
   gap: 18px;
   padding: 24px;
-  border-radius: 24px;
-  background: var(--gradient-surface);
+  border-radius: 14px;
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-md);
 }
 
 .history-head,

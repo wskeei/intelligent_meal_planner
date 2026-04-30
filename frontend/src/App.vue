@@ -3,18 +3,13 @@
     <div class="layout">
       <header class="topbar">
         <div class="container topbar-inner">
-          <!-- Brand -->
           <router-link to="/" class="brand">
             <div class="logo-icon">
-              <el-icon :size="22" class="brand-icon"><Food /></el-icon>
+              <el-icon :size="20" class="brand-icon"><Food /></el-icon>
             </div>
-            <div>
-              <span class="brand-text">{{ $t('app.brand') }}</span>
-              <p class="brand-subtitle">{{ $t('app.tagline') }}</p>
-            </div>
+            <span class="brand-text">{{ $t('app.brand') }}</span>
           </router-link>
 
-          <!-- Primary nav (inline, visible on auth pages only) -->
           <nav v-if="showPrimaryNav" class="primary-nav">
             <router-link to="/meal-plan" class="nav-item" active-class="active">
               <el-icon><MagicStick /></el-icon>
@@ -38,16 +33,13 @@
             </router-link>
           </nav>
 
-          <!-- Utility nav -->
           <div class="utility-nav">
-            <!-- Shopping cart with badge -->
             <router-link v-if="showPrimaryNav" to="/shopping-list" class="utility-link cart-link" :aria-label="$t('nav.shopping_cart')">
               <el-badge :value="shoppingListCount" :hidden="shoppingListCount === 0" :max="9">
                 <el-icon :size="20"><ShoppingCart /></el-icon>
               </el-badge>
             </router-link>
 
-            <!-- Language switcher -->
             <el-dropdown @command="handleCommand">
               <span class="utility-link">
                 {{ locale === 'zh' ? '中文' : 'English' }}
@@ -61,7 +53,6 @@
               </template>
             </el-dropdown>
 
-            <!-- Logout -->
             <button v-if="showPrimaryNav" class="utility-link" type="button" @click="handleLogout">
               {{ $t('nav.exit') }}
             </button>
@@ -179,7 +170,7 @@ function handleCommand(command: string) {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  min-height: 72px;
+  min-height: 60px;
 }
 
 .footer-inner {
@@ -201,13 +192,12 @@ function handleCommand(command: string) {
 }
 
 .logo-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-accent-contrast) 22%, transparent);
+  border-radius: 10px;
+  background: var(--color-accent-strong);
 }
 
 .brand-icon {
@@ -215,18 +205,16 @@ function handleCommand(command: string) {
 }
 
 .brand-text {
-  display: block;
   color: var(--color-secondary);
-  font-size: 1.08rem;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
 }
 
-.brand-subtitle,
 .footer p {
   margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.86rem;
+  color: var(--color-text-light);
+  font-size: var(--text-sm);
 }
 
 .primary-nav {
@@ -249,30 +237,20 @@ function handleCommand(command: string) {
 .utility-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 14px;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 10px;
   color: var(--color-text-secondary);
-  font-weight: 600;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease;
-}
-
-.brand:hover,
-.brand:focus-visible,
-.nav-item:hover,
-.utility-link:hover,
-.mobile-nav-item:hover {
-  transform: translateY(-1px);
+  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .nav-item:hover,
 .utility-link:hover,
 .mobile-nav-item:hover {
-  background: color-mix(in srgb, var(--color-accent-soft) 70%, transparent);
+  background: var(--color-accent-soft);
   color: var(--color-secondary);
 }
 
@@ -308,7 +286,7 @@ function handleCommand(command: string) {
 
 .main-content {
   flex: 1;
-  padding: 28px 0;
+  padding: 32px 0;
 }
 
 .footer {
@@ -322,27 +300,23 @@ function handleCommand(command: string) {
   z-index: 45;
   display: none;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--color-surface-raised) 94%, transparent);
+  gap: 4px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border-soft);
-  backdrop-filter: blur(10px);
 }
 
 .mobile-nav-item {
   display: grid;
   justify-items: center;
-  gap: 4px;
-  min-height: 52px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  color: var(--color-text-secondary);
-  font-size: 0.78rem;
-  font-weight: 600;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease,
-    transform 180ms ease;
+  gap: 3px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  color: var(--color-text-light);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 @media (max-width: 720px) {
@@ -350,12 +324,8 @@ function handleCommand(command: string) {
     display: none;
   }
 
-  .brand-subtitle {
-    display: none;
-  }
-
   .main-content.with-mobile-nav {
-    padding-bottom: 92px;
+    padding-bottom: 80px;
   }
 
   .mobile-nav {
@@ -365,15 +335,7 @@ function handleCommand(command: string) {
 
 @media (max-width: 560px) {
   .topbar-inner {
-    align-items: flex-start;
-    padding-top: 14px;
-    padding-bottom: 14px;
-  }
-
-  .topbar-inner,
-  .utility-nav {
-    flex-direction: column;
-    align-items: flex-start;
+    min-height: 52px;
   }
 }
 </style>

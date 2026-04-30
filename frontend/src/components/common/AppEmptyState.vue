@@ -31,7 +31,7 @@ defineProps<{
   justify-items: start;
   gap: 10px;
   padding: 28px;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--gradient-surface);
   border: 1px solid var(--color-border-soft);
   box-shadow: var(--shadow-sm);

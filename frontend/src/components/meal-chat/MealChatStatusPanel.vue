@@ -92,16 +92,15 @@ defineEmits<{
   display: grid;
   gap: 12px;
   padding: 14px;
-  border-radius: 20px;
-  background: var(--gradient-surface);
+  border-radius: 12px;
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-sm);
 }
 
 .status-panel.expanded {
   gap: 16px;
   padding: 18px;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--gradient-emphasis);
   border-color: var(--color-border-strong);
   box-shadow: var(--shadow-md);
@@ -174,8 +173,7 @@ defineEmits<{
 }
 
 .toggle-button:hover {
-  background: color-mix(in srgb, var(--color-accent-soft) 72%, transparent);
-  transform: translateY(-1px);
+  background: var(--color-accent-soft);
 }
 
 .toggle-button:focus-visible {
