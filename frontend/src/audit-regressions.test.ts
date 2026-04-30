@@ -22,7 +22,7 @@ describe('frontend audit regressions', () => {
     const profileView = readSource('./views/ProfileView.vue')
     const statusPanel = readSource('./components/meal-chat/MealChatStatusPanel.vue')
 
-    expect(homeView).toContain('var(--color-accent-strong)')
+    expect(homeView).toContain('var(--color-accent-soft)')
     expect(homeView).toContain('var(--color-surface-raised)')
     expect(homeView).not.toMatch(/#10251a|#173728|#1f5137|#f6fff7|#eef8f0/)
     expect(homeView).not.toContain('rgba(34, 197, 94')
@@ -32,7 +32,7 @@ describe('frontend audit regressions', () => {
     expect(profileView).not.toContain('color="#4ade80"')
     expect(profileView).not.toMatch(/#10251a|#173728|#214c35|#f0fff5/)
 
-    expect(statusPanel).toContain('var(--color-surface-raised)')
+    expect(statusPanel).toContain('var(--gradient-surface)')
     expect(statusPanel).toContain('var(--gradient-emphasis)')
     expect(statusPanel).not.toMatch(/#ffffff|#f6faf7|#166534|#effff5/)
     expect(statusPanel).not.toContain('rgba(34, 197, 94')
@@ -46,13 +46,12 @@ describe('frontend audit regressions', () => {
     expect(statusPanel).not.toContain('min-height: 42px;')
   })
 
-  it('uses touch-safe flat navigation and responsive recipe dialog sizing', () => {
+  it('uses touch-safe secondary navigation and responsive recipe dialog sizing', () => {
     const appView = readSource('./App.vue')
     const recipesView = readSource('./views/RecipesView.vue')
 
-    expect(appView).toContain('class="primary-nav"')
-    expect(appView).toContain('/weekly-plan')
-    expect(appView).toContain('<el-badge')
+    expect(appView).toContain('<el-dropdown trigger="click" @command="handleMoreCommand">')
+    expect(appView).toContain('void router.push(command)')
     expect(recipesView).not.toContain('window.innerWidth')
     expect(recipesView).toContain("const dialogWidth = 'min(680px, calc(100vw - 24px))'")
   })
