@@ -77,6 +77,9 @@
       <section v-if="!recentPlans.length && !weeklyPlans.length" class="empty-state">
         <h2 class="empty-title">{{ $t('dashboard.empty_title') }}</h2>
         <p class="empty-desc">{{ $t('dashboard.empty_desc') }}</p>
+        <el-button type="primary" size="large" tag="router-link" to="/meal-plan">
+          {{ $t('dashboard.start_planning') }}
+        </el-button>
       </section>
     </template>
   </div>
