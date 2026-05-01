@@ -275,6 +275,11 @@
       "delete_failed": "计划删除失败，请稍后重试。"
     }
   },
+  "meal_types": {
+    "breakfast": "早餐",
+    "lunch": "午餐",
+    "dinner": "晚餐"
+  },
   "recipes": {
     "title": "菜谱",
     "subtitle": "按餐次、预算和热量范围快速筛选更适合你的菜。",

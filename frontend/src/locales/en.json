@@ -275,6 +275,11 @@
       "delete_failed": "Could not delete the plan. Please try again."
     }
   },
+  "meal_types": {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner"
+  },
   "recipes": {
     "title": "Recipes",
     "subtitle": "Filter by meal, budget, and calories to find dishes that fit your situation.",
