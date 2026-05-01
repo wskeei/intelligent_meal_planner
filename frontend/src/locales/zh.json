@@ -337,7 +337,10 @@
       "height": "用于估算身体参数。",
       "weight": "用于计算更合理的营养目标。",
       "activityLevel": "用于判断你每天的消耗水平。"
-    }
+    },
+    "missing_bar": "还有 {count} 项待补充",
+    "section_basic": "基础信息",
+    "section_goal": "目标"
   },
   "history": {
     "title": "历史方案",

@@ -337,7 +337,10 @@
       "height": "Used to estimate your body metrics.",
       "weight": "Used to calculate a more realistic nutrition target.",
       "activityLevel": "Used to estimate your daily energy burn."
-    }
+    },
+    "missing_bar": "{count} fields missing",
+    "section_basic": "Basic info",
+    "section_goal": "Goal"
   },
   "history": {
     "title": "Plan history",
