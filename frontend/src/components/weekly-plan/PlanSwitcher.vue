@@ -336,7 +336,7 @@ function onDropdownVisibleChange(visible: boolean) {
 }
 
 .plan-switcher__row:hover {
-  background: var(--color-surface-raised, #f5f5f5);
+  background: var(--color-surface-raised);
 }
 
 .plan-switcher__row-main {
@@ -403,7 +403,7 @@ function onDropdownVisibleChange(visible: boolean) {
 }
 
 .plan-switcher__kebab:hover {
-  background: var(--color-border-soft, #eee);
+  background: var(--color-border-soft);
   color: var(--color-secondary);
 }
 
@@ -438,7 +438,7 @@ function onDropdownVisibleChange(visible: boolean) {
 }
 
 .plan-switcher__create-btn:hover {
-  background: var(--color-surface-raised, #f5f5f5);
+  background: var(--color-surface-raised);
 }
 
 /* Inline create input */
@@ -458,7 +458,7 @@ function onDropdownVisibleChange(visible: boolean) {
   padding: 7px 10px;
   border: 1px solid var(--color-border-soft);
   border-radius: 8px;
-  background: var(--color-surface-raised, #fff);
+  background: var(--color-surface-raised);
   color: var(--color-secondary);
   font-size: var(--text-sm);
   outline: none;
@@ -479,7 +479,7 @@ function onDropdownVisibleChange(visible: boolean) {
   border: none;
   border-radius: 8px;
   background: var(--color-accent-strong);
-  color: #fff;
+  color: var(--color-accent-contrast);
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
   cursor: pointer;
@@ -518,7 +518,7 @@ function onDropdownVisibleChange(visible: boolean) {
   padding: 8px 10px;
   border: 1px solid var(--color-border-soft);
   border-radius: 8px;
-  background: var(--color-surface-raised, #fff);
+  background: var(--color-surface-raised);
   color: var(--color-secondary);
   font-size: var(--text-sm);
   font-family: inherit;

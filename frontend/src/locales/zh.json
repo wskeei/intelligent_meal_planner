@@ -233,7 +233,7 @@
     "attach_confirm": "确认加入这一天",
     "attach_success": "单日方案已加入周计划。",
     "pending_attach_desc": "选择日期后，把当前正式方案挂到已选中的周计划里。",
-    "pick_plan_first": "先在左侧选择或创建一个周计划。",
+    "pick_plan_first": "先选择或创建一个周计划。",
     "days_count": "已安排 {count} 天",
     "days_empty_title": "这个周计划还没有安排日期",
     "days_empty_desc": "从配餐结果页或历史页把满意的单日方案加入这里。",

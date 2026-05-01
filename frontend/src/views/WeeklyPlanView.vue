@@ -55,8 +55,10 @@
     <div v-if="loading" class="skeleton-list">
       <div v-for="n in 3" :key="n" class="skeleton-section">
         <div class="skeleton-line skeleton-line--heading" />
-        <div class="skeleton-line skeleton-line--body" />
-        <div class="skeleton-line skeleton-line--body short" />
+        <div class="skeleton-divider" />
+        <div class="skeleton-line skeleton-line--meal" />
+        <div class="skeleton-line skeleton-line--meal" />
+        <div class="skeleton-line skeleton-line--summary" />
       </div>
     </div>
 
@@ -76,9 +78,27 @@
     <!-- 5. No plans empty state -->
     <AppEmptyState
       v-else-if="!plans.length && !loading"
-      :title="$t('weekly_plan.empty_title')"
+      :title="$t('weekly_plan.no_plans_yet')"
       :description="$t('weekly_plan.empty_desc')"
-    />
+    >
+      <template #actions>
+        <div class="empty-create">
+          <el-input
+            v-model="emptyCreateName"
+            :placeholder="$t('weekly_plan.new_plan_placeholder')"
+            @keyup.enter="createFromEmpty"
+          />
+          <el-button
+            type="primary"
+            :loading="emptyCreating"
+            :disabled="!emptyCreateName.trim()"
+            @click="createFromEmpty"
+          >
+            {{ $t('weekly_plan.create_first') }}
+          </el-button>
+        </div>
+      </template>
+    </AppEmptyState>
 
     <!-- 6. Plan with no days -->
     <AppEmptyState
@@ -141,6 +161,8 @@ const shoppingListName = ref('')
 const attaching = ref(false)
 const generating = ref(false)
 const loadError = ref('')
+const emptyCreateName = ref('')
+const emptyCreating = ref(false)
 
 const pendingAttach = computed(() => {
   const sourceSessionId =
@@ -218,6 +240,22 @@ async function loadInitialState() {
   }
 }
 
+async function createFromEmpty() {
+  const name = emptyCreateName.value.trim()
+  if (!name) return
+  emptyCreating.value = true
+  try {
+    const plan = await weeklyPlanStore.createPlan(name)
+    emptyCreateName.value = ''
+    await weeklyPlanStore.openPlan(plan.id)
+    ElMessage.success(t('weekly_plan.create_success'))
+  } catch {
+    ElMessage.error(t('weekly_plan.errors.create_failed'))
+  } finally {
+    emptyCreating.value = false
+  }
+}
+
 async function attachPendingDay() {
   if (!activePlan.value || !pendingAttach.value || !selectedPlanDate.value) return
 
@@ -273,8 +311,8 @@ async function generateShoppingList() {
   }
 }
 
-onMounted(() => {
-  loadInitialState()
+onMounted(async () => {
+  await loadInitialState()
 })
 </script>
 
@@ -371,16 +409,23 @@ onMounted(() => {
 /* ── Loading skeleton ── */
 .skeleton-list {
   display: grid;
-  gap: 20px;
+  gap: 0;
 }
 
 .skeleton-section {
   display: grid;
-  gap: 12px;
-  padding: 20px;
-  border-radius: 14px;
-  background: var(--gradient-surface);
-  border: 1px solid var(--color-border-soft);
+  gap: 10px;
+  padding: 20px 0;
+}
+
+.skeleton-section + .skeleton-section {
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.skeleton-divider {
+  height: 1px;
+  background: var(--color-border-soft);
+  margin: 2px 0;
 }
 
 .skeleton-line {
@@ -392,15 +437,19 @@ onMounted(() => {
 
 .skeleton-line--heading {
   height: 18px;
-  width: 40%;
+  width: 35%;
 }
 
-.skeleton-line--body {
-  width: 80%;
+.skeleton-line--meal {
+  height: 12px;
+  width: 70%;
+  margin-left: 12px;
 }
 
-.skeleton-line--body.short {
-  width: 55%;
+.skeleton-line--summary {
+  height: 12px;
+  width: 30%;
+  justify-self: end;
 }
 
 @keyframes skeleton-pulse {
@@ -431,6 +480,19 @@ onMounted(() => {
 }
 
 /* ── Day list ── */
+.empty-create {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .empty-create {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .day-list {
   display: grid;
   gap: 0;
