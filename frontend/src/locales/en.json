@@ -312,13 +312,10 @@
     "title": "Profile",
     "subtitle": "These details directly affect calorie ranges, budget checks, and follow-up questions.",
     "onboarding_subtitle": "Fill in these key details first so the chat can move more smoothly into the real plan.",
-    "details": "Core details",
     "profile_ready": "Your key details are ready. You can go straight into planning.",
-    "profile_missing_detail": "{count} details are still missing, and the system will keep asking for them in chat.",
     "open_chat": "Back to planning",
     "saved": "Profile updated",
     "save_failed": "Could not save the profile. Please try again.",
-    "save_inline_error": "The profile was not saved yet. Check the inputs and retry, or try again in a moment.",
     "goal_reason": "Tell the planner whether this request should focus on loss, gain, or maintenance.",
     "field_labels": {
       "gender": "Gender",

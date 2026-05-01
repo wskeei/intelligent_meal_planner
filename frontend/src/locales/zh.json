@@ -312,13 +312,10 @@
     "title": "档案",
     "subtitle": "这些资料会直接影响热量范围、预算判断和后续追问。",
     "onboarding_subtitle": "先补齐这几项关键资料，后面的对话会更顺畅，也更容易直接进入正式配餐。",
-    "details": "基础资料",
     "profile_ready": "关键资料已经齐全，可以直接进入今天的配餐。",
-    "profile_missing_detail": "还有 {count} 项资料未填写，系统会继续追问这些内容。",
     "open_chat": "继续去配餐",
     "saved": "档案已更新",
     "save_failed": "档案保存失败，请稍后重试。",
-    "save_inline_error": "档案还没有保存成功。请检查输入后重试，或稍后再试一次。",
     "goal_reason": "告诉系统你这次更想减脂、增肌还是维持。",
     "field_labels": {
       "gender": "性别",
