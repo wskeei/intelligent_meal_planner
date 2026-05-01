@@ -1,5 +1,6 @@
 <template>
   <div class="profile-page">
+    <!-- Header -->
     <header class="page-header">
       <h1>{{ $t('profile.title') }}</h1>
       <p class="subtitle">
@@ -7,137 +8,106 @@
       </p>
     </header>
 
-    <div class="profile-grid">
-      <el-card class="settings-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <span>{{ $t('profile.details') }}</span>
-          </div>
-        </template>
-
-        <el-form label-position="top" size="large">
-          <el-alert
-            v-if="saveError"
-            :title="saveError"
-            type="error"
-            show-icon
-            :closable="false"
-            class="inline-alert"
-          />
-
-          <el-form-item :label="$t('auth.username')">
-            <el-input :model-value="profile.username" disabled />
-          </el-form-item>
-
-          <el-form-item :label="$t('auth.gender')">
-              <el-radio-group v-model="localProfile.gender">
-                <el-radio value="male">{{ $t('auth.male') }}</el-radio>
-                <el-radio value="female">{{ $t('auth.female') }}</el-radio>
-            </el-radio-group>
-            <p class="field-hint">{{ $t('profile.field_reasons.gender') }}</p>
-          </el-form-item>
-
-          <div class="grid-two">
-            <el-form-item :label="$t('auth.age')">
-              <el-input-number v-model="localProfile.age" :min="10" :max="100" class="full-width" />
-              <p class="field-hint">{{ $t('profile.field_reasons.age') }}</p>
-            </el-form-item>
-
-            <el-form-item :label="$t('auth.activity_level')">
-              <el-select v-model="localProfile.activityLevel" class="full-width">
-                <el-option :label="$t('auth.activity.sedentary')" value="sedentary" />
-                <el-option :label="$t('auth.activity.light')" value="light" />
-                <el-option :label="$t('auth.activity.moderate')" value="moderate" />
-                <el-option :label="$t('auth.activity.active')" value="active" />
-                <el-option :label="$t('auth.activity.very_active')" value="very_active" />
-              </el-select>
-              <p class="field-hint">{{ $t('profile.field_reasons.activityLevel') }}</p>
-            </el-form-item>
-          </div>
-
-          <div class="grid-two">
-            <el-form-item :label="$t('auth.height')">
-              <el-input-number v-model="localProfile.height" :min="100" :max="250" class="full-width" />
-              <p class="field-hint">{{ $t('profile.field_reasons.height') }}</p>
-            </el-form-item>
-
-            <el-form-item :label="$t('auth.weight')">
-              <el-input-number v-model="localProfile.weight" :min="30" :max="250" :step="0.5" class="full-width" />
-              <p class="field-hint">{{ $t('profile.field_reasons.weight') }}</p>
-            </el-form-item>
-          </div>
-
-          <el-form-item :label="$t('auth.goal')">
-            <el-select v-model="localProfile.goal" class="full-width">
-              <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
-              <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
-              <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
-              <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
-            </el-select>
-            <p class="field-hint">{{ $t('profile.goal_reason') }}</p>
-          </el-form-item>
-
-          <div class="actions">
-            <el-button type="primary" :loading="saving" @click="save">
-              {{ $t('common.save') }}
-            </el-button>
-            <el-button plain tag="router-link" to="/meal-plan">
-              {{ $t('profile.open_chat') }}
-            </el-button>
-          </div>
-        </el-form>
-      </el-card>
-
-      <div class="side-stack">
-        <el-card class="status-card" shadow="hover">
-          <p class="eyebrow">{{ $t('profile.sync_title') }}</p>
-          <div class="progress-head">
-            <div>
-              <h2>{{ profileCompletionPercent }}%</h2>
-              <p>{{ $t('profile.progress_label', { completed: profileCompletionCompleted, total: profileCompletionTotal }) }}</p>
-            </div>
-            <el-progress
-              type="circle"
-              :percentage="profileCompletionPercent"
-              :width="96"
-              :stroke-width="10"
-              :show-text="false"
-              :color="progressColor"
-            />
-          </div>
-
-          <p class="status-copy">
-            {{
-              missingProfileFields.length
-                ? $t('profile.profile_missing_detail', { count: missingProfileFields.length })
-                : $t('profile.profile_ready')
-            }}
-          </p>
-
-          <div v-if="missingProfileFields.length" class="missing-block">
-            <article v-for="field in missingProfileFields" :key="field" class="missing-item">
-              <strong>{{ $t(`profile.field_labels.${field}`) }}</strong>
-              <p>{{ $t(`profile.field_reasons.${field}`) }}</p>
-            </article>
-          </div>
-        </el-card>
-
-        <el-alert
-          :title="$t('profile.chat_sync_title')"
-          :description="$t('profile.chat_sync_desc')"
-          type="info"
-          show-icon
-          :closable="false"
-        />
+    <!-- Missing fields bar -->
+    <section v-if="missingProfileFields.length" class="missing-bar">
+      <button class="missing-bar__toggle" type="button" :aria-expanded="showMissing" @click="showMissing = !showMissing">
+        <span>{{ $t('profile.missing_bar', { count: missingProfileFields.length }) }}</span>
+        <el-icon class="missing-bar__chevron" :class="{ 'is-open': showMissing }"><ArrowDown /></el-icon>
+      </button>
+      <div v-if="showMissing" class="missing-bar__list">
+        <div v-for="field in missingProfileFields" :key="field" class="missing-bar__item">
+          <strong>{{ $t(`profile.field_labels.${field}`) }}</strong>
+          <span>{{ $t(`profile.field_reasons.${field}`) }}</span>
+        </div>
       </div>
+    </section>
+
+    <!-- Basic info section -->
+    <section class="form-section">
+      <h2 class="section-heading">{{ $t('profile.section_basic') }}</h2>
+      <div class="section-divider" />
+
+      <div class="username-row">
+        <span class="username-label">{{ $t('auth.username') }}</span>
+        <span class="username-value">{{ profile.username || '--' }}</span>
+      </div>
+
+      <div class="field">
+        <label class="field__label">{{ $t('auth.gender') }}</label>
+        <el-radio-group v-model="localProfile.gender" :aria-label="$t('auth.gender')">
+          <el-radio-button value="male">{{ $t('auth.male') }}</el-radio-button>
+          <el-radio-button value="female">{{ $t('auth.female') }}</el-radio-button>
+        </el-radio-group>
+        <p class="field__hint">{{ $t('profile.field_reasons.gender') }}</p>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field__label">{{ $t('auth.age') }}</label>
+          <el-input-number v-model="localProfile.age" :min="10" :max="100" controls-position="right" :aria-label="$t('auth.age')" />
+          <p class="field__hint">{{ $t('profile.field_reasons.age') }}</p>
+        </div>
+        <div class="field">
+          <label class="field__label">{{ $t('auth.activity_level') }}</label>
+          <el-select v-model="localProfile.activityLevel" :placeholder="$t('auth.activity_level')" :aria-label="$t('auth.activity_level')">
+            <el-option :label="$t('auth.activity.sedentary')" value="sedentary" />
+            <el-option :label="$t('auth.activity.light')" value="light" />
+            <el-option :label="$t('auth.activity.moderate')" value="moderate" />
+            <el-option :label="$t('auth.activity.active')" value="active" />
+            <el-option :label="$t('auth.activity.very_active')" value="very_active" />
+          </el-select>
+          <p class="field__hint">{{ $t('profile.field_reasons.activityLevel') }}</p>
+        </div>
+      </div>
+
+      <div class="field-grid">
+        <div class="field">
+          <label class="field__label">{{ $t('auth.height') }}</label>
+          <el-input-number v-model="localProfile.height" :min="100" :max="250" controls-position="right" :aria-label="$t('auth.height')" />
+          <p class="field__hint">{{ $t('profile.field_reasons.height') }}</p>
+        </div>
+        <div class="field">
+          <label class="field__label">{{ $t('auth.weight') }}</label>
+          <el-input-number v-model="localProfile.weight" :min="30" :max="250" :step="0.5" controls-position="right" :aria-label="$t('auth.weight')" />
+          <p class="field__hint">{{ $t('profile.field_reasons.weight') }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Goal section -->
+    <section class="form-section">
+      <h2 class="section-heading">{{ $t('profile.section_goal') }}</h2>
+      <div class="section-divider" />
+
+      <div class="field">
+        <label class="field__label">{{ $t('auth.goal') }}</label>
+        <el-select v-model="localProfile.goal" :aria-label="$t('auth.goal')">
+          <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
+          <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
+          <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
+          <el-option :label="$t('meal_plan.goals.healthy')" value="healthy" />
+        </el-select>
+        <p class="field__hint">{{ $t('profile.goal_reason') }}</p>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions">
+      <el-button type="primary" :loading="saving" @click="save">
+        {{ $t('common.save') }}
+      </el-button>
+      <el-button text tag="router-link" to="/meal-plan">
+        {{ $t('profile.open_chat') }}
+      </el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
@@ -148,16 +118,13 @@ const route = useRoute()
 const userStore = useUserStore()
 const {
   profile,
-  missingProfileFields,
-  profileCompletionCompleted,
-  profileCompletionPercent,
-  profileCompletionTotal
+  missingProfileFields
 } = storeToRefs(userStore)
 
 const saving = ref(false)
-const saveError = ref('')
+const showMissing = ref(false)
 const onboardingMode = route.query.onboarding === '1'
-const progressColor = ref('var(--color-accent)')
+
 const localProfile = reactive<UserProfile>({
   username: '',
   age: null,
@@ -176,172 +143,216 @@ watch(
   { immediate: true, deep: true }
 )
 
-let colorSchemeQuery: MediaQueryList | null = null
-let onColorSchemeChange: ((event: MediaQueryListEvent) => void) | null = null
-
-function syncProgressColor() {
-  if (typeof window === 'undefined') return
-  const color = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
-  progressColor.value = color || 'var(--color-accent)'
-}
-
 async function save() {
   saving.value = true
-  saveError.value = ''
   try {
     await userStore.saveProfile(localProfile)
     ElMessage.success(t('profile.saved'))
   } catch (error) {
     console.error(error)
-    saveError.value = t('profile.save_inline_error')
     ElMessage.error(t('profile.save_failed'))
   } finally {
     saving.value = false
   }
 }
-
-onMounted(() => {
-  syncProgressColor()
-  colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  onColorSchemeChange = () => {
-    syncProgressColor()
-  }
-  colorSchemeQuery.addEventListener('change', onColorSchemeChange)
-})
-
-onBeforeUnmount(() => {
-  if (colorSchemeQuery && onColorSchemeChange) {
-    colorSchemeQuery.removeEventListener('change', onColorSchemeChange)
-  }
-})
 </script>
 
 <style scoped>
 .profile-page {
   display: grid;
-  gap: 24px;
+  gap: 28px;
+  max-width: 640px;
 }
 
+/* Header */
 .page-header h1 {
   margin: 0;
   color: var(--color-secondary);
-  font-size: clamp(2rem, 4vw, 2.6rem);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
 }
 
 .subtitle {
   margin: 8px 0 0;
   color: var(--color-text-secondary);
-  line-height: 1.6;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
 }
 
-.profile-grid {
+/* Missing fields bar */
+.missing-bar {
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-border-accent);
+  overflow: hidden;
+}
+
+.missing-bar__toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: transparent;
+  color: var(--color-accent-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+.missing-bar__chevron {
+  transition: transform 160ms ease;
+  color: var(--color-accent-strong);
+}
+
+.missing-bar__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.missing-bar__list {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.95fr);
-  gap: 24px;
-  align-items: start;
+  gap: 2px;
+  padding: 0 18px 14px;
 }
 
-.settings-card,
-.status-card {
-  border: 1px solid var(--color-border-soft);
-  border-radius: 14px;
+.missing-bar__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-surface-raised) 50%, transparent);
 }
 
-.card-header {
+.missing-bar__item strong {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   color: var(--color-secondary);
-  font-weight: 700;
 }
 
-.grid-two {
+.missing-bar__item span {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+}
+
+/* Form sections */
+.form-section {
+  display: grid;
+  gap: 18px;
+}
+
+.section-heading {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-light);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--color-border-soft);
+}
+
+/* Username row */
+.username-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.username-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+}
+
+.username-value {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--color-secondary);
+}
+
+/* Fields */
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-secondary);
+}
+
+.field__hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
+  line-height: 1.5;
+}
+
+.field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-.full-width {
+/* Element Plus overrides */
+.field :deep(.el-radio-group) {
+  display: flex;
+  gap: 8px;
+}
+
+.field :deep(.el-radio-button__inner) {
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border-soft) !important;
+  background: var(--color-surface-raised) !important;
+  color: var(--color-text-secondary) !important;
+  font-weight: var(--weight-medium) !important;
+  box-shadow: none !important;
+  padding: 8px 18px;
+  min-height: 40px;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.field :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  border-color: var(--color-accent) !important;
+  background: var(--color-accent-soft) !important;
+  color: var(--color-accent-strong) !important;
+}
+
+.field :deep(.el-input-number),
+.field :deep(.el-select) {
   width: 100%;
 }
 
-.field-hint {
-  margin: 8px 0 0;
-  color: var(--color-text-light);
-  font-size: 0.84rem;
-  line-height: 1.5;
+.field :deep(.el-input__wrapper),
+.field :deep(.el-select__wrapper) {
+  border-radius: 10px;
+  min-height: 40px;
 }
 
-.inline-alert {
-  margin-bottom: 16px;
-}
-
-.actions,
-.side-stack,
-.missing-block {
-  display: grid;
-  gap: 14px;
-}
-
+/* Actions */
 .actions {
-  grid-auto-flow: column;
-  justify-content: start;
-  margin-top: 8px;
-}
-
-.status-card {
-  background: var(--gradient-emphasis);
-  color: var(--color-text-emphasis);
-  border: 1px solid var(--color-border-accent);
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--color-text-emphasis-muted);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.progress-head {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
   align-items: center;
+  gap: 12px;
+  padding-top: 4px;
 }
 
-.progress-head h2 {
-  margin: 0;
-  font-size: 2rem;
-}
-
-.progress-head p,
-.status-copy,
-.missing-item p {
-  margin: 6px 0 0;
-  color: var(--color-text-emphasis-muted);
-  line-height: 1.6;
-}
-
-.missing-item {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--color-surface-raised) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-border-soft) 72%, transparent);
-}
-
-.missing-item strong {
-  color: var(--color-text-emphasis);
-}
-
-@media (max-width: 960px) {
-  .profile-grid,
-  .grid-two {
+/* Mobile */
+@media (max-width: 640px) {
+  .field-grid {
     grid-template-columns: 1fr;
   }
-}
 
-@media (max-width: 640px) {
   .actions {
-    grid-auto-flow: row;
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .actions :deep(.el-button) {

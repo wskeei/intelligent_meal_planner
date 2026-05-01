@@ -312,17 +312,10 @@
     "title": "Profile",
     "subtitle": "These details directly affect calorie ranges, budget checks, and follow-up questions.",
     "onboarding_subtitle": "Fill in these key details first so the chat can move more smoothly into the real plan.",
-    "details": "Core details",
-    "sync_title": "Profile progress",
     "profile_ready": "Your key details are ready. You can go straight into planning.",
-    "profile_missing_detail": "{count} details are still missing, and the system will keep asking for them in chat.",
-    "progress_label": "{completed}/{total} complete",
     "open_chat": "Back to planning",
-    "chat_sync_title": "Chat and profile stay in sync",
-    "chat_sync_desc": "If you provide age, height, weight, or activity level in chat, the latest values will appear here automatically.",
     "saved": "Profile updated",
     "save_failed": "Could not save the profile. Please try again.",
-    "save_inline_error": "The profile was not saved yet. Check the inputs and retry, or try again in a moment.",
     "goal_reason": "Tell the planner whether this request should focus on loss, gain, or maintenance.",
     "field_labels": {
       "gender": "Gender",
@@ -337,7 +330,10 @@
       "height": "Used to estimate your body metrics.",
       "weight": "Used to calculate a more realistic nutrition target.",
       "activityLevel": "Used to estimate your daily energy burn."
-    }
+    },
+    "missing_bar": "{count} fields missing",
+    "section_basic": "Basic info",
+    "section_goal": "Goal"
   },
   "history": {
     "title": "Plan history",
