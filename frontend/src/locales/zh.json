@@ -250,6 +250,19 @@
     "create_success": "周计划已创建。",
     "remove_success": "该天已从周计划移除。",
     "no_notes": "还没有补充备注。",
+    "plan_switcher_label": "切换计划",
+    "new_plan": "新建计划",
+    "new_plan_placeholder": "计划名称",
+    "no_plans_yet": "还没有周计划",
+    "create_first": "创建第一个",
+    "plan_info": "{count}天 · 创建于 {date}",
+    "daily_total": "总计 {calories} kcal · {price}",
+    "delete_day": "删除",
+    "edit_plan": "编辑计划",
+    "edit_success": "计划已更新。",
+    "delete_plan": "删除计划",
+    "delete_confirm_title": "确认删除",
+    "delete_confirm_message": "删除后无法恢复，确定要删除这个周计划吗？",
     "errors": {
       "create_failed": "周计划创建失败，请稍后重试。",
       "load_failed": "周计划加载失败，请稍后重试。",
@@ -257,7 +270,9 @@
       "remove_failed": "移除周计划日期失败，请稍后重试。",
       "generate_failed": "采购清单生成失败，请稍后重试。",
       "plan_date_occupied": "这个日期已经有方案了，请换一天或先删除原有安排。",
-      "resource_missing": "目标周计划或来源方案已不存在。"
+      "resource_missing": "目标周计划或来源方案已不存在。",
+      "edit_failed": "计划更新失败，请稍后重试。",
+      "delete_failed": "计划删除失败，请稍后重试。"
     }
   },
   "recipes": {
