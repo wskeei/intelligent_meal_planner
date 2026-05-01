@@ -6,7 +6,7 @@ from datetime import date, datetime
 from enum import Enum
 from typing import Any, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class HealthGoal(str, Enum):
@@ -306,3 +306,156 @@ class ShoppingListResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     items: list[ShoppingListItemResponse] = Field(default_factory=list)
+
+
+# ============ 摄入追踪 ============
+
+
+class IntakeRecordCreate(BaseModel):
+    date: date
+    meal_type: str = Field(..., pattern="^(breakfast|lunch|dinner|snack)$")
+    recipe_id: Optional[int] = None
+    custom_food_name: Optional[str] = Field(default=None, max_length=100)
+    actual_calories: Optional[float] = None
+    actual_protein: Optional[float] = None
+    actual_carbs: Optional[float] = None
+    actual_fat: Optional[float] = None
+    portion_size: float = Field(default=1.0, gt=0, le=10)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    note: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_source(self):
+        if not self.recipe_id and not self.custom_food_name:
+            raise ValueError("Either recipe_id or custom_food_name is required")
+        return self
+
+
+class IntakeRecordUpdate(BaseModel):
+    portion_size: Optional[float] = Field(default=None, gt=0, le=10)
+    rating: Optional[int] = Field(default=None, ge=1, le=5)
+    note: Optional[str] = None
+
+
+class IntakeRecordResponse(BaseModel):
+    id: int
+    date: date
+    meal_type: str
+    recipe_id: Optional[int] = None
+    recipe_name: Optional[str] = None
+    custom_food_name: Optional[str] = None
+    actual_calories: float
+    actual_protein: float
+    actual_carbs: float
+    actual_fat: float
+    portion_size: float
+    source: str
+    rating: Optional[int] = None
+    note: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DailyIntakeSummary(BaseModel):
+    date: date
+    total_calories: float = 0
+    total_protein: float = 0
+    total_carbs: float = 0
+    total_fat: float = 0
+    meal_count: int = 0
+    records: list[IntakeRecordResponse] = Field(default_factory=list)
+
+
+# ============ 营养看板 ============
+
+
+class NutritionTarget(BaseModel):
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class DailyDashboardResponse(BaseModel):
+    date: date
+    target: NutritionTarget
+    actual: NutritionTarget
+    remaining: NutritionTarget
+    meals_logged: int
+    meals_planned: int = 3
+    completion_rate: float
+
+
+class WeeklySummaryDay(BaseModel):
+    date: date
+    calories: float = 0
+    protein: float = 0
+    carbs: float = 0
+    fat: float = 0
+    meal_count: int = 0
+    on_target: bool = False
+
+
+class WeeklyDashboardResponse(BaseModel):
+    days: list[WeeklySummaryDay] = Field(default_factory=list)
+    avg_calories: float = 0
+    avg_protein: float = 0
+    target_adherence_rate: float = 0
+
+
+class WeightLogCreate(BaseModel):
+    date: date
+    weight: float = Field(..., gt=20, le=300)
+    body_fat_pct: Optional[float] = Field(default=None, gt=0, le=60)
+    note: Optional[str] = None
+
+
+class WeightLogResponse(BaseModel):
+    id: int
+    date: date
+    weight: float
+    body_fat_pct: Optional[float] = None
+    note: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ReminderResponse(BaseModel):
+    id: int
+    type: str
+    title: str
+    message: str
+    severity: str
+    is_read: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TrendPoint(BaseModel):
+    period: str
+    avg_calories: float = 0
+    avg_protein: float = 0
+    avg_carbs: float = 0
+    avg_fat: float = 0
+    adherence_rate: float = 0
+
+
+class ReportRequest(BaseModel):
+    report_type: str = Field(default="weekly", pattern="^(weekly|monthly)$")
+    start_date: Optional[date] = None
+
+
+class ReportResponse(BaseModel):
+    report_type: str
+    html: str
+    generated_at: datetime
+
+
+class InsightResponse(BaseModel):
+    insight: str
+    generated_at: datetime
