@@ -165,3 +165,69 @@ class ShoppingListItem(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     shopping_list = relationship("ShoppingList", back_populates="items")
+
+
+class IntakeRecord(Base):
+    __tablename__ = "intake_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(Date, nullable=False, index=True)
+    meal_type = Column(String(20), nullable=False)  # breakfast/lunch/dinner/snack
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=True)
+    custom_food_name = Column(String(100), nullable=True)
+    actual_calories = Column(Float, nullable=False)
+    actual_protein = Column(Float, nullable=False)
+    actual_carbs = Column(Float, nullable=False)
+    actual_fat = Column(Float, nullable=False)
+    portion_size = Column(Float, default=1.0)
+    source = Column(String(20), default="manual")  # manual/plan/auto
+    rating = Column(Integer, nullable=True)
+    feedback_skipped = Column(Boolean, default=False)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", foreign_keys=[recipe_id])
+
+
+class WeightLog(Base):
+    __tablename__ = "weight_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    date = Column(Date, nullable=False)
+    weight = Column(Float, nullable=False)
+    body_fat_pct = Column(Float, nullable=True)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", "recipe_id", name="uq_user_pref_recipe"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
+    preference_score = Column(Float, default=0.5)
+    times_eaten = Column(Integer, default=0)
+    times_skipped = Column(Integer, default=0)
+    avg_rating = Column(Float, nullable=True)
+    last_eaten = Column(Date, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    type = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    severity = Column(String(20), default="info")  # info/warning/critical
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    dismissed_at = Column(DateTime, nullable=True)
