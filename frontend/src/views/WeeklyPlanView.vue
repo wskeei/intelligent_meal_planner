@@ -1,171 +1,114 @@
 <template>
   <div class="weekly-plan-page">
+    <!-- 1. Page header -->
     <header class="page-header">
-      <div>
+      <div class="page-header__left">
         <h1>{{ $t('weekly_plan.title') }}</h1>
-        <p class="subtitle">{{ $t('weekly_plan.subtitle') }}</p>
+        <PlanSwitcher
+          :plans="plans"
+          :active-plan-id="activePlan?.id ?? null"
+          @select="openPlan"
+        />
       </div>
-      <el-button
-        v-if="activePlan"
-        type="primary"
-        :loading="generating"
-        @click="generateShoppingList"
+      <div
+        v-if="activePlan && activePlan.days.length"
+        class="page-header__right"
       >
-        {{ $t('weekly_plan.generate_list') }}
-      </el-button>
+        <el-input
+          v-model="shoppingListName"
+          class="list-name-input"
+          :placeholder="$t('weekly_plan.list_name_placeholder')"
+        />
+        <el-button
+          type="primary"
+          :loading="generating"
+          @click="generateShoppingList"
+        >
+          {{ $t('weekly_plan.generate_list') }}
+        </el-button>
+      </div>
     </header>
 
-    <section class="weekly-layout">
-      <aside class="sidebar-stack">
-        <el-card class="create-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.create') }}</h2>
-                <p>{{ $t('weekly_plan.create_desc') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div class="form-stack">
-            <el-input v-model="newPlanName" :placeholder="$t('weekly_plan.create_placeholder')" />
-            <el-input
-              v-model="newPlanNotes"
-              type="textarea"
-              :rows="3"
-              resize="none"
-              :placeholder="$t('weekly_plan.notes_placeholder')"
-            />
-            <el-button type="primary" :loading="creating" :disabled="!newPlanName.trim()" @click="createPlan">
-              {{ $t('weekly_plan.create') }}
-            </el-button>
-          </div>
-        </el-card>
-
-        <el-card class="plans-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.saved_plans') }}</h2>
-                <p>{{ $t('weekly_plan.saved_desc') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div v-if="plans.length" class="plan-list">
-            <button
-              v-for="plan in plans"
-              :key="plan.id"
-              type="button"
-              class="plan-button"
-              :class="{ active: activePlan?.id === plan.id }"
-              @click="openPlan(plan.id)"
-            >
-              <span class="plan-name">{{ plan.name }}</span>
-              <span class="plan-meta">{{ $t('weekly_plan.days_count', { count: plan.day_count }) }}</span>
-            </button>
-          </div>
-
-          <p v-else class="muted-copy">{{ $t('weekly_plan.empty_desc') }}</p>
-        </el-card>
-      </aside>
-
-      <section class="content-stack">
-        <el-card v-if="pendingAttach" class="attach-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.attach_day') }}</h2>
-                <p>{{ attachSourceLabel }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div class="attach-grid">
-            <el-input v-model="selectedPlanDate" type="date" />
-            <el-button
-              type="primary"
-              :loading="attaching"
-              :disabled="!activePlan || !selectedPlanDate"
-              @click="attachPendingDay"
-            >
-              {{ $t('weekly_plan.attach_confirm') }}
-            </el-button>
-          </div>
-          <p class="muted-copy" v-if="!activePlan">{{ $t('weekly_plan.pick_plan_first') }}</p>
-        </el-card>
-
-        <AppEmptyState
-          v-if="loadError && !loading && !activePlan && !plans.length"
-          :eyebrow="$t('weekly_plan.load_failed_eyebrow')"
-          :title="$t('weekly_plan.load_failed_title')"
-          :description="loadError"
+    <!-- 2. Pending attach banner -->
+    <section v-if="pendingAttach" class="attach-banner">
+      <div class="attach-banner__info">
+        <p class="attach-banner__label">{{ $t('weekly_plan.attach_day') }}</p>
+        <p class="attach-banner__source">{{ attachSourceLabel }}</p>
+      </div>
+      <div class="attach-banner__actions">
+        <el-input v-model="selectedPlanDate" type="date" class="attach-banner__date" />
+        <el-button
+          type="primary"
+          :loading="attaching"
+          :disabled="!activePlan || !selectedPlanDate"
+          @click="attachPendingDay"
         >
-          <template #actions>
-            <el-button type="primary" @click="loadInitialState">
-              {{ $t('common.retry') }}
-            </el-button>
-          </template>
-        </AppEmptyState>
+          {{ $t('weekly_plan.attach_confirm') }}
+        </el-button>
+      </div>
+      <p v-if="!activePlan" class="attach-banner__hint">
+        {{ $t('weekly_plan.pick_plan_first') }}
+      </p>
+    </section>
 
-        <AppEmptyState
-          v-else-if="!activePlan && !loading"
-          :title="$t('weekly_plan.empty_title')"
-          :description="$t('weekly_plan.empty_desc')"
-        />
+    <!-- 3. Loading skeleton -->
+    <div v-if="loading" class="skeleton-list">
+      <div v-for="n in 3" :key="n" class="skeleton-section">
+        <div class="skeleton-line skeleton-line--heading" />
+        <div class="skeleton-line skeleton-line--body" />
+        <div class="skeleton-line skeleton-line--body short" />
+      </div>
+    </div>
 
-        <template v-else-if="activePlan">
-          <el-card class="plan-shell" shadow="never">
-            <template #header>
-              <div class="plan-shell-head">
-                <div>
-                  <h2>{{ activePlan.name }}</h2>
-                  <p>{{ activePlan.notes || $t('weekly_plan.no_notes') }}</p>
-                </div>
-                <el-input
-                  v-model="shoppingListName"
-                  class="list-name-input"
-                  :placeholder="$t('weekly_plan.list_name_placeholder')"
-                />
-              </div>
-            </template>
+    <!-- 4. Load error -->
+    <AppEmptyState
+      v-else-if="loadError && !activePlan && !plans.length"
+      :title="$t('weekly_plan.load_failed_title')"
+      :description="loadError"
+    >
+      <template #actions>
+        <el-button type="primary" @click="loadInitialState">
+          {{ $t('common.retry') }}
+        </el-button>
+      </template>
+    </AppEmptyState>
 
-            <div v-if="activePlan.days.length" class="day-grid">
-              <article v-for="day in activePlan.days" :key="day.id" class="day-card">
-                <div class="day-head">
-                  <div>
-                    <p class="eyebrow">{{ formatDate(day.plan_date) }}</p>
-                    <h3>{{ $t('weekly_plan.day_snapshot') }}</h3>
-                  </div>
-                  <el-button text type="danger" @click="removeDay(day.id)">
-                    {{ $t('common.delete') }}
-                  </el-button>
-                </div>
+    <!-- 5. No plans empty state -->
+    <AppEmptyState
+      v-else-if="!plans.length && !loading"
+      :title="$t('weekly_plan.empty_title')"
+      :description="$t('weekly_plan.empty_desc')"
+    />
 
-                <div class="meal-list">
-                  <article
-                    v-for="meal in day.meal_plan_snapshot.meals || []"
-                    :key="`${day.id}-${meal.recipe_id}-${meal.meal_type}`"
-                    class="meal-item"
-                  >
-                    <div>
-                      <p class="meal-name">{{ meal.recipe_name || $t('common.not_available') }}</p>
-                      <p class="meal-meta">{{ meal.meal_type }} · {{ meal.calories }} kcal</p>
-                    </div>
-                    <strong>{{ formatPrice(meal.price) }}</strong>
-                  </article>
-                </div>
-              </article>
-            </div>
+    <!-- 6. Plan with no days -->
+    <AppEmptyState
+      v-else-if="activePlan && !activePlan.days.length"
+      :title="$t('weekly_plan.days_empty_title')"
+      :description="$t('weekly_plan.days_empty_desc')"
+    />
 
-            <AppEmptyState
-              v-else
-              :title="$t('weekly_plan.days_empty_title')"
-              :description="$t('weekly_plan.days_empty_desc')"
-            />
-          </el-card>
-        </template>
-      </section>
+    <!-- 7. Day list -->
+    <section
+      v-else-if="activePlan && activePlan.days.length"
+      class="day-list"
+    >
+      <div class="plan-info">
+        <span class="plan-info__count">
+          {{
+            $t('weekly_plan.plan_info', {
+              count: activePlan.days.length,
+              date: formatDate(activePlan.created_at ?? '')
+            })
+          }}
+        </span>
+        <span v-if="activePlan.notes" class="plan-info__notes">{{ activePlan.notes }}</span>
+      </div>
+      <DaySection
+        v-for="day in sortedDays"
+        :key="day.id"
+        :day="day"
+        @remove-day="removeDay"
+      />
     </section>
   </div>
 </template>
@@ -178,10 +121,12 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
+import DaySection from '@/components/weekly-plan/DaySection.vue'
+import PlanSwitcher from '@/components/weekly-plan/PlanSwitcher.vue'
 import { getApiErrorDetail } from '@/api'
 import { useShoppingStore } from '@/stores/shopping'
 import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
-import { formatCurrencyAmount, formatDisplayDate } from '@/utils/resilience'
+import { formatDisplayDate } from '@/utils/resilience'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -191,11 +136,8 @@ const weeklyPlanStore = useWeeklyPlanStore()
 const shoppingStore = useShoppingStore()
 const { plans, activePlan, loading } = storeToRefs(weeklyPlanStore)
 
-const newPlanName = ref('')
-const newPlanNotes = ref('')
 const selectedPlanDate = ref(getLocalDateInputValue())
 const shoppingListName = ref('')
-const creating = ref(false)
 const attaching = ref(false)
 const generating = ref(false)
 const loadError = ref('')
@@ -219,12 +161,15 @@ const attachSourceLabel = computed(() =>
   pendingAttach.value?.source_label || t('weekly_plan.pending_attach_desc')
 )
 
+const sortedDays = computed(() => {
+  if (!activePlan.value) return []
+  return [...activePlan.value.days].sort((a, b) =>
+    a.plan_date.localeCompare(b.plan_date)
+  )
+})
+
 function formatDate(value: string) {
   return formatDisplayDate(value, locale.value)
-}
-
-function formatPrice(value: unknown) {
-  return formatCurrencyAmount(value, locale.value)
 }
 
 function getLocalDateInputValue(baseDate = new Date()) {
@@ -250,23 +195,6 @@ function handleWeeklyPlanError(error: unknown, fallbackKey: string) {
 async function ensureActivePlan() {
   if (activePlan.value || !plans.value.length) return
   await weeklyPlanStore.openPlan(plans.value[0].id)
-}
-
-async function createPlan() {
-  const name = newPlanName.value.trim()
-  if (!name) return
-
-  creating.value = true
-  try {
-    await weeklyPlanStore.createPlan(name, newPlanNotes.value.trim())
-    newPlanName.value = ''
-    newPlanNotes.value = ''
-    ElMessage.success(t('weekly_plan.create_success'))
-  } catch (error) {
-    handleWeeklyPlanError(error, 'weekly_plan.errors.create_failed')
-  } finally {
-    creating.value = false
-  }
 }
 
 async function openPlan(planId: number) {
@@ -345,199 +273,205 @@ async function generateShoppingList() {
   }
 }
 
-onMounted(async () => {
-  await loadInitialState()
+onMounted(() => {
+  loadInitialState()
 })
 </script>
 
 <style scoped>
 .weekly-plan-page {
+  max-width: 800px;
   display: grid;
   gap: 24px;
+  margin: 0 auto;
 }
 
-.page-header,
-.weekly-layout,
-.attach-grid,
-.plan-shell-head,
-.day-head,
-.meal-item {
-  display: flex;
-  gap: 16px;
-}
-
-.page-header,
-.day-head,
-.meal-item {
-  justify-content: space-between;
-  align-items: center;
-}
-
+/* ── Page header ── */
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.page-header h1,
-.section-head h2,
-.plan-shell-head h2,
-.day-head h3,
-.meal-name {
+.page-header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-header__left h1 {
   margin: 0;
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-secondary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.page-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list-name-input {
+  width: min(240px, 100%);
+}
+
+/* ── Pending attach banner ── */
+.attach-banner {
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-border-accent);
+  border-radius: 12px;
+}
+
+.attach-banner__info {
+  min-width: 0;
+}
+
+.attach-banner__label {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   color: var(--color-secondary);
 }
 
-.subtitle,
-.section-head p,
-.muted-copy,
-.plan-shell-head p,
-.meal-meta,
-.plan-meta {
+.attach-banner__source {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
-.subtitle,
-.section-head p,
-.plan-shell-head p {
-  margin: 8px 0 0;
+.attach-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.weekly-layout {
-  align-items: flex-start;
+.attach-banner__date {
+  width: min(200px, 100%);
 }
 
-.sidebar-stack,
-.content-stack,
-.form-stack,
-.plan-list,
-.day-grid,
-.meal-list {
+.attach-banner__hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Loading skeleton ── */
+.skeleton-list {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
-.sidebar-stack {
-  width: min(340px, 100%);
-  flex-shrink: 0;
-}
-
-.content-stack {
-  flex: 1;
-  min-width: 0;
-}
-
-.section-head,
-.plan-shell-head > div,
-.day-head > div,
-.meal-item > div {
-  min-width: 0;
-}
-
-.plan-button {
-  width: 100%;
+.skeleton-section {
   display: grid;
-  gap: 6px;
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid var(--color-border-soft);
+  gap: 12px;
+  padding: 20px;
+  border-radius: 14px;
   background: var(--gradient-surface);
-  text-align: left;
-  min-width: 0;
+  border: 1px solid var(--color-border-soft);
 }
 
-.plan-button.active {
-  border-color: var(--color-border-accent);
-  background: color-mix(in srgb, var(--color-accent-soft) 84%, var(--color-surface-raised));
+.skeleton-line {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--color-border-soft);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.plan-name,
-.meal-name {
-  font-weight: 700;
+.skeleton-line--heading {
+  height: 18px;
+  width: 40%;
+}
+
+.skeleton-line--body {
+  width: 80%;
+}
+
+.skeleton-line--body.short {
+  width: 55%;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Plan info ── */
+.plan-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+
+.plan-info__count {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.plan-info__notes {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+  font-style: italic;
   overflow-wrap: anywhere;
 }
 
-.attach-grid {
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.attach-grid :deep(.el-input) {
-  width: min(240px, 100%);
-}
-
-.plan-shell-head {
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.list-name-input {
-  width: min(320px, 100%);
-}
-
-.day-grid {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.day-card {
+/* ── Day list ── */
+.day-list {
   display: grid;
-  gap: 14px;
-  padding: 20px;
-  border-radius: 22px;
-  background: var(--gradient-surface);
-  border: 1px solid var(--color-border-soft);
-  box-shadow: var(--shadow-sm);
+  gap: 0;
 }
 
-.eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-primary-dark);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.meal-list {
-  gap: 10px;
-}
-
-.meal-item {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-soft);
-  align-items: flex-start;
-}
-
-.meal-item strong {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-@media (max-width: 960px) {
-  .weekly-layout {
-    flex-direction: column;
-  }
-
-  .sidebar-stack {
-    width: 100%;
-  }
-}
-
+/* ── Mobile ── */
 @media (max-width: 640px) {
-  .attach-grid,
-  .page-header,
-  .plan-shell-head,
-  .day-head,
-  .meal-item {
+  .page-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .attach-grid :deep(.el-button),
-  .form-stack :deep(.el-button),
-  .page-header :deep(.el-button) {
+  .page-header__left {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-header__right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header__right :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .list-name-input {
+    width: 100%;
+  }
+
+  .attach-banner__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .attach-banner__date {
+    width: 100%;
+  }
+
+  .attach-banner__actions :deep(.el-button) {
     width: 100%;
     min-height: 44px;
   }
