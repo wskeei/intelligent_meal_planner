@@ -27,8 +27,8 @@ describe('frontend audit regressions', () => {
     expect(homeView).not.toMatch(/#10251a|#173728|#1f5137|#f6fff7|#eef8f0/)
     expect(homeView).not.toContain('rgba(34, 197, 94')
 
-    expect(profileView).toContain('var(--gradient-emphasis)')
-    expect(profileView).toContain('--color-accent')
+    expect(profileView).toContain('var(--color-accent-soft)')
+    expect(profileView).toContain('var(--color-accent)')
     expect(profileView).not.toContain('color="#4ade80"')
     expect(profileView).not.toMatch(/#10251a|#173728|#214c35|#f0fff5/)
 
@@ -65,7 +65,7 @@ describe('frontend audit regressions', () => {
     expect(registerView).toContain('background: var(--color-surface-muted);')
     expect(registerView).not.toContain('background: #f7faf8;')
 
-    expect(profileView).toContain("const progressColor = ref('var(--color-accent)')")
+    expect(profileView).toContain('var(--color-border-accent)')
     expect(profileView).not.toContain("#8ba284")
 
     expect(generationOverlay).toContain('background: var(--gradient-overlay-backdrop);')
