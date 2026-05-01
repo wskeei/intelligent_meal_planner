@@ -10,11 +10,11 @@
 
     <!-- Missing fields bar -->
     <section v-if="missingProfileFields.length" class="missing-bar">
-      <button class="missing-bar__toggle" type="button" @click="showMissing = !showMissing">
+      <button class="missing-bar__toggle" type="button" :aria-expanded="showMissingExpanded" aria-controls="missing-bar-list" @click="showMissing = !showMissing">
         <span>{{ $t('profile.missing_bar', { count: missingProfileFields.length }) }}</span>
         <el-icon class="missing-bar__chevron" :class="{ 'is-open': showMissing }"><ArrowDown /></el-icon>
       </button>
-      <div v-if="showMissing" class="missing-bar__list">
+      <div v-if="showMissing" id="missing-bar-list" class="missing-bar__list">
         <div v-for="field in missingProfileFields" :key="field" class="missing-bar__item">
           <strong>{{ $t(`profile.field_labels.${field}`) }}</strong>
           <span>{{ $t(`profile.field_reasons.${field}`) }}</span>
@@ -33,8 +33,8 @@
       </div>
 
       <div class="field">
-        <label class="field__label">{{ $t('auth.gender') }}</label>
-        <el-radio-group v-model="localProfile.gender">
+        <label for="profile-gender" class="field__label">{{ $t('auth.gender') }}</label>
+        <el-radio-group id="profile-gender" v-model="localProfile.gender">
           <el-radio-button value="male">{{ $t('auth.male') }}</el-radio-button>
           <el-radio-button value="female">{{ $t('auth.female') }}</el-radio-button>
         </el-radio-group>
@@ -43,13 +43,13 @@
 
       <div class="field-grid">
         <div class="field">
-          <label class="field__label">{{ $t('auth.age') }}</label>
-          <el-input-number v-model="localProfile.age" :min="10" :max="100" controls-position="right" />
+          <label for="profile-age" class="field__label">{{ $t('auth.age') }}</label>
+          <el-input-number id="profile-age" v-model="localProfile.age" :min="10" :max="100" controls-position="right" />
           <p class="field__hint">{{ $t('profile.field_reasons.age') }}</p>
         </div>
         <div class="field">
-          <label class="field__label">{{ $t('auth.activity_level') }}</label>
-          <el-select v-model="localProfile.activityLevel" :placeholder="$t('auth.activity_level')">
+          <label for="profile-activity" class="field__label">{{ $t('auth.activity_level') }}</label>
+          <el-select id="profile-activity" v-model="localProfile.activityLevel" :placeholder="$t('auth.activity_level')">
             <el-option :label="$t('auth.activity.sedentary')" value="sedentary" />
             <el-option :label="$t('auth.activity.light')" value="light" />
             <el-option :label="$t('auth.activity.moderate')" value="moderate" />
@@ -62,13 +62,13 @@
 
       <div class="field-grid">
         <div class="field">
-          <label class="field__label">{{ $t('auth.height') }}</label>
-          <el-input-number v-model="localProfile.height" :min="100" :max="250" controls-position="right" />
+          <label for="profile-height" class="field__label">{{ $t('auth.height') }}</label>
+          <el-input-number id="profile-height" v-model="localProfile.height" :min="100" :max="250" controls-position="right" />
           <p class="field__hint">{{ $t('profile.field_reasons.height') }}</p>
         </div>
         <div class="field">
-          <label class="field__label">{{ $t('auth.weight') }}</label>
-          <el-input-number v-model="localProfile.weight" :min="30" :max="250" :step="0.5" controls-position="right" />
+          <label for="profile-weight" class="field__label">{{ $t('auth.weight') }}</label>
+          <el-input-number id="profile-weight" v-model="localProfile.weight" :min="30" :max="250" :step="0.5" controls-position="right" />
           <p class="field__hint">{{ $t('profile.field_reasons.weight') }}</p>
         </div>
       </div>
@@ -80,8 +80,8 @@
       <div class="section-divider" />
 
       <div class="field">
-        <label class="field__label">{{ $t('auth.goal') }}</label>
-        <el-select v-model="localProfile.goal">
+        <label for="profile-goal" class="field__label">{{ $t('auth.goal') }}</label>
+        <el-select id="profile-goal" v-model="localProfile.goal">
           <el-option :label="$t('meal_plan.goals.lose_weight')" value="lose_weight" />
           <el-option :label="$t('meal_plan.goals.maintain')" value="maintain" />
           <el-option :label="$t('meal_plan.goals.gain_muscle')" value="gain_muscle" />
@@ -104,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
@@ -123,6 +123,7 @@ const {
 
 const saving = ref(false)
 const showMissing = ref(false)
+const showMissingExpanded = computed<'true' | 'false'>(() => showMissing.value ? 'true' : 'false')
 const onboardingMode = route.query.onboarding === '1'
 
 const localProfile = reactive<UserProfile>({
