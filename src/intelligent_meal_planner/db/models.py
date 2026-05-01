@@ -192,6 +192,9 @@ class IntakeRecord(Base):
 
 class WeightLog(Base):
     __tablename__ = "weight_logs"
+    __table_args__ = (
+        UniqueConstraint("user_id", "date", name="uq_weight_log_user_date"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)

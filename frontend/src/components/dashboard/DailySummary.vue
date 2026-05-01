@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDashboardStore } from '@/stores/dashboard'
 
+const { t } = useI18n()
 const store = useDashboardStore()
 
 const nutrients = computed(() => {
   if (!store.daily) return []
   const { target, actual } = store.daily
   return [
-    { label: 'Calories', actual: actual.calories, target: target.calories, unit: 'kcal' },
-    { label: 'Protein', actual: actual.protein, target: target.protein, unit: 'g' },
-    { label: 'Carbs', actual: actual.carbs, target: target.carbs, unit: 'g' },
-    { label: 'Fat', actual: actual.fat, target: target.fat, unit: 'g' },
+    { label: t('nutrition.calories'), actual: actual.calories, target: target.calories, unit: 'kcal' },
+    { label: t('nutrition.protein_g'), actual: actual.protein, target: target.protein, unit: 'g' },
+    { label: t('nutrition.carbs_g'), actual: actual.carbs, target: target.carbs, unit: 'g' },
+    { label: t('nutrition.fat_g'), actual: actual.fat, target: target.fat, unit: 'g' },
   ]
 })
 </script>
@@ -24,7 +26,7 @@ const nutrients = computed(() => {
         {{ Math.round(n.actual) }}<span class="nutrient-target">/{{ Math.round(n.target) }}{{ n.unit }}</span>
       </span>
       <el-progress
-        :percentage="Math.min(100, (n.actual / n.target) * 100)"
+        :percentage="Math.min(100, (n.actual / (n.target || 1)) * 100)"
         :stroke-width="8"
         :show-text="false"
       />

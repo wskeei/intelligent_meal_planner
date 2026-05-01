@@ -11,8 +11,7 @@ class TrendAnalyzer:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_nutrition_trends(self, user_id: int, period: str = "weekly",
-                             months: int = 3) -> list[dict]:
+    def get_nutrition_trends(self, user_id: int, months: int = 3) -> list[dict]:
         today = date.today()
         start = today - timedelta(days=months * 30)
         records = (
@@ -89,7 +88,7 @@ class TrendAnalyzer:
         if weekday_cals and weekend_cals:
             wd_avg = sum(weekday_cals) / len(weekday_cals)
             we_avg = sum(weekend_cals) / len(weekend_cals)
-            if abs(we_avg - wd_avg) / wd_avg > 0.15:
+            if wd_avg > 0 and abs(we_avg - wd_avg) / wd_avg > 0.15:
                 patterns.append({
                     "type": "weekend_difference",
                     "message": f"Weekend intake {'higher' if we_avg > wd_avg else 'lower'} than weekday by {abs(we_avg - wd_avg):.0f} kcal",

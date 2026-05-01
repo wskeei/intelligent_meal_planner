@@ -337,6 +337,15 @@ class IntakeRecordUpdate(BaseModel):
     note: Optional[str] = None
 
 
+class QuickLogCreate(BaseModel):
+    model_config = {"populate_by_name": True}
+
+    log_date: date = Field(default_factory=date.today, alias="date")
+    recipe_id: int
+    portion_size: float = Field(default=1.0, gt=0, le=10)
+    meal_type: Optional[str] = Field(default=None, pattern="^(breakfast|lunch|dinner|snack)$")
+
+
 class IntakeRecordResponse(BaseModel):
     id: int
     date: date
@@ -402,6 +411,8 @@ class WeeklyDashboardResponse(BaseModel):
     days: list[WeeklySummaryDay] = Field(default_factory=list)
     avg_calories: float = 0
     avg_protein: float = 0
+    avg_carbs: float = 0
+    avg_fat: float = 0
     target_adherence_rate: float = 0
 
 

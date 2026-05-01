@@ -80,8 +80,7 @@ class IntakeTracker:
                 record.actual_fat = recipe.fat * ps
 
         for k, v in fields.items():
-            if v is not None:
-                setattr(record, k, v)
+            setattr(record, k, v)
 
         self.db.commit()
         self.db.refresh(record)
@@ -113,7 +112,16 @@ class IntakeTracker:
         }
         return {"records": records, "totals": totals, "count": len(records)}
 
+    def recipe_names(self, records: list[models.IntakeRecord]) -> dict[int, str]:
+        """Batch-fetch recipe names for a list of records."""
+        recipe_ids = {r.recipe_id for r in records if r.recipe_id}
+        if not recipe_ids:
+            return {}
+        recipes = self.db.query(models.Recipe).filter(models.Recipe.id.in_(recipe_ids)).all()
+        return {r.id: r.name for r in recipes}
+
     def recipe_name(self, record: models.IntakeRecord) -> Optional[str]:
+        """Single record name lookup (kept for backward compat)."""
         if record.recipe_id:
             recipe = self.db.get(models.Recipe, record.recipe_id)
             return recipe.name if recipe else None

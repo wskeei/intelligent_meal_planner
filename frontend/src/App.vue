@@ -323,11 +323,16 @@ function handleCommand(command: string) {
   bottom: 0;
   z-index: 45;
   display: none;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   gap: 4px;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
   background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border-soft);
+  scrollbar-width: none;
+}
+.mobile-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .mobile-nav-item {
@@ -335,7 +340,9 @@ function handleCommand(command: string) {
   justify-items: center;
   gap: 3px;
   min-height: 48px;
+  min-width: 64px;
   padding: 6px 8px;
+  flex-shrink: 0;
   border-radius: 10px;
   color: var(--color-text-light);
   font-size: var(--text-xs);
@@ -353,7 +360,7 @@ function handleCommand(command: string) {
   }
 
   .mobile-nav {
-    display: grid;
+    display: flex;
   }
 }
 

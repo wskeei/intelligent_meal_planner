@@ -25,6 +25,7 @@ class PreferenceLearner:
         if not pref:
             pref = models.UserPreference(
                 user_id=user_id, recipe_id=recipe_id, preference_score=0.5,
+                times_eaten=0, times_skipped=0,
             )
             self.db.add(pref)
         return pref
@@ -68,10 +69,19 @@ class PreferenceLearner:
             .all()
         )
 
+        # Pre-fetch all recipes to avoid N+1 queries
+        recipe_ids = {p.recipe_id for p in prefs}
+        recipes_map = {}
+        if recipe_ids:
+            for recipe in self.db.query(models.Recipe).filter(
+                models.Recipe.id.in_(recipe_ids)
+            ).all():
+                recipes_map[recipe.id] = recipe
+
         category_scores: dict[str, list[float]] = {}
         disliked = []
         for pref in prefs:
-            recipe = self.db.get(models.Recipe, pref.recipe_id)
+            recipe = recipes_map.get(pref.recipe_id)
             if recipe:
                 cat = recipe.category
                 category_scores.setdefault(cat, []).append(pref.preference_score)

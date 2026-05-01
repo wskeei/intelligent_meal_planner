@@ -355,6 +355,11 @@
     "total_price": "总价格"
   },
   "nutrition": {
+    "calories": "热量",
+    "protein_g": "蛋白质",
+    "carbs_g": "碳水",
+    "fat_g": "脂肪",
+    "snack": "加餐",
     "dashboard_title": "营养看板",
     "ai_insight": "AI 健康洞察",
     "log_meal": "记录饮食",

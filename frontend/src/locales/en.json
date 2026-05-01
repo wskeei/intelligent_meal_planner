@@ -355,6 +355,11 @@
     "total_price": "Total price"
   },
   "nutrition": {
+    "calories": "Calories",
+    "protein_g": "Protein",
+    "carbs_g": "Carbs",
+    "fat_g": "Fat",
+    "snack": "Snack",
     "dashboard_title": "Nutrition Dashboard",
     "ai_insight": "AI Health Insights",
     "log_meal": "Log Meal",

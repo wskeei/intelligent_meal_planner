@@ -11,20 +11,33 @@ from ..schemas import (
     DailyIntakeSummary,
     IntakeRecordCreate,
     IntakeRecordUpdate,
+    QuickLogCreate,
 )
 from ...nutrition.intake_tracker import IntakeTracker
+from ...nutrition.preference_learner import PreferenceLearner
 from ...db import models
 
 router = APIRouter(prefix="/intake", tags=["摄入追踪"])
 
 
-def _to_response(record: models.IntakeRecord, tracker: IntakeTracker) -> dict:
+def _to_response(
+    record: models.IntakeRecord,
+    tracker: IntakeTracker,
+    names_map: dict[int, str] | None = None,
+) -> dict:
+    recipe_name = None
+    if record.recipe_id and names_map:
+        recipe_name = names_map.get(record.recipe_id)
+    elif record.recipe_id:
+        recipe_name = tracker.recipe_name(record)
+    else:
+        recipe_name = record.custom_food_name
     return {
         "id": record.id,
         "date": record.date,
         "meal_type": record.meal_type,
         "recipe_id": record.recipe_id,
-        "recipe_name": tracker.recipe_name(record),
+        "recipe_name": recipe_name,
         "custom_food_name": record.custom_food_name,
         "actual_calories": record.actual_calories,
         "actual_protein": record.actual_protein,
@@ -62,44 +75,44 @@ def log_meal(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # C2: Wire preference learner
+    learner = PreferenceLearner(db)
+    if record.recipe_id:
+        learner.update_from_selection(current_user.id, record.recipe_id)
+        if record.rating:
+            learner.update_from_rating(current_user.id, record.recipe_id, record.rating)
+
     return _to_response(record, tracker)
 
 
 @router.post("/quick-log")
 def quick_log(
-    payload: dict,
+    payload: QuickLogCreate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """Quick log: just recipe_id + optional portion_size. Meal type auto-detected."""
-    recipe_id = payload.get("recipe_id")
-    if not recipe_id:
-        raise HTTPException(status_code=400, detail="recipe_id required")
-
-    recipe = db.get(models.Recipe, recipe_id)
+    recipe = db.get(models.Recipe, payload.recipe_id)
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
     meal_types = recipe.meal_type or ["lunch"]
-    auto_meal = meal_types[0] if meal_types else "lunch"
-
-    raw_date = payload.get("date")
-    if isinstance(raw_date, str):
-        from datetime import date as date_cls
-        record_date = date_cls.fromisoformat(raw_date)
-    elif isinstance(raw_date, date):
-        record_date = raw_date
-    else:
-        record_date = date.today()
+    auto_meal = payload.meal_type or (meal_types[0] if meal_types else "lunch")
 
     tracker = IntakeTracker(db)
     record = tracker.log_meal(
         user_id=current_user.id,
-        record_date=record_date,
-        meal_type=payload.get("meal_type", auto_meal),
-        recipe_id=recipe_id,
-        portion_size=payload.get("portion_size", 1.0),
+        record_date=payload.log_date,
+        meal_type=auto_meal,
+        recipe_id=payload.recipe_id,
+        portion_size=payload.portion_size,
     )
+
+    # C2: Wire preference learner
+    learner = PreferenceLearner(db)
+    learner.update_from_selection(current_user.id, payload.recipe_id)
+
     return _to_response(record, tracker)
 
 
@@ -111,6 +124,7 @@ def get_daily_records(
 ):
     tracker = IntakeTracker(db)
     result = tracker.get_daily(current_user.id, record_date)
+    names_map = tracker.recipe_names(result["records"])
     return DailyIntakeSummary(
         date=record_date,
         total_calories=result["totals"]["calories"],
@@ -118,7 +132,7 @@ def get_daily_records(
         total_carbs=result["totals"]["carbs"],
         total_fat=result["totals"]["fat"],
         meal_count=result["count"],
-        records=[_to_response(r, tracker) for r in result["records"]],
+        records=[_to_response(r, tracker, names_map) for r in result["records"]],
     )
 
 

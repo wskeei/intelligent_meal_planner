@@ -32,8 +32,13 @@ def daily_dashboard(
     current_user: models.User = Depends(get_current_user),
 ):
     from ...nutrition.baseline_generator import BaselineGenerator
-    baseline = BaselineGenerator(db)
-    baseline.initialize_for_user(current_user)
+    # Only run baseline if user has no auto records yet
+    has_baseline = db.query(models.IntakeRecord).filter_by(
+        user_id=current_user.id, source="auto"
+    ).first()
+    if not has_baseline:
+        baseline = BaselineGenerator(db)
+        baseline.initialize_for_user(current_user)
 
     svc = DashboardService(db)
     data = svc.daily_summary(current_user, summary_date)
@@ -58,6 +63,8 @@ def weekly_dashboard(
         days=[WeeklySummaryDay(**d) for d in data["days"]],
         avg_calories=data["avg_calories"],
         avg_protein=data["avg_protein"],
+        avg_carbs=data["avg_carbs"],
+        avg_fat=data["avg_fat"],
         target_adherence_rate=data["target_adherence_rate"],
     )
 

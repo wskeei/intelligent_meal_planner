@@ -40,10 +40,10 @@ async function submit() {
     <el-form :inline="true" @submit.prevent="submit">
       <el-form-item>
         <el-select v-model="mealType" style="width: 120px">
-          <el-option label="Breakfast" value="breakfast" />
-          <el-option label="Lunch" value="lunch" />
-          <el-option label="Dinner" value="dinner" />
-          <el-option label="Snack" value="snack" />
+          <el-option :label="$t('meal_types.breakfast')" value="breakfast" />
+          <el-option :label="$t('meal_types.lunch')" value="lunch" />
+          <el-option :label="$t('meal_types.dinner')" value="dinner" />
+          <el-option :label="$t('nutrition.snack')" value="snack" />
         </el-select>
       </el-form-item>
       <el-form-item>

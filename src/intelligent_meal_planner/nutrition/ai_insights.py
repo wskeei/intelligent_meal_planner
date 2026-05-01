@@ -1,11 +1,15 @@
 """DeepSeek LLM-powered health insights."""
 
+import logging
 import os
 from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
 from ..db import models
+from ..meal_chat.target_mapper import build_hidden_targets
+
+logger = logging.getLogger(__name__)
 
 
 class AIInsightsEngine:
@@ -28,8 +32,8 @@ class AIInsightsEngine:
         if api_key:
             try:
                 return self._call_llm(user, records, target_date)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("LLM insight failed, using fallback: %s", exc)
 
         return self._rule_based_insight(user, total_cal, total_prot, len(records))
 
@@ -60,7 +64,16 @@ class AIInsightsEngine:
         self, user: models.User, total_cal: float, total_prot: float, meal_count: int,
     ) -> str:
         if meal_count == 0:
-            return f"No meals logged today. Target: {int(total_cal or 2000)} kcal. Start with a balanced lunch!"
+            targets = {}
+            if all([user.weight, user.height, user.age, user.gender, user.activity_level]):
+                targets = build_hidden_targets(
+                    {"weight": user.weight, "height": user.height,
+                     "age": user.age, "gender": user.gender,
+                     "activity_level": user.activity_level},
+                    user.health_goal or "healthy",
+                )
+            cal_target = int(targets.get("target_calories", 2000))
+            return f"No meals logged today. Your target: {cal_target} kcal. Start with a balanced lunch!"
 
         insights = []
         if total_cal < 1200:

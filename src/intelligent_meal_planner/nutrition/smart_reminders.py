@@ -1,6 +1,6 @@
 """Rule-based smart reminder engine."""
 
-from datetime import date, timedelta
+from datetime import date, datetime as dt_class, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,7 @@ class SmartReminderEngine:
         )
 
     def _has_recent_reminder(self, user_id: int, rtype: str, days: int = 1) -> bool:
-        cutoff = date.today() - timedelta(days=days)
+        cutoff = dt_class.combine(date.today() - timedelta(days=days), dt_class.min.time())
         return (
             self.db.query(models.Reminder)
             .filter(

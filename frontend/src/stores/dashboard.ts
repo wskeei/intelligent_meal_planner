@@ -37,33 +37,45 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadWeekly() {
-    const { data } = await dashboardApi.getWeekly()
-    weekly.value = data
+    try {
+      const { data } = await dashboardApi.getWeekly()
+      weekly.value = data
+    } catch { /* ignore */ }
   }
 
   async function loadReminders() {
-    const { data } = await dashboardApi.getReminders()
-    reminders.value = data
+    try {
+      const { data } = await dashboardApi.getReminders()
+      reminders.value = data
+    } catch { /* ignore */ }
   }
 
   async function loadTodayRecords() {
-    const { data } = await intakeApi.getDaily(today)
-    todayRecords.value = data.records
+    try {
+      const { data } = await intakeApi.getDaily(today)
+      todayRecords.value = data.records
+    } catch { /* ignore */ }
   }
 
   async function loadTrends(months = 3) {
-    const { data } = await dashboardApi.getTrends(months)
-    trends.value = data
+    try {
+      const { data } = await dashboardApi.getTrends(months)
+      trends.value = data
+    } catch { /* ignore */ }
   }
 
   async function loadInsight() {
-    const { data } = await dashboardApi.getInsights()
-    insight.value = data
+    try {
+      const { data } = await dashboardApi.getInsights()
+      insight.value = data
+    } catch { /* ignore */ }
   }
 
   async function loadWeight() {
-    const { data } = await dashboardApi.getWeight()
-    weightHistory.value = data
+    try {
+      const { data } = await dashboardApi.getWeight()
+      weightHistory.value = data
+    } catch { /* ignore */ }
   }
 
   async function dismissReminder(id: number) {

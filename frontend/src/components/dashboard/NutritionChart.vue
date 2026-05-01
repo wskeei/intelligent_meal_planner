@@ -48,10 +48,10 @@ const chartOption = computed(() => {
     <div class="chart-header">
       <h2>{{ $t('nutrition.weekly_trend') }}</h2>
       <el-select v-model="metric" size="small" style="width: 120px">
-        <el-option label="Calories" value="calories" />
-        <el-option label="Protein" value="protein" />
-        <el-option label="Carbs" value="carbs" />
-        <el-option label="Fat" value="fat" />
+        <el-option :label="$t('nutrition.calories')" value="calories" />
+        <el-option :label="$t('nutrition.protein_g')" value="protein" />
+        <el-option :label="$t('nutrition.carbs_g')" value="carbs" />
+        <el-option :label="$t('nutrition.fat_g')" value="fat" />
       </el-select>
     </div>
     <VChart :option="chartOption" style="height: 300px" autoresize />
