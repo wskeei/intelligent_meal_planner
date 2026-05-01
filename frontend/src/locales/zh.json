@@ -235,14 +235,8 @@
   },
   "weekly_plan": {
     "title": "周计划",
-    "subtitle": "把满意的单日正式方案按日期挂进这里，再闭环生成采购清单。",
-    "create": "新建周计划",
-    "create_desc": "周计划按手动累积方式构建，V1 不做自动排满。",
     "create_placeholder": "例如：第 15 周控卡计划",
     "notes_placeholder": "补充这周的目标、预算提醒或执行备注",
-    "saved_plans": "已有周计划",
-    "saved_desc": "先选中一个周计划，再把当前单日方案挂进去。",
-    "load_failed_eyebrow": "周计划暂不可用",
     "load_failed_title": "暂时无法加载周计划",
     "empty_title": "先建一个周计划",
     "empty_desc": "先创建一个周计划，再把单日正式方案按日期挂进去。",
@@ -250,9 +244,8 @@
     "attach_confirm": "确认加入这一天",
     "attach_success": "单日方案已加入周计划。",
     "pending_attach_desc": "选择日期后，把当前正式方案挂到已选中的周计划里。",
-    "pick_plan_first": "先在左侧选择或创建一个周计划。",
+    "pick_plan_first": "先选择或创建一个周计划。",
     "days_count": "已安排 {count} 天",
-    "day_snapshot": "当日方案快照",
     "days_empty_title": "这个周计划还没有安排日期",
     "days_empty_desc": "从配餐结果页或历史页把满意的单日方案加入这里。",
     "generate_list": "生成采购清单",
@@ -261,6 +254,14 @@
     "create_success": "周计划已创建。",
     "remove_success": "该天已从周计划移除。",
     "no_notes": "还没有补充备注。",
+    "plan_switcher_label": "切换计划",
+    "new_plan": "新建计划",
+    "new_plan_placeholder": "计划名称",
+    "no_plans_yet": "还没有周计划",
+    "create_first": "创建第一个",
+    "plan_info": "{count}天 · 创建于 {date}",
+    "daily_total": "总计 {calories} kcal · {price}",
+    "delete_day": "删除",
     "edit_plan": "编辑计划",
     "edit_success": "周计划已更新。",
     "delete_plan": "删除计划",
@@ -278,6 +279,11 @@
       "plan_date_occupied": "这个日期已经有方案了，请换一天或先删除原有安排。",
       "resource_missing": "目标周计划或来源方案已不存在。"
     }
+  },
+  "meal_types": {
+    "breakfast": "早餐",
+    "lunch": "午餐",
+    "dinner": "晚餐"
   },
   "recipes": {
     "title": "菜谱",

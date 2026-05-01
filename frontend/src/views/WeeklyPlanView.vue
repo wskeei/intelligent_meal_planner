@@ -1,239 +1,152 @@
 <template>
   <div class="weekly-plan-page">
+    <!-- 1. Page header -->
     <header class="page-header">
-      <div>
+      <div class="page-header__left">
         <h1>{{ $t('weekly_plan.title') }}</h1>
-        <p class="subtitle">{{ $t('weekly_plan.subtitle') }}</p>
+        <PlanSwitcher
+          :plans="plans"
+          :active-plan-id="activePlan?.id ?? null"
+          @select="openPlan"
+        />
       </div>
-      <el-button
-        v-if="activePlan"
-        type="primary"
-        :loading="generating"
-        @click="generateShoppingList"
+      <div
+        v-if="activePlan && activePlan.days.length"
+        class="page-header__right"
       >
-        {{ $t('weekly_plan.generate_list') }}
-      </el-button>
+        <el-input
+          v-model="shoppingListName"
+          class="list-name-input"
+          :placeholder="$t('weekly_plan.list_name_placeholder')"
+        />
+        <el-button
+          type="primary"
+          :loading="generating"
+          @click="generateShoppingList"
+        >
+          {{ $t('weekly_plan.generate_list') }}
+        </el-button>
+      </div>
     </header>
 
-    <section class="weekly-layout">
-      <aside class="sidebar-stack">
-        <el-card class="create-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.create') }}</h2>
-                <p>{{ $t('weekly_plan.create_desc') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div class="form-stack">
-            <el-input v-model="newPlanName" :placeholder="$t('weekly_plan.create_placeholder')" />
-            <el-input
-              v-model="newPlanNotes"
-              type="textarea"
-              :rows="3"
-              resize="none"
-              :placeholder="$t('weekly_plan.notes_placeholder')"
-            />
-            <el-button type="primary" :loading="creating" :disabled="!newPlanName.trim()" @click="createPlan">
-              {{ $t('weekly_plan.create') }}
-            </el-button>
-          </div>
-        </el-card>
-
-        <el-card class="plans-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.saved_plans') }}</h2>
-                <p>{{ $t('weekly_plan.saved_desc') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div v-if="plans.length" class="plan-list">
-            <div
-              v-for="plan in plans"
-              :key="plan.id"
-              class="plan-row"
-              :class="{ active: activePlan?.id === plan.id }"
-              @click="openPlan(plan.id)"
-            >
-              <div class="plan-copy">
-                <span class="plan-name">{{ plan.name }}</span>
-                <span class="plan-meta">{{ $t('weekly_plan.days_count', { count: plan.day_count }) }}</span>
-              </div>
-              <div class="plan-actions">
-                <el-button
-                  class="plan-edit-btn"
-                  circle
-                  text
-                  :aria-label="$t('weekly_plan.edit_plan')"
-                  @click.stop="openEditDialog(plan.id)"
-                >
-                  <el-icon><Edit /></el-icon>
-                </el-button>
-                <el-button
-                  class="plan-delete-btn"
-                  circle
-                  text
-                  :aria-label="$t('weekly_plan.delete_plan')"
-                  @click.stop="deletePlan(plan.id)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </div>
-
-          <p v-else class="muted-copy">{{ $t('weekly_plan.empty_desc') }}</p>
-        </el-card>
-      </aside>
-
-      <section class="content-stack">
-        <el-card v-if="pendingAttach" class="attach-card" shadow="never">
-          <template #header>
-            <div class="section-head">
-              <div>
-                <h2>{{ $t('weekly_plan.attach_day') }}</h2>
-                <p>{{ attachSourceLabel }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div class="attach-grid">
-            <el-input v-model="selectedPlanDate" type="date" />
-            <el-button
-              type="primary"
-              :loading="attaching"
-              :disabled="!activePlan || !selectedPlanDate"
-              @click="attachPendingDay"
-            >
-              {{ $t('weekly_plan.attach_confirm') }}
-            </el-button>
-          </div>
-          <p class="muted-copy" v-if="!activePlan">{{ $t('weekly_plan.pick_plan_first') }}</p>
-        </el-card>
-
-        <AppEmptyState
-          v-if="loadError && !loading && !activePlan && !plans.length"
-          :eyebrow="$t('weekly_plan.load_failed_eyebrow')"
-          :title="$t('weekly_plan.load_failed_title')"
-          :description="loadError"
+    <!-- 2. Pending attach banner -->
+    <section v-if="pendingAttach" class="attach-banner">
+      <div class="attach-banner__info">
+        <p class="attach-banner__label">{{ $t('weekly_plan.attach_day') }}</p>
+        <p class="attach-banner__source">{{ attachSourceLabel }}</p>
+      </div>
+      <div class="attach-banner__actions">
+        <el-input v-model="selectedPlanDate" type="date" class="attach-banner__date" />
+        <el-button
+          type="primary"
+          :loading="attaching"
+          :disabled="!activePlan || !selectedPlanDate"
+          @click="attachPendingDay"
         >
-          <template #actions>
-            <el-button type="primary" @click="loadInitialState">
-              {{ $t('common.retry') }}
-            </el-button>
-          </template>
-        </AppEmptyState>
-
-        <AppEmptyState
-          v-else-if="!activePlan && !loading"
-          :title="$t('weekly_plan.empty_title')"
-          :description="$t('weekly_plan.empty_desc')"
-        />
-
-        <template v-else-if="activePlan">
-          <el-card class="plan-shell" shadow="never">
-            <template #header>
-              <div class="plan-shell-head">
-                <div>
-                  <h2>{{ activePlan.name }}</h2>
-                  <p>{{ activePlan.notes || $t('weekly_plan.no_notes') }}</p>
-                </div>
-                <el-input
-                  v-model="shoppingListName"
-                  class="list-name-input"
-                  :placeholder="$t('weekly_plan.list_name_placeholder')"
-                />
-              </div>
-            </template>
-
-            <div v-if="activePlan.days.length" class="day-grid">
-              <article v-for="day in activePlan.days" :key="day.id" class="day-card">
-                <div class="day-head">
-                  <div>
-                    <p class="eyebrow">{{ formatDate(day.plan_date) }}</p>
-                    <h3>{{ $t('weekly_plan.day_snapshot') }}</h3>
-                  </div>
-                  <el-button
-                    class="day-delete-btn"
-                    circle
-                    text
-                    :aria-label="$t('common.delete')"
-                    @click="removeDay(day.id)"
-                  >
-                    <el-icon><Delete /></el-icon>
-                  </el-button>
-                </div>
-
-                <div class="meal-list">
-                  <article
-                    v-for="meal in day.meal_plan_snapshot.meals || []"
-                    :key="`${day.id}-${meal.recipe_id}-${meal.meal_type}`"
-                    class="meal-item"
-                  >
-                    <div>
-                      <p class="meal-name">{{ meal.recipe_name || $t('common.not_available') }}</p>
-                      <p class="meal-meta">{{ meal.meal_type }} · {{ meal.calories }} kcal</p>
-                    </div>
-                    <strong>{{ formatPrice(meal.price) }}</strong>
-                  </article>
-                </div>
-              </article>
-            </div>
-
-            <AppEmptyState
-              v-else
-              :title="$t('weekly_plan.days_empty_title')"
-              :description="$t('weekly_plan.days_empty_desc')"
-            />
-          </el-card>
-        </template>
-      </section>
+          {{ $t('weekly_plan.attach_confirm') }}
+        </el-button>
+      </div>
+      <p v-if="!activePlan" class="attach-banner__hint">
+        {{ $t('weekly_plan.pick_plan_first') }}
+      </p>
     </section>
 
-    <el-dialog
-      v-model="editDialogVisible"
-      :title="$t('weekly_plan.edit_plan')"
-      width="420px"
-      :close-on-click-modal="false"
-    >
-      <div class="edit-form">
-        <el-input v-model="editPlanName" :placeholder="$t('weekly_plan.create_placeholder')" />
-        <el-input
-          v-model="editPlanNotes"
-          type="textarea"
-          :rows="3"
-          resize="none"
-          :placeholder="$t('weekly_plan.notes_placeholder')"
-        />
+    <!-- 3. Loading skeleton -->
+    <div v-if="loading" class="skeleton-list">
+      <div v-for="n in 3" :key="n" class="skeleton-section">
+        <div class="skeleton-line skeleton-line--heading" />
+        <div class="skeleton-divider" />
+        <div class="skeleton-line skeleton-line--meal" />
+        <div class="skeleton-line skeleton-line--meal" />
+        <div class="skeleton-line skeleton-line--summary" />
       </div>
-      <template #footer>
-        <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" :disabled="!editPlanName.trim()" @click="saveEditPlan">
-          {{ $t('common.save') }}
+    </div>
+
+    <!-- 4. Load error -->
+    <AppEmptyState
+      v-else-if="loadError && !activePlan && !plans.length"
+      :title="$t('weekly_plan.load_failed_title')"
+      :description="loadError"
+    >
+      <template #actions>
+        <el-button type="primary" @click="loadInitialState">
+          {{ $t('common.retry') }}
         </el-button>
       </template>
-    </el-dialog>
+    </AppEmptyState>
+
+    <!-- 5. No plans empty state -->
+    <AppEmptyState
+      v-else-if="!plans.length && !loading"
+      :title="$t('weekly_plan.no_plans_yet')"
+      :description="$t('weekly_plan.empty_desc')"
+    >
+      <template #actions>
+        <div class="empty-create">
+          <el-input
+            v-model="emptyCreateName"
+            :placeholder="$t('weekly_plan.new_plan_placeholder')"
+            @keyup.enter="createFromEmpty"
+          />
+          <el-button
+            type="primary"
+            :loading="emptyCreating"
+            :disabled="!emptyCreateName.trim()"
+            @click="createFromEmpty"
+          >
+            {{ $t('weekly_plan.create_first') }}
+          </el-button>
+        </div>
+      </template>
+    </AppEmptyState>
+
+    <!-- 6. Plan with no days -->
+    <AppEmptyState
+      v-else-if="activePlan && !activePlan.days.length"
+      :title="$t('weekly_plan.days_empty_title')"
+      :description="$t('weekly_plan.days_empty_desc')"
+    />
+
+    <!-- 7. Day list -->
+    <section
+      v-else-if="activePlan && activePlan.days.length"
+      class="day-list"
+    >
+      <div class="plan-info">
+        <span class="plan-info__count">
+          {{
+            $t('weekly_plan.plan_info', {
+              count: activePlan.days.length,
+              date: formatDate(activePlan.created_at ?? '')
+            })
+          }}
+        </span>
+        <span v-if="activePlan.notes" class="plan-info__notes">{{ activePlan.notes }}</span>
+      </div>
+      <DaySection
+        v-for="day in sortedDays"
+        :key="day.id"
+        :day="day"
+        @remove-day="removeDay"
+      />
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 
-import { Edit, Delete } from '@element-plus/icons-vue'
 import AppEmptyState from '@/components/common/AppEmptyState.vue'
+import DaySection from '@/components/weekly-plan/DaySection.vue'
+import PlanSwitcher from '@/components/weekly-plan/PlanSwitcher.vue'
 import { getApiErrorDetail } from '@/api'
 import { useShoppingStore } from '@/stores/shopping'
 import { useWeeklyPlanStore } from '@/stores/weeklyPlan'
-import { formatCurrencyAmount, formatDisplayDate } from '@/utils/resilience'
+import { formatDisplayDate } from '@/utils/resilience'
 
 const { locale, t } = useI18n()
 const route = useRoute()
@@ -243,18 +156,13 @@ const weeklyPlanStore = useWeeklyPlanStore()
 const shoppingStore = useShoppingStore()
 const { plans, activePlan, loading } = storeToRefs(weeklyPlanStore)
 
-const newPlanName = ref('')
-const newPlanNotes = ref('')
 const selectedPlanDate = ref(getLocalDateInputValue())
 const shoppingListName = ref('')
-const creating = ref(false)
 const attaching = ref(false)
 const generating = ref(false)
 const loadError = ref('')
-const editDialogVisible = ref(false)
-const editPlanName = ref('')
-const editPlanNotes = ref('')
-const editingPlanId = ref<number | null>(null)
+const emptyCreateName = ref('')
+const emptyCreating = ref(false)
 
 const pendingAttach = computed(() => {
   const sourceSessionId =
@@ -275,12 +183,15 @@ const attachSourceLabel = computed(() =>
   pendingAttach.value?.source_label || t('weekly_plan.pending_attach_desc')
 )
 
+const sortedDays = computed(() => {
+  if (!activePlan.value) return []
+  return [...activePlan.value.days].sort((a, b) =>
+    a.plan_date.localeCompare(b.plan_date)
+  )
+})
+
 function formatDate(value: string) {
   return formatDisplayDate(value, locale.value)
-}
-
-function formatPrice(value: unknown) {
-  return formatCurrencyAmount(value, locale.value)
 }
 
 function getLocalDateInputValue(baseDate = new Date()) {
@@ -308,23 +219,6 @@ async function ensureActivePlan() {
   await weeklyPlanStore.openPlan(plans.value[0].id)
 }
 
-async function createPlan() {
-  const name = newPlanName.value.trim()
-  if (!name) return
-
-  creating.value = true
-  try {
-    await weeklyPlanStore.createPlan(name, newPlanNotes.value.trim())
-    newPlanName.value = ''
-    newPlanNotes.value = ''
-    ElMessage.success(t('weekly_plan.create_success'))
-  } catch (error) {
-    handleWeeklyPlanError(error, 'weekly_plan.errors.create_failed')
-  } finally {
-    creating.value = false
-  }
-}
-
 async function openPlan(planId: number) {
   loadError.value = ''
   try {
@@ -343,6 +237,22 @@ async function loadInitialState() {
   } catch (error) {
     loadError.value = t('weekly_plan.errors.load_failed')
     handleWeeklyPlanError(error, 'weekly_plan.errors.load_failed')
+  }
+}
+
+async function createFromEmpty() {
+  const name = emptyCreateName.value.trim()
+  if (!name) return
+  emptyCreating.value = true
+  try {
+    const plan = await weeklyPlanStore.createPlan(name)
+    emptyCreateName.value = ''
+    await weeklyPlanStore.openPlan(plan.id)
+    ElMessage.success(t('weekly_plan.create_success'))
+  } catch {
+    ElMessage.error(t('weekly_plan.errors.create_failed'))
+  } finally {
+    emptyCreating.value = false
   }
 }
 
@@ -372,53 +282,6 @@ async function removeDay(dayId: number) {
     ElMessage.success(t('weekly_plan.remove_success'))
   } catch (error) {
     handleWeeklyPlanError(error, 'weekly_plan.errors.remove_failed')
-  }
-}
-
-function openEditDialog(planId: number) {
-  const plan = plans.value.find((p) => p.id === planId)
-  if (!plan) return
-  editingPlanId.value = planId
-  editPlanName.value = plan.name
-  editPlanNotes.value = plan.notes || ''
-  editDialogVisible.value = true
-}
-
-async function saveEditPlan() {
-  if (!editingPlanId.value || !editPlanName.value.trim()) return
-
-  try {
-    await weeklyPlanStore.updatePlan(editingPlanId.value, {
-      name: editPlanName.value.trim(),
-      notes: editPlanNotes.value.trim()
-    })
-    editDialogVisible.value = false
-    ElMessage.success(t('weekly_plan.edit_success'))
-  } catch (error) {
-    handleWeeklyPlanError(error, 'weekly_plan.errors.edit_failed')
-  }
-}
-
-async function deletePlan(planId: number) {
-  try {
-    await ElMessageBox.confirm(
-      t('weekly_plan.delete_confirm_message'),
-      t('weekly_plan.delete_confirm_title'),
-      {
-        confirmButtonText: t('common.confirm'),
-        cancelButtonText: t('common.cancel'),
-        type: 'warning'
-      }
-    )
-  } catch {
-    return
-  }
-
-  try {
-    await weeklyPlanStore.deletePlan(planId)
-    ElMessage.success(t('weekly_plan.delete_success'))
-  } catch (error) {
-    handleWeeklyPlanError(error, 'weekly_plan.errors.delete_failed')
   }
 }
 
@@ -455,281 +318,224 @@ onMounted(async () => {
 
 <style scoped>
 .weekly-plan-page {
+  max-width: 800px;
   display: grid;
   gap: 24px;
+  margin: 0 auto;
 }
 
-.page-header,
-.weekly-layout,
-.attach-grid,
-.plan-shell-head,
-.day-head,
-.meal-item {
-  display: flex;
-  gap: 16px;
-}
-
-.page-header,
-.day-head,
-.meal-item {
-  justify-content: space-between;
-  align-items: center;
-}
-
+/* ── Page header ── */
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.page-header h1,
-.section-head h2,
-.plan-shell-head h2,
-.day-head h3,
-.meal-name {
+.page-header__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-header__left h1 {
   margin: 0;
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-secondary);
+  letter-spacing: var(--tracking-tight);
+}
+
+.page-header__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list-name-input {
+  width: min(240px, 100%);
+}
+
+/* ── Pending attach banner ── */
+.attach-banner {
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-border-accent);
+  border-radius: 12px;
+}
+
+.attach-banner__info {
+  min-width: 0;
+}
+
+.attach-banner__label {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   color: var(--color-secondary);
 }
 
-.subtitle,
-.section-head p,
-.muted-copy,
-.plan-shell-head p,
-.meal-meta,
-.plan-meta {
+.attach-banner__source {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 
-.subtitle,
-.section-head p,
-.plan-shell-head p {
-  margin: 8px 0 0;
-}
-
-.weekly-layout {
-  align-items: flex-start;
-}
-
-.sidebar-stack,
-.content-stack,
-.form-stack,
-.plan-list,
-.day-grid,
-.meal-list {
-  display: grid;
-  gap: 16px;
-}
-
-.sidebar-stack {
-  width: min(340px, 100%);
-  flex-shrink: 0;
-}
-
-.content-stack {
-  flex: 1;
-  min-width: 0;
-}
-
-.section-head,
-.plan-shell-head > div,
-.day-head > div,
-.meal-item > div {
-  min-width: 0;
-}
-
-.plan-row {
+.attach-banner__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-soft);
-  background: var(--gradient-surface);
-  cursor: pointer;
-  transition: border-color 200ms ease, background 200ms ease;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.plan-row:hover {
-  border-color: color-mix(in srgb, var(--color-border-accent) 40%, transparent);
+.attach-banner__date {
+  width: min(200px, 100%);
 }
 
-.plan-row.active {
-  border-color: var(--color-border-accent);
-  background: color-mix(in srgb, var(--color-accent-soft) 84%, var(--color-surface-raised));
-}
-
-.plan-copy {
-  flex: 1;
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-
-.plan-actions {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.plan-row:hover .plan-actions,
-.plan-row:focus-within .plan-actions {
-  opacity: 1;
-}
-
-.plan-edit-btn,
-.plan-delete-btn {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 10px;
+.attach-banner__hint {
+  margin: 0;
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  transition: color 180ms ease, background 180ms ease;
+  line-height: 1.6;
 }
 
-.plan-edit-btn:hover {
-  color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
-}
-
-.plan-edit-btn:focus-visible,
-.plan-delete-btn:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
-  outline-offset: 2px;
-}
-
-.plan-delete-btn:hover {
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-}
-
-.day-delete-btn {
+/* ── Loading skeleton ── */
+.skeleton-list {
   display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 10px;
+  gap: 0;
+}
+
+.skeleton-section {
+  display: grid;
+  gap: 10px;
+  padding: 20px 0;
+}
+
+.skeleton-section + .skeleton-section {
+  border-top: 1px solid var(--color-border-soft);
+}
+
+.skeleton-divider {
+  height: 1px;
+  background: var(--color-border-soft);
+  margin: 2px 0;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--color-border-soft);
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-line--heading {
+  height: 18px;
+  width: 35%;
+}
+
+.skeleton-line--meal {
+  height: 12px;
+  width: 70%;
+  margin-left: 12px;
+}
+
+.skeleton-line--summary {
+  height: 12px;
+  width: 30%;
+  justify-self: end;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Plan info ── */
+.plan-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+}
+
+.plan-info__count {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.plan-info__notes {
+  font-size: var(--text-sm);
   color: var(--color-text-light);
-  transition: color 180ms ease, background 180ms ease;
-}
-
-.day-delete-btn:hover {
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-}
-
-.day-delete-btn:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary-dark) 70%, white);
-  outline-offset: 2px;
-}
-
-.edit-form {
-  display: grid;
-  gap: var(--space-5);
-}
-
-.plan-name,
-.meal-name {
-  font-weight: 700;
+  font-style: italic;
   overflow-wrap: anywhere;
 }
 
-.attach-grid {
+/* ── Day list ── */
+.empty-create {
+  display: flex;
+  gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
-}
-
-.attach-grid :deep(.el-input) {
-  width: min(240px, 100%);
-}
-
-.plan-shell-head {
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.list-name-input {
-  width: min(320px, 100%);
-}
-
-.day-grid {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.day-card {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
-  border-radius: 12px;
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border-soft);
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  color: var(--color-primary-dark);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.meal-list {
-  gap: 10px;
-}
-
-.meal-item {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border-soft);
-  align-items: flex-start;
-}
-
-.meal-item strong {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-@media (max-width: 960px) {
-  .weekly-layout {
-    flex-direction: column;
-  }
-
-  .sidebar-stack {
-    width: 100%;
-  }
 }
 
 @media (max-width: 640px) {
-  .attach-grid,
-  .page-header,
-  .plan-shell-head,
-  .day-head,
-  .meal-item {
+  .empty-create {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.day-list {
+  display: grid;
+  gap: 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .page-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .attach-grid :deep(.el-button),
-  .form-stack :deep(.el-button),
-  .page-header :deep(.el-button) {
+  .page-header__left {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-header__right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header__right :deep(.el-button) {
     width: 100%;
     min-height: 44px;
   }
 
-  .plan-actions {
-    opacity: 1;
+  .list-name-input {
+    width: 100%;
   }
-}
 
-@media (hover: none) {
-  .plan-actions {
-    opacity: 1;
+  .attach-banner__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .attach-banner__date {
+    width: 100%;
+  }
+
+  .attach-banner__actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
   }
 }
 </style>

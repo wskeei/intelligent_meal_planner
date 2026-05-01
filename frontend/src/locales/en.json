@@ -235,14 +235,8 @@
   },
   "weekly_plan": {
     "title": "Weekly plan",
-    "subtitle": "Attach finalized daily plans by date, then close the loop by generating a shopping list.",
-    "create": "Create weekly plan",
-    "create_desc": "Weekly plans are built explicitly in V1. There is no auto-fill flow yet.",
     "create_placeholder": "For example: Week 15 cutting plan",
     "notes_placeholder": "Add a short note for the goal, budget, or execution focus",
-    "saved_plans": "Saved weekly plans",
-    "saved_desc": "Select one plan, then attach the finalized day to it.",
-    "load_failed_eyebrow": "Plan unavailable",
     "load_failed_title": "We couldn't load your weekly plans",
     "empty_title": "Create a weekly plan first",
     "empty_desc": "Create a weekly plan, then attach finalized daily plans into dated slots.",
@@ -252,7 +246,6 @@
     "pending_attach_desc": "Choose a date, then attach the current finalized result to the selected weekly plan.",
     "pick_plan_first": "Create or select a weekly plan first.",
     "days_count": "{count} days scheduled",
-    "day_snapshot": "Day snapshot",
     "days_empty_title": "This weekly plan has no scheduled days yet",
     "days_empty_desc": "Attach a finalized day from the planner result or history view.",
     "generate_list": "Generate shopping list",
@@ -261,6 +254,14 @@
     "create_success": "Weekly plan created.",
     "remove_success": "The day was removed from the weekly plan.",
     "no_notes": "No notes yet.",
+    "plan_switcher_label": "Switch plan",
+    "new_plan": "New plan",
+    "new_plan_placeholder": "Plan name",
+    "no_plans_yet": "No plans yet",
+    "create_first": "Create your first",
+    "plan_info": "{count} days · Created {date}",
+    "daily_total": "Total {calories} kcal · {price}",
+    "delete_day": "Remove",
     "edit_plan": "Edit plan",
     "edit_success": "Weekly plan updated.",
     "delete_plan": "Delete plan",
@@ -278,6 +279,11 @@
       "plan_date_occupied": "That date is already occupied. Pick another day or remove the existing one first.",
       "resource_missing": "The target weekly plan or source meal plan no longer exists."
     }
+  },
+  "meal_types": {
+    "breakfast": "Breakfast",
+    "lunch": "Lunch",
+    "dinner": "Dinner"
   },
   "recipes": {
     "title": "Recipes",
