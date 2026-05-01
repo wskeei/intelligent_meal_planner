@@ -5,6 +5,7 @@ from .auth import router as auth_router
 from .weekly_plans import router as weekly_plans_router
 from .shopping_lists import router as shopping_lists_router
 from .intake import router as intake_router
+from .dashboard import router as dashboard_router
 
 __all__ = [
     "recipes_router",
@@ -14,4 +15,5 @@ __all__ = [
     "weekly_plans_router",
     "shopping_lists_router",
     "intake_router",
+    "dashboard_router",
 ]

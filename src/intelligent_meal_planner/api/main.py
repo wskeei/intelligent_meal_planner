@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from ..db import database, models
 from .routers import (
     auth_router,
+    dashboard_router,
     intake_router,
     meal_chat_router,
     meal_plans_router,
@@ -147,6 +148,7 @@ app.include_router(meal_plans_router, prefix="/api")
 app.include_router(weekly_plans_router, prefix="/api")
 app.include_router(shopping_lists_router, prefix="/api")
 app.include_router(intake_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
 
 
 @app.get("/", tags=["system"])
