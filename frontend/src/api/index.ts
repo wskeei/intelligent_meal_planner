@@ -280,6 +280,9 @@ export const weeklyPlanApi = {
   list: () => api.get<WeeklyPlanSummary[]>('/weekly-plans'),
   create: (payload: { name: string; notes?: string }) => api.post<WeeklyPlan>('/weekly-plans', payload),
   getById: (id: number) => api.get<WeeklyPlan>(`/weekly-plans/${id}`),
+  update: (id: number, payload: { name?: string; notes?: string }) =>
+    api.patch<WeeklyPlan>(`/weekly-plans/${id}`, payload),
+  delete: (id: number) => api.delete<{ success: boolean }>(`/weekly-plans/${id}`),
   attachDay: (id: number, payload: WeeklyPlanAttachPayload) =>
     api.post<WeeklyPlan>(`/weekly-plans/${id}/days`, payload),
   removeDay: (id: number, dayId: number) => api.delete<WeeklyPlan>(`/weekly-plans/${id}/days/${dayId}`)
