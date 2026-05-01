@@ -31,6 +31,10 @@ def daily_dashboard(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    from ...nutrition.baseline_generator import BaselineGenerator
+    baseline = BaselineGenerator(db)
+    baseline.initialize_for_user(current_user)
+
     svc = DashboardService(db)
     data = svc.daily_summary(current_user, summary_date)
     return DailyDashboardResponse(
