@@ -50,6 +50,21 @@ const router = createRouter({
       path: '/history',
       name: 'history',
       component: () => import('@/views/HistoryView.vue')
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('@/views/DashboardView.vue')
+    },
+    {
+      path: '/intake',
+      name: 'intake',
+      component: () => import('@/views/IntakeLogView.vue')
+    },
+    {
+      path: '/reports',
+      name: 'reports',
+      component: () => import('@/views/ReportView.vue')
     }
   ]
 })
