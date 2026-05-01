@@ -11,7 +11,10 @@
     "history": "History",
     "profile": "Profile",
     "shopping_cart": "Shopping List",
-    "exit": "Log out"
+    "exit": "Log out",
+    "dashboard": "Dashboard",
+    "intake": "Intake",
+    "reports": "Reports"
   },
   "common": {
     "loading": "Loading...",
@@ -350,6 +353,27 @@
     "error_desc": "Try again once. If it still fails, check your login state or the backend service.",
     "total_calories": "Total calories",
     "total_price": "Total price"
+  },
+  "nutrition": {
+    "dashboard_title": "Nutrition Dashboard",
+    "ai_insight": "AI Health Insights",
+    "log_meal": "Log Meal",
+    "view_reports": "View Reports",
+    "weekly_trend": "7-Day Trend",
+    "reminders": "Smart Reminders",
+    "dismiss_all": "Dismiss All",
+    "intake_log": "Intake Log",
+    "today_records": "Today's Records",
+    "no_records": "No records yet today. Time to eat!",
+    "quick_log": "Quick Log",
+    "select_recipe": "Select recipe",
+    "portion": "Portion",
+    "log": "Log",
+    "reports": "Nutrition Reports",
+    "weekly_report": "Weekly",
+    "monthly_report": "Monthly",
+    "generate_report": "Generate Report",
+    "refresh_insight": "Refresh Insight"
   },
   "auth": {
     "product_name": "Meal Planner",

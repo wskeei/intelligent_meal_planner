@@ -31,6 +31,18 @@
               <el-icon><User /></el-icon>
               <span>{{ $t('nav.profile') }}</span>
             </router-link>
+            <router-link to="/dashboard" class="nav-item" active-class="active">
+              <el-icon><DataAnalysis /></el-icon>
+              <span>{{ $t('nav.dashboard') }}</span>
+            </router-link>
+            <router-link to="/intake" class="nav-item" active-class="active">
+              <el-icon><EditPen /></el-icon>
+              <span>{{ $t('nav.intake') }}</span>
+            </router-link>
+            <router-link to="/reports" class="nav-item" active-class="active">
+              <el-icon><Document /></el-icon>
+              <span>{{ $t('nav.reports') }}</span>
+            </router-link>
           </nav>
 
           <div class="utility-nav">
@@ -97,13 +109,25 @@
           <el-icon><User /></el-icon>
           <span>{{ $t('nav.profile') }}</span>
         </router-link>
+        <router-link to="/dashboard" class="mobile-nav-item" active-class="active">
+          <el-icon><DataAnalysis /></el-icon>
+          <span>{{ $t('nav.dashboard') }}</span>
+        </router-link>
+        <router-link to="/intake" class="mobile-nav-item" active-class="active">
+          <el-icon><EditPen /></el-icon>
+          <span>{{ $t('nav.intake') }}</span>
+        </router-link>
+        <router-link to="/reports" class="mobile-nav-item" active-class="active">
+          <el-icon><Document /></el-icon>
+          <span>{{ $t('nav.reports') }}</span>
+        </router-link>
       </nav>
     </div>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, Calendar, Clock, Food, MagicStick, ShoppingCart, User } from '@element-plus/icons-vue'
+import { ArrowDown, Calendar, Clock, DataAnalysis, Document, EditPen, Food, MagicStick, ShoppingCart, User } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { computed, watch } from 'vue'

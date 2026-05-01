@@ -11,7 +11,10 @@
     "history": "历史",
     "profile": "档案",
     "shopping_cart": "购物清单",
-    "exit": "退出登录"
+    "exit": "退出登录",
+    "dashboard": "看板",
+    "intake": "记录",
+    "reports": "报告"
   },
   "common": {
     "loading": "加载中...",
@@ -350,6 +353,27 @@
     "error_desc": "请重试一次；如果仍失败，再检查登录状态或后端服务。",
     "total_calories": "总热量",
     "total_price": "总价格"
+  },
+  "nutrition": {
+    "dashboard_title": "营养看板",
+    "ai_insight": "AI 健康洞察",
+    "log_meal": "记录饮食",
+    "view_reports": "查看报告",
+    "weekly_trend": "7日趋势",
+    "reminders": "智能提醒",
+    "dismiss_all": "全部标为已读",
+    "intake_log": "饮食记录",
+    "today_records": "今日记录",
+    "no_records": "今天还没有记录，快去吃点什么吧！",
+    "quick_log": "快速记录",
+    "select_recipe": "选择菜品",
+    "portion": "份量",
+    "log": "记录",
+    "reports": "营养报告",
+    "weekly_report": "周报",
+    "monthly_report": "月报",
+    "generate_report": "生成报告",
+    "refresh_insight": "刷新洞察"
   },
   "auth": {
     "product_name": "智能配餐",
