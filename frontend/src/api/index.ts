@@ -323,4 +323,161 @@ export const feasibilityApi = {
   }) => api.get<FeasibilityResult>('/meal-plans/feasibility', { params })
 }
 
+// ============ Intake Tracking ============
+
+export interface IntakeRecord {
+  id: number
+  date: string
+  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  recipe_id?: number | null
+  recipe_name?: string | null
+  custom_food_name?: string | null
+  actual_calories: number
+  actual_protein: number
+  actual_carbs: number
+  actual_fat: number
+  portion_size: number
+  source: 'manual' | 'plan' | 'auto'
+  rating?: number | null
+  note?: string | null
+  created_at: string
+}
+
+export interface DailyIntakeSummary {
+  date: string
+  total_calories: number
+  total_protein: number
+  total_carbs: number
+  total_fat: number
+  meal_count: number
+  records: IntakeRecord[]
+}
+
+export interface NutritionTarget {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+export interface DailyDashboard {
+  date: string
+  target: NutritionTarget
+  actual: NutritionTarget
+  remaining: NutritionTarget
+  meals_logged: number
+  completion_rate: number
+}
+
+export interface WeeklySummaryDay {
+  date: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  meal_count: number
+  on_target: boolean
+}
+
+export interface WeeklyDashboard {
+  days: WeeklySummaryDay[]
+  avg_calories: number
+  avg_protein: number
+  target_adherence_rate: number
+}
+
+export interface WeightLog {
+  id: number
+  date: string
+  weight: number
+  body_fat_pct?: number | null
+  note?: string | null
+}
+
+export interface Reminder {
+  id: number
+  type: string
+  title: string
+  message: string
+  severity: 'info' | 'warning' | 'critical'
+  is_read: boolean
+  created_at: string
+}
+
+export interface TrendPoint {
+  period: string
+  avg_calories: number
+  avg_protein: number
+  avg_carbs: number
+  avg_fat: number
+  adherence_rate: number
+}
+
+export interface ReportResponse {
+  report_type: string
+  html: string
+  generated_at: string
+}
+
+export interface InsightResponse {
+  insight: string
+  generated_at: string
+}
+
+export const intakeApi = {
+  logMeal: (payload: {
+    date: string
+    meal_type: string
+    recipe_id?: number
+    custom_food_name?: string
+    actual_calories?: number
+    actual_protein?: number
+    actual_carbs?: number
+    actual_fat?: number
+    portion_size?: number
+    rating?: number
+  }) => api.post<IntakeRecord>('/intake/records', payload),
+
+  quickLog: (payload: { date: string; recipe_id: number; portion_size?: number; meal_type?: string }) =>
+    api.post<IntakeRecord>('/intake/quick-log', payload),
+
+  getDaily: (recordDate: string) =>
+    api.get<DailyIntakeSummary>(`/intake/records/${recordDate}`),
+
+  updateRecord: (id: number, payload: { portion_size?: number; rating?: number; note?: string }) =>
+    api.patch<IntakeRecord>(`/intake/records/${id}`, payload),
+
+  deleteRecord: (id: number) =>
+    api.delete(`/intake/records/${id}`)
+}
+
+export const dashboardApi = {
+  getDaily: (summaryDate: string) =>
+    api.get<DailyDashboard>(`/dashboard/daily/${summaryDate}`),
+
+  getWeekly: () =>
+    api.get<WeeklyDashboard>('/dashboard/weekly'),
+
+  getTrends: (months?: number) =>
+    api.get<TrendPoint[]>('/dashboard/trends', { params: { months } }),
+
+  logWeight: (payload: { date: string; weight: number; body_fat_pct?: number }) =>
+    api.post<WeightLog>('/dashboard/weight', payload),
+
+  getWeight: () =>
+    api.get<WeightLog[]>('/dashboard/weight'),
+
+  getReminders: () =>
+    api.get<Reminder[]>('/dashboard/reminders'),
+
+  dismissReminder: (id: number) =>
+    api.patch(`/dashboard/reminders/${id}/dismiss`),
+
+  getInsights: () =>
+    api.get<InsightResponse>('/dashboard/insights'),
+
+  generateReport: (payload: { report_type: string; start_date?: string }) =>
+    api.post<ReportResponse>('/dashboard/report', payload)
+}
+
 export default api
