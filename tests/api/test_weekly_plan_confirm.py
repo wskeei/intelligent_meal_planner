@@ -1,5 +1,5 @@
 import copy
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -93,8 +93,8 @@ def _create_plan_with_day(client, auth_header, db_session):
         status="finalized",
         collected_slots={},
         final_plan=make_final_plan_payload(),
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     db_session.add(session)
     db_session.commit()

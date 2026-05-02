@@ -22,6 +22,8 @@
             {{ day.completed ? t('weekly_plan.completed') : t('weekly_plan.confirm_complete') }}
           </span>
         </button>
+        <span v-if="day.completed && completedTimeLabel" class="confirm-time">{{ completedTimeLabel }}</span>
+        <span v-else-if="!day.completed && isFutureDate" class="confirm-hint">{{ t('weekly_plan.early_confirm_hint') }}</span>
         <button
           class="day-delete-btn"
           type="button"
@@ -89,11 +91,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Delete, Check, CircleCheck, Loading } from '@element-plus/icons-vue'
 import type { WeeklyPlanDay } from '@/api'
-import { formatDisplayDate, formatCurrencyAmount, resolveIntlLocale } from '@/utils/resilience'
+import { formatDisplayDate, formatCompletedTime, formatCurrencyAmount, resolveIntlLocale } from '@/utils/resilience'
 
 const props = defineProps<{
   day: WeeklyPlanDay
@@ -113,6 +115,18 @@ const showCancelDialog = ref(false)
 
 const meals = computed(() => props.day.meal_plan_snapshot.meals)
 const nutrition = computed(() => props.day.nutrition_snapshot)
+
+const isFutureDate = computed(() => {
+  if (!props.day.plan_date) return false
+  return props.day.plan_date > new Date().toISOString().slice(0, 10)
+})
+
+const completedTimeLabel = computed(() => {
+  if (!props.day.completed || !props.day.completed_at) return ''
+  return t('weekly_plan.completed_at', {
+    time: formatCompletedTime(props.day.completed_at, locale.value, props.day.completed_at)
+  })
+})
 
 const displayDate = computed(() =>
   formatDisplayDate(props.day.plan_date, locale.value)
@@ -149,24 +163,20 @@ function onToggleConfirm() {
   }
 }
 
-async function doConfirm() {
+watch(() => props.day.completed, () => {
+  confirming.value = false
+})
+
+function doConfirm() {
   showConfirmDialog.value = false
   confirming.value = true
-  try {
-    await emit('confirm-day', props.day.plan_date)
-  } finally {
-    confirming.value = false
-  }
+  emit('confirm-day', props.day.plan_date)
 }
 
-async function doCancel() {
+function doCancel() {
   showCancelDialog.value = false
   confirming.value = true
-  try {
-    await emit('cancel-confirm', props.day.plan_date)
-  } finally {
-    confirming.value = false
-  }
+  emit('cancel-confirm', props.day.plan_date)
 }
 </script>
 
@@ -245,6 +255,18 @@ async function doCancel() {
 }
 
 .confirm-btn__text {
+  white-space: nowrap;
+}
+
+.confirm-time {
+  font-size: var(--text-xs);
+  color: var(--color-success);
+  white-space: nowrap;
+}
+
+.confirm-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-light);
   white-space: nowrap;
 }
 
@@ -389,6 +411,11 @@ async function doCancel() {
   }
 
   .confirm-btn__text {
+    display: none;
+  }
+
+  .confirm-time,
+  .confirm-hint {
     display: none;
   }
 }

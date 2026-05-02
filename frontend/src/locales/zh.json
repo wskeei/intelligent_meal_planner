@@ -292,6 +292,7 @@
     "cancel_dialog_message": "取消后将删除同步的饮食记录。",
     "completed": "已完成",
     "completed_at": "完成于 {time}",
+    "early_confirm_hint": "提前确认",
     "confirm_success": "当天配餐已确认并同步到记录。",
     "cancel_success": "已取消确认并移除同步记录。"
   },

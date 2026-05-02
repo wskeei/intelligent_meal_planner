@@ -123,6 +123,47 @@ export function formatDisplayDate(
   }
 }
 
+export function formatCompletedTime(
+  value: string | number | Date | null | undefined,
+  locale: string,
+  fallback = ''
+) {
+  if (value === null || value === undefined || value === '') return fallback
+
+  const date = value instanceof Date ? value : new Date(value)
+  if (Number.isNaN(date.getTime())) return fallback
+
+  const resolvedLocale = resolveIntlLocale(locale)
+  const now = new Date()
+
+  const timeStr = new Intl.DateTimeFormat(resolvedLocale, {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((startOfToday.getTime() - startOfDate.getTime()) / 86_400_000)
+
+  if (diffDays === 0) return timeStr
+
+  if (diffDays === 1) {
+    try {
+      const yesterday = new Intl.RelativeTimeFormat(resolvedLocale, { numeric: 'auto' })
+        .format(-1, 'day')
+      return `${yesterday} ${timeStr}`
+    } catch {
+      return `${date.getMonth() + 1}/${date.getDate()} ${timeStr}`
+    }
+  }
+
+  const dateStr = new Intl.DateTimeFormat(resolvedLocale, {
+    month: 'short',
+    day: 'numeric'
+  }).format(date)
+  return `${dateStr} ${timeStr}`
+}
+
 export function splitAndTrimList(raw: string, separator = ',') {
   if (!raw.trim()) return []
 

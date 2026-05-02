@@ -291,7 +291,8 @@
     "cancel_dialog_title": "Cancel confirmation?",
     "cancel_dialog_message": "This will remove the synced intake records.",
     "completed": "Completed",
-    "completed_at": "Completed at {time}",
+    "completed_at": "Completed {time}",
+    "early_confirm_hint": "Marking early",
     "confirm_success": "Day confirmed and synced to intake records.",
     "cancel_success": "Confirmation cancelled and synced records removed."
   },

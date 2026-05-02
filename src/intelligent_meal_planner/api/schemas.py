@@ -375,6 +375,10 @@ class ConfirmDayResponse(BaseModel):
     records: list[IntakeRecordResponse] = Field(default_factory=list)
 
 
+class CancelConfirmResponse(BaseModel):
+    success: bool = True
+
+
 class DailyIntakeSummary(BaseModel):
     date: date
     total_calories: float = 0

@@ -4,12 +4,20 @@ import copy
 import json
 import re
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, selectinload
+
+from .exceptions import (
+    DayAlreadyConfirmedError,
+    DayNotConfirmedError,
+    EmptyMealPlanError,
+    RecipeMissingError,
+    WeeklyPlanDayNotFoundError,
+)
 
 from ..db import models
 from ..db.models import MealChatMessage, MealChatSession, User
@@ -576,7 +584,7 @@ class MealChatApplication:
 
 class WeeklyPlanService:
     def _touch_plan(self, plan: models.WeeklyPlan) -> None:
-        plan.updated_at = datetime.utcnow()
+        plan.updated_at = datetime.now(timezone.utc)
 
     def _resolve_requested_meal_plan(
         self, final_plan: Dict[str, Any], meal_plan_id: str
@@ -769,51 +777,51 @@ class WeeklyPlanService:
         plan = self.get_owned_plan(db, user_id, plan_id)
         day = next((d for d in plan.days if d.plan_date == plan_date), None)
         if day is None:
-            raise HTTPException(status_code=404, detail="Weekly plan day not found")
+            raise WeeklyPlanDayNotFoundError()
 
         if day.completed:
-            raise HTTPException(status_code=409, detail="Day already confirmed")
+            raise DayAlreadyConfirmedError()
 
         snapshot = day.meal_plan_snapshot or {}
         meals = snapshot.get("meals", [])
         if not meals:
-            raise HTTPException(
-                status_code=422, detail="No meals in plan for this day"
-            )
+            raise EmptyMealPlanError()
 
         created_records: list[models.IntakeRecord] = []
-        for meal in meals:
-            recipe_id = meal.get("recipe_id")
-            portion_size = meal.get("portion_size", 1.0)
-            meal_type = meal.get("meal_type", "lunch")
+        try:
+            for meal in meals:
+                recipe_id = meal.get("recipe_id")
+                portion_size = meal.get("portion_size", 1.0)
+                meal_type = meal.get("meal_type", "lunch")
 
-            recipe = db.get(models.Recipe, recipe_id) if recipe_id else None
-            if recipe is None:
-                raise HTTPException(
-                    status_code=422, detail="Recipe data missing for planned meal"
+                recipe = db.get(models.Recipe, recipe_id) if recipe_id else None
+                if recipe is None:
+                    raise RecipeMissingError(recipe_id)
+
+                record = models.IntakeRecord(
+                    user_id=user_id,
+                    date=day.plan_date,
+                    meal_type=meal_type,
+                    recipe_id=recipe_id,
+                    actual_calories=recipe.calories * portion_size,
+                    actual_protein=recipe.protein * portion_size,
+                    actual_carbs=recipe.carbs * portion_size,
+                    actual_fat=recipe.fat * portion_size,
+                    portion_size=portion_size,
+                    source="plan",
+                    source_plan_day_id=day.id,
                 )
+                db.add(record)
+                created_records.append(record)
 
-            record = models.IntakeRecord(
-                user_id=user_id,
-                date=day.plan_date,
-                meal_type=meal_type,
-                recipe_id=recipe_id,
-                actual_calories=recipe.calories * portion_size,
-                actual_protein=recipe.protein * portion_size,
-                actual_carbs=recipe.carbs * portion_size,
-                actual_fat=recipe.fat * portion_size,
-                portion_size=portion_size,
-                source="plan",
-                source_plan_day_id=day.id,
-            )
-            db.add(record)
-            created_records.append(record)
-
-        day.completed = True
-        day.completed_at = datetime.utcnow()
-        self._touch_plan(plan)
-        db.add(plan)
-        db.commit()
+            day.completed = True
+            day.completed_at = datetime.now(timezone.utc)
+            self._touch_plan(plan)
+            db.add(plan)
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
         for r in created_records:
             db.refresh(r)
@@ -853,28 +861,32 @@ class WeeklyPlanService:
         plan = self.get_owned_plan(db, user_id, plan_id)
         day = next((d for d in plan.days if d.plan_date == plan_date), None)
         if day is None:
-            raise HTTPException(status_code=404, detail="Weekly plan day not found")
+            raise WeeklyPlanDayNotFoundError()
 
         if not day.completed:
-            raise HTTPException(status_code=409, detail="Day not confirmed yet")
+            raise DayNotConfirmedError()
 
-        db.query(models.IntakeRecord).filter(
-            models.IntakeRecord.source == "plan",
-            models.IntakeRecord.source_plan_day_id == day.id,
-        ).delete(synchronize_session=False)
+        try:
+            db.query(models.IntakeRecord).filter(
+                models.IntakeRecord.source == "plan",
+                models.IntakeRecord.source_plan_day_id == day.id,
+            ).delete(synchronize_session=False)
 
-        day.completed = False
-        day.completed_at = None
-        self._touch_plan(plan)
-        db.add(plan)
-        db.commit()
+            day.completed = False
+            day.completed_at = None
+            self._touch_plan(plan)
+            db.add(plan)
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
 
 
 class ShoppingListService:
     AMOUNT_PATTERN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([A-Za-z\u4e00-\u9fff%]+)\s*$")
 
     def _touch_list(self, shopping_list: models.ShoppingList) -> None:
-        shopping_list.updated_at = datetime.utcnow()
+        shopping_list.updated_at = datetime.now(timezone.utc)
 
     def _parse_display_amount(self, display_amount: str) -> tuple[float, str] | None:
         match = self.AMOUNT_PATTERN.match(display_amount)

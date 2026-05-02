@@ -1,11 +1,19 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ...db.database import get_db
 from ...db.models import User
+from ..exceptions import (
+    DayAlreadyConfirmedError,
+    DayNotConfirmedError,
+    EmptyMealPlanError,
+    RecipeMissingError,
+    WeeklyPlanDayNotFoundError,
+)
 from ..schemas import (
+    CancelConfirmResponse,
     ConfirmDayResponse,
     WeeklyPlanAttachDayRequest,
     WeeklyPlanCreateRequest,
@@ -110,15 +118,29 @@ async def confirm_weekly_plan_day(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return weekly_plan_service.confirm_day(db, current_user.id, plan_id, plan_date)
+    try:
+        return weekly_plan_service.confirm_day(db, current_user.id, plan_id, plan_date)
+    except WeeklyPlanDayNotFoundError:
+        raise HTTPException(status_code=404, detail="Weekly plan day not found")
+    except DayAlreadyConfirmedError:
+        raise HTTPException(status_code=409, detail="Day already confirmed")
+    except EmptyMealPlanError:
+        raise HTTPException(status_code=422, detail="No meals in plan for this day")
+    except RecipeMissingError:
+        raise HTTPException(status_code=422, detail="Recipe data missing for planned meal")
 
 
-@router.post("/{plan_id}/days/{plan_date}/cancel-confirm")
+@router.post("/{plan_id}/days/{plan_date}/cancel-confirm", response_model=CancelConfirmResponse)
 async def cancel_confirm_weekly_plan_day(
     plan_id: int,
     plan_date: date,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    weekly_plan_service.cancel_confirm(db, current_user.id, plan_id, plan_date)
-    return {"success": True}
+    try:
+        weekly_plan_service.cancel_confirm(db, current_user.id, plan_id, plan_date)
+    except WeeklyPlanDayNotFoundError:
+        raise HTTPException(status_code=404, detail="Weekly plan day not found")
+    except DayNotConfirmedError:
+        raise HTTPException(status_code=409, detail="Day not confirmed yet")
+    return CancelConfirmResponse()
