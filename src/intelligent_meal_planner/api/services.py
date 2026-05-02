@@ -619,6 +619,8 @@ class WeeklyPlanService:
             "source_session_id": day.source_session_id,
             "meal_plan_snapshot": day.meal_plan_snapshot,
             "nutrition_snapshot": day.nutrition_snapshot or {},
+            "completed": day.completed,
+            "completed_at": day.completed_at,
         }
 
     def _serialize_plan(self, plan: models.WeeklyPlan) -> Dict[str, Any]:
@@ -755,6 +757,116 @@ class WeeklyPlanService:
     def delete_plan(self, db: Session, user_id: int, plan_id: int) -> None:
         plan = self.get_owned_plan(db, user_id, plan_id)
         db.delete(plan)
+        db.commit()
+
+    def confirm_day(
+        self,
+        db: Session,
+        user_id: int,
+        plan_id: int,
+        plan_date: date,
+    ) -> dict[str, Any]:
+        plan = self.get_owned_plan(db, user_id, plan_id)
+        day = next((d for d in plan.days if d.plan_date == plan_date), None)
+        if day is None:
+            raise HTTPException(status_code=404, detail="Weekly plan day not found")
+
+        if day.completed:
+            raise HTTPException(status_code=409, detail="Day already confirmed")
+
+        snapshot = day.meal_plan_snapshot or {}
+        meals = snapshot.get("meals", [])
+        if not meals:
+            raise HTTPException(
+                status_code=422, detail="No meals in plan for this day"
+            )
+
+        created_records: list[models.IntakeRecord] = []
+        for meal in meals:
+            recipe_id = meal.get("recipe_id")
+            portion_size = meal.get("portion_size", 1.0)
+            meal_type = meal.get("meal_type", "lunch")
+
+            recipe = db.get(models.Recipe, recipe_id) if recipe_id else None
+            if recipe is None:
+                raise HTTPException(
+                    status_code=422, detail="Recipe data missing for planned meal"
+                )
+
+            record = models.IntakeRecord(
+                user_id=user_id,
+                date=day.plan_date,
+                meal_type=meal_type,
+                recipe_id=recipe_id,
+                actual_calories=recipe.calories * portion_size,
+                actual_protein=recipe.protein * portion_size,
+                actual_carbs=recipe.carbs * portion_size,
+                actual_fat=recipe.fat * portion_size,
+                portion_size=portion_size,
+                source="plan",
+                source_plan_day_id=day.id,
+            )
+            db.add(record)
+            created_records.append(record)
+
+        day.completed = True
+        day.completed_at = datetime.utcnow()
+        self._touch_plan(plan)
+        db.add(plan)
+        db.commit()
+
+        for r in created_records:
+            db.refresh(r)
+
+        return {
+            "synced_count": len(created_records),
+            "records": [
+                {
+                    "id": r.id,
+                    "date": r.date,
+                    "meal_type": r.meal_type,
+                    "recipe_id": r.recipe_id,
+                    "recipe_name": r.recipe.name if r.recipe else None,
+                    "custom_food_name": r.custom_food_name,
+                    "actual_calories": r.actual_calories,
+                    "actual_protein": r.actual_protein,
+                    "actual_carbs": r.actual_carbs,
+                    "actual_fat": r.actual_fat,
+                    "portion_size": r.portion_size,
+                    "source": r.source,
+                    "source_plan_day_id": r.source_plan_day_id,
+                    "rating": r.rating,
+                    "note": r.note,
+                    "created_at": r.created_at,
+                }
+                for r in created_records
+            ],
+        }
+
+    def cancel_confirm(
+        self,
+        db: Session,
+        user_id: int,
+        plan_id: int,
+        plan_date: date,
+    ) -> None:
+        plan = self.get_owned_plan(db, user_id, plan_id)
+        day = next((d for d in plan.days if d.plan_date == plan_date), None)
+        if day is None:
+            raise HTTPException(status_code=404, detail="Weekly plan day not found")
+
+        if not day.completed:
+            raise HTTPException(status_code=409, detail="Day not confirmed yet")
+
+        db.query(models.IntakeRecord).filter(
+            models.IntakeRecord.source == "plan",
+            models.IntakeRecord.source_plan_day_id == day.id,
+        ).delete(synchronize_session=False)
+
+        day.completed = False
+        day.completed_at = None
+        self._touch_plan(plan)
+        db.add(plan)
         db.commit()
 
 

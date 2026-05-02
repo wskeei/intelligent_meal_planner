@@ -1,9 +1,12 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from ...db.database import get_db
 from ...db.models import User
 from ..schemas import (
+    ConfirmDayResponse,
     WeeklyPlanAttachDayRequest,
     WeeklyPlanCreateRequest,
     WeeklyPlanResponse,
@@ -98,3 +101,24 @@ async def remove_weekly_plan_day(
     current_user: User = Depends(get_current_user),
 ):
     return weekly_plan_service.remove_day(db, current_user.id, plan_id, day_id)
+
+
+@router.post("/{plan_id}/days/{plan_date}/confirm", response_model=ConfirmDayResponse)
+async def confirm_weekly_plan_day(
+    plan_id: int,
+    plan_date: date,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return weekly_plan_service.confirm_day(db, current_user.id, plan_id, plan_date)
+
+
+@router.post("/{plan_id}/days/{plan_date}/cancel-confirm")
+async def cancel_confirm_weekly_plan_day(
+    plan_id: int,
+    plan_date: date,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    weekly_plan_service.cancel_confirm(db, current_user.id, plan_id, plan_date)
+    return {"success": True}

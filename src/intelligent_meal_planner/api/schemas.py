@@ -263,11 +263,6 @@ class WeeklyPlanResponse(BaseModel):
     days: list[WeeklyPlanDayResponse] = Field(default_factory=list)
 
 
-class ConfirmDayResponse(BaseModel):
-    synced_count: int
-    records: list[IntakeRecordResponse] = Field(default_factory=list)
-
-
 class ShoppingListGenerateRequest(BaseModel):
     weekly_plan_id: int
     name: str | None = None
@@ -373,6 +368,11 @@ class IntakeRecordResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ConfirmDayResponse(BaseModel):
+    synced_count: int
+    records: list[IntakeRecordResponse] = Field(default_factory=list)
 
 
 class DailyIntakeSummary(BaseModel):
