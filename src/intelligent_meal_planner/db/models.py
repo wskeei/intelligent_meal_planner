@@ -120,6 +120,8 @@ class WeeklyPlanDay(Base):
     source_session_id = Column(String, nullable=True)
     meal_plan_snapshot = Column(JSON, nullable=False)
     nutrition_snapshot = Column(JSON, nullable=False, default=dict)
+    completed = Column(Boolean, default=False, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -182,6 +184,11 @@ class IntakeRecord(Base):
     actual_fat = Column(Float, nullable=False)
     portion_size = Column(Float, default=1.0)
     source = Column(String(20), default="manual")  # manual/plan/auto
+    source_plan_day_id = Column(
+        Integer,
+        ForeignKey("weekly_plan_days.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     rating = Column(Integer, nullable=True)
     feedback_skipped = Column(Boolean, default=False)
     note = Column(Text, nullable=True)
