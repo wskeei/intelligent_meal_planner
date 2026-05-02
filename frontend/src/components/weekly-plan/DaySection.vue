@@ -6,14 +6,31 @@
         <span class="day-header__date">{{ displayDate }}</span>
         <span class="day-header__weekday">{{ weekday }}</span>
       </div>
-      <button
-        class="day-delete-btn"
-        type="button"
-        :aria-label="t('weekly_plan.delete_day')"
-        @click="onRemove"
-      >
-        <el-icon :size="16"><Delete /></el-icon>
-      </button>
+      <div class="day-header__right">
+        <button
+          class="confirm-btn"
+          type="button"
+          :class="{ 'confirm-btn--completed': day.completed, 'confirm-btn--loading': confirming }"
+          :aria-label="day.completed ? t('weekly_plan.completed') : t('weekly_plan.confirm_complete')"
+          :disabled="confirming"
+          @click="onToggleConfirm"
+        >
+          <el-icon v-if="confirming" class="is-loading"><Loading /></el-icon>
+          <el-icon v-else-if="day.completed"><Check /></el-icon>
+          <el-icon v-else><CircleCheck /></el-icon>
+          <span class="confirm-btn__text">
+            {{ day.completed ? t('weekly_plan.completed') : t('weekly_plan.confirm_complete') }}
+          </span>
+        </button>
+        <button
+          class="day-delete-btn"
+          type="button"
+          :aria-label="t('weekly_plan.delete_day')"
+          @click="onRemove"
+        >
+          <el-icon :size="16"><Delete /></el-icon>
+        </button>
+      </div>
     </div>
 
     <!-- Meal rows -->
@@ -42,13 +59,39 @@
         })
       }}
     </p>
+
+    <!-- Confirm dialog -->
+    <el-dialog
+      v-model="showConfirmDialog"
+      :title="t('weekly_plan.confirm_dialog_title')"
+      width="360px"
+    >
+      <p>{{ t('weekly_plan.confirm_dialog_message') }}</p>
+      <template #footer>
+        <el-button @click="showConfirmDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="doConfirm">{{ t('weekly_plan.confirm_complete') }}</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Cancel dialog -->
+    <el-dialog
+      v-model="showCancelDialog"
+      :title="t('weekly_plan.cancel_dialog_title')"
+      width="360px"
+    >
+      <p>{{ t('weekly_plan.cancel_dialog_message') }}</p>
+      <template #footer>
+        <el-button @click="showCancelDialog = false">{{ t('common.close') }}</el-button>
+        <el-button type="danger" @click="doCancel">{{ t('weekly_plan.cancel_confirm') }}</el-button>
+      </template>
+    </el-dialog>
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, Check, CircleCheck, Loading } from '@element-plus/icons-vue'
 import type { WeeklyPlanDay } from '@/api'
 import { formatDisplayDate, formatCurrencyAmount, resolveIntlLocale } from '@/utils/resilience'
 
@@ -58,9 +101,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'remove-day': [id: number]
+  'confirm-day': [date: string]
+  'cancel-confirm': [date: string]
 }>()
 
 const { t, locale } = useI18n()
+
+const confirming = ref(false)
+const showConfirmDialog = ref(false)
+const showCancelDialog = ref(false)
 
 const meals = computed(() => props.day.meal_plan_snapshot.meals)
 const nutrition = computed(() => props.day.nutrition_snapshot)
@@ -90,6 +139,34 @@ function mealTypeLabel(type: string): string {
 
 function onRemove() {
   emit('remove-day', props.day.id)
+}
+
+function onToggleConfirm() {
+  if (props.day.completed) {
+    showCancelDialog.value = true
+  } else {
+    showConfirmDialog.value = true
+  }
+}
+
+async function doConfirm() {
+  showConfirmDialog.value = false
+  confirming.value = true
+  try {
+    await emit('confirm-day', props.day.plan_date)
+  } finally {
+    confirming.value = false
+  }
+}
+
+async function doCancel() {
+  showCancelDialog.value = false
+  confirming.value = true
+  try {
+    await emit('cancel-confirm', props.day.plan_date)
+  } finally {
+    confirming.value = false
+  }
 }
 </script>
 
@@ -128,6 +205,47 @@ function onRemove() {
   letter-spacing: var(--tracking-wider);
   color: var(--color-text-light);
   text-transform: capitalize;
+}
+
+.day-header__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Confirm button ── */
+.confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: background 160ms, border-color 160ms, color 160ms;
+}
+
+.confirm-btn:hover {
+  background: var(--color-surface-raised);
+}
+
+.confirm-btn--completed {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.confirm-btn--loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.confirm-btn__text {
+  white-space: nowrap;
 }
 
 /* ── Delete button (hidden by default, shown on parent hover) ── */
@@ -267,6 +385,10 @@ function onRemove() {
   }
 
   .meal-row__price {
+    display: none;
+  }
+
+  .confirm-btn__text {
     display: none;
   }
 }

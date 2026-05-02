@@ -29,6 +29,7 @@ function onLogged() {
         <div class="record-info">
           <span class="record-meal">{{ r.meal_type }}</span>
           <span class="record-name">{{ r.recipe_name || r.custom_food_name }}</span>
+          <span v-if="r.source === 'plan'" class="record-source">{{ $t('nutrition.from_plan') }}</span>
         </div>
         <div class="record-nutrition">
           {{ Math.round(r.actual_calories) }} kcal · {{ Math.round(r.actual_protein) }}g P
@@ -67,6 +68,14 @@ function onLogged() {
 .record-nutrition {
   font-size: 13px;
   color: var(--el-text-color-regular);
+}
+.record-source {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
+  white-space: nowrap;
 }
 .empty {
   padding: 24px;

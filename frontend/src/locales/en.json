@@ -280,8 +280,20 @@
       "edit_failed": "Could not update the weekly plan. Please try again.",
       "delete_failed": "Could not delete the weekly plan. Please try again.",
       "plan_date_occupied": "That date is already occupied. Pick another day or remove the existing one first.",
-      "resource_missing": "The target weekly plan or source meal plan no longer exists."
-    }
+      "resource_missing": "The target weekly plan or source meal plan no longer exists.",
+      "confirm_failed": "Failed to confirm. Please try again later.",
+      "cancel_failed": "Failed to cancel confirmation. Please try again later."
+    },
+    "confirm_complete": "Confirm completion",
+    "cancel_confirm": "Cancel confirmation",
+    "confirm_dialog_title": "Confirm day completion?",
+    "confirm_dialog_message": "This will sync the meals to your intake records, making them visible on the dashboard and in reports.",
+    "cancel_dialog_title": "Cancel confirmation?",
+    "cancel_dialog_message": "This will remove the synced intake records.",
+    "completed": "Completed",
+    "completed_at": "Completed at {time}",
+    "confirm_success": "Day confirmed and synced to intake records.",
+    "cancel_success": "Confirmation cancelled and synced records removed."
   },
   "meal_types": {
     "breakfast": "Breakfast",
@@ -378,7 +390,8 @@
     "weekly_report": "Weekly",
     "monthly_report": "Monthly",
     "generate_report": "Generate Report",
-    "refresh_insight": "Refresh Insight"
+    "refresh_insight": "Refresh Insight",
+    "from_plan": "From weekly plan"
   },
   "auth": {
     "product_name": "Meal Planner",

@@ -280,8 +280,20 @@
       "edit_failed": "周计划更新失败，请稍后重试。",
       "delete_failed": "周计划删除失败，请稍后重试。",
       "plan_date_occupied": "这个日期已经有方案了，请换一天或先删除原有安排。",
-      "resource_missing": "目标周计划或来源方案已不存在。"
-    }
+      "resource_missing": "目标周计划或来源方案已不存在。",
+      "confirm_failed": "确认失败，请稍后重试。",
+      "cancel_failed": "取消确认失败，请稍后重试。"
+    },
+    "confirm_complete": "确认完成",
+    "cancel_confirm": "取消确认",
+    "confirm_dialog_title": "确认完成当天配餐？",
+    "confirm_dialog_message": "确认后将同步到饮食记录，可在看板和报告中查看。",
+    "cancel_dialog_title": "取消确认？",
+    "cancel_dialog_message": "取消后将删除同步的饮食记录。",
+    "completed": "已完成",
+    "completed_at": "完成于 {time}",
+    "confirm_success": "当天配餐已确认并同步到记录。",
+    "cancel_success": "已取消确认并移除同步记录。"
   },
   "meal_types": {
     "breakfast": "早餐",
@@ -378,7 +390,8 @@
     "weekly_report": "周报",
     "monthly_report": "月报",
     "generate_report": "生成报告",
-    "refresh_insight": "刷新洞察"
+    "refresh_insight": "刷新洞察",
+    "from_plan": "来自周计划"
   },
   "auth": {
     "product_name": "智能配餐",
