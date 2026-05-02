@@ -584,7 +584,7 @@ class MealChatApplication:
 
 class WeeklyPlanService:
     def _touch_plan(self, plan: models.WeeklyPlan) -> None:
-        plan.updated_at = datetime.now(timezone.utc)
+        plan.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     def _resolve_requested_meal_plan(
         self, final_plan: Dict[str, Any], meal_plan_id: str
@@ -815,7 +815,7 @@ class WeeklyPlanService:
                 created_records.append(record)
 
             day.completed = True
-            day.completed_at = datetime.now(timezone.utc)
+            day.completed_at = datetime.now(timezone.utc).replace(tzinfo=None)
             self._touch_plan(plan)
             db.add(plan)
             db.commit()
@@ -886,7 +886,7 @@ class ShoppingListService:
     AMOUNT_PATTERN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*([A-Za-z\u4e00-\u9fff%]+)\s*$")
 
     def _touch_list(self, shopping_list: models.ShoppingList) -> None:
-        shopping_list.updated_at = datetime.now(timezone.utc)
+        shopping_list.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
     def _parse_display_amount(self, display_amount: str) -> tuple[float, str] | None:
         match = self.AMOUNT_PATTERN.match(display_amount)
