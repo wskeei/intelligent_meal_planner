@@ -241,6 +241,8 @@ class WeeklyPlanDayResponse(BaseModel):
     source_session_id: str | None = None
     meal_plan_snapshot: dict[str, Any]
     nutrition_snapshot: dict[str, Any] = Field(default_factory=dict)
+    completed: bool = False
+    completed_at: datetime | None = None
 
 
 class WeeklyPlanSummaryResponse(BaseModel):
@@ -359,12 +361,22 @@ class IntakeRecordResponse(BaseModel):
     actual_fat: float
     portion_size: float
     source: str
+    source_plan_day_id: Optional[int] = None
     rating: Optional[int] = None
     note: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class ConfirmDayResponse(BaseModel):
+    synced_count: int
+    records: list[IntakeRecordResponse] = Field(default_factory=list)
+
+
+class CancelConfirmResponse(BaseModel):
+    success: bool = True
 
 
 class DailyIntakeSummary(BaseModel):

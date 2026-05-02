@@ -128,6 +128,8 @@
         :key="day.id"
         :day="day"
         @remove-day="removeDay"
+        @confirm-day="confirmDay"
+        @cancel-confirm="cancelConfirm"
       />
     </section>
   </div>
@@ -282,6 +284,26 @@ async function removeDay(dayId: number) {
     ElMessage.success(t('weekly_plan.remove_success'))
   } catch (error) {
     handleWeeklyPlanError(error, 'weekly_plan.errors.remove_failed')
+  }
+}
+
+async function confirmDay(date: string) {
+  if (!activePlan.value) return
+  try {
+    await weeklyPlanStore.confirmDay(activePlan.value.id, date)
+    ElMessage.success(t('weekly_plan.confirm_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.confirm_failed')
+  }
+}
+
+async function cancelConfirm(date: string) {
+  if (!activePlan.value) return
+  try {
+    await weeklyPlanStore.cancelConfirm(activePlan.value.id, date)
+    ElMessage.success(t('weekly_plan.cancel_success'))
+  } catch (error) {
+    handleWeeklyPlanError(error, 'weekly_plan.errors.cancel_failed')
   }
 }
 

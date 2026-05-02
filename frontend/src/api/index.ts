@@ -97,6 +97,8 @@ export interface WeeklyPlanDay {
   source_session_id?: string | null
   meal_plan_snapshot: MealPlan
   nutrition_snapshot: NutritionSummary
+  completed: boolean
+  completed_at?: string
 }
 
 export interface WeeklyPlanSummary {
@@ -285,7 +287,11 @@ export const weeklyPlanApi = {
   delete: (id: number) => api.delete<{ success: boolean }>(`/weekly-plans/${id}`),
   attachDay: (id: number, payload: WeeklyPlanAttachPayload) =>
     api.post<WeeklyPlan>(`/weekly-plans/${id}/days`, payload),
-  removeDay: (id: number, dayId: number) => api.delete<WeeklyPlan>(`/weekly-plans/${id}/days/${dayId}`)
+  removeDay: (id: number, dayId: number) => api.delete<WeeklyPlan>(`/weekly-plans/${id}/days/${dayId}`),
+  confirmDay: (id: number, date: string) =>
+    api.post<{ synced_count: number; records: IntakeRecord[] }>(`/weekly-plans/${id}/days/${date}/confirm`),
+  cancelConfirm: (id: number, date: string) =>
+    api.post<{ success: boolean }>(`/weekly-plans/${id}/days/${date}/cancel-confirm`),
 }
 
 export const shoppingListApi = {
@@ -338,6 +344,7 @@ export interface IntakeRecord {
   actual_fat: number
   portion_size: number
   source: 'manual' | 'plan' | 'auto'
+  source_plan_day_id?: number | null
   rating?: number | null
   note?: string | null
   created_at: string

@@ -45,6 +45,7 @@ def _to_response(
         "actual_fat": record.actual_fat,
         "portion_size": record.portion_size,
         "source": record.source,
+        "source_plan_day_id": record.source_plan_day_id,
         "rating": record.rating,
         "note": record.note,
         "created_at": record.created_at,

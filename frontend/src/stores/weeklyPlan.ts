@@ -7,6 +7,7 @@ import {
   type WeeklyPlanAttachPayload,
   type WeeklyPlanSummary
 } from '@/api'
+import { useDashboardStore } from './dashboard'
 
 export const useWeeklyPlanStore = defineStore('weekly-plan', () => {
   const plans = ref<WeeklyPlanSummary[]>([])
@@ -72,6 +73,33 @@ export const useWeeklyPlanStore = defineStore('weekly-plan', () => {
     await loadPlans()
   }
 
+  async function confirmDay(planId: number, date: string) {
+    const { data } = await weeklyPlanApi.confirmDay(planId, date)
+    if (activePlan.value?.id === planId) {
+      const day = activePlan.value.days.find((d) => d.plan_date === date)
+      if (day) {
+        day.completed = true
+        day.completed_at = new Date().toISOString()
+      }
+    }
+    const dashboard = useDashboardStore()
+    await dashboard.loadAll()
+    return data
+  }
+
+  async function cancelConfirm(planId: number, date: string) {
+    await weeklyPlanApi.cancelConfirm(planId, date)
+    if (activePlan.value?.id === planId) {
+      const day = activePlan.value.days.find((d) => d.plan_date === date)
+      if (day) {
+        day.completed = false
+        day.completed_at = undefined
+      }
+    }
+    const dashboard = useDashboardStore()
+    await dashboard.loadAll()
+  }
+
   return {
     plans,
     activePlan,
@@ -82,6 +110,8 @@ export const useWeeklyPlanStore = defineStore('weekly-plan', () => {
     updatePlan,
     deletePlan,
     attachDay,
-    removeDay
+    removeDay,
+    confirmDay,
+    cancelConfirm
   }
 })
