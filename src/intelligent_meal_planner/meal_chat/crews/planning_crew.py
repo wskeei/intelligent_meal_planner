@@ -18,11 +18,16 @@ def calculate_target_ranges(
 
     简化版本：使用基础代谢率和活动系数估算。
     """
-    # 获取基础数据
-    weight = profile.get("weight_kg", 70)
-    height = profile.get("height_cm", 170)
-    age = profile.get("age", 30)
-    gender = profile.get("gender", "male")
+    # 获取基础数据，提供默认值
+    weight = profile.get("weight_kg") or 70
+    height = profile.get("height_cm") or 170
+    age = profile.get("age") or 30
+    gender = profile.get("gender") or "male"
+
+    # 确保是数值类型
+    weight = float(weight) if weight else 70.0
+    height = float(height) if height else 170.0
+    age = int(age) if age else 30
 
     # 计算基础代谢率 (BMR) - 使用 Mifflin-St Jeor 公式
     if gender == "male":
@@ -219,8 +224,12 @@ class PlanningCrew:
         Returns:
             PlanningResult
         """
-        health_goal = preferences.get("health_goal", "healthy")
-        budget = float(preferences.get("budget", 80))
+        health_goal = preferences.get("health_goal") or "healthy"
+        budget = preferences.get("budget") or 80
+        if budget is not None:
+            budget = float(budget)
+        else:
+            budget = 80.0
 
         # 计算营养目标
         target_ranges = calculate_target_ranges(profile, health_goal)
