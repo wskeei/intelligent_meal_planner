@@ -7,6 +7,10 @@ from intelligent_meal_planner.meal_chat.models import (
     PlanningResult,
     MemoryUpdateResult,
 )
+from intelligent_meal_planner.meal_chat.state import (
+    MessageTurn,
+    ConversationState,
+)
 
 
 class TestIntentResult:
@@ -84,3 +88,124 @@ class TestMemoryUpdateResult:
         )
         assert result.should_update is True
         assert "豆腐" in result.taste_profile_updates["avoid_ingredients"]
+
+
+class TestMessageTurn:
+    def test_create_message_turn(self):
+        msg = MessageTurn(role="user", content="我想减脂")
+        assert msg.role == "user"
+        assert msg.content == "我想减脂"
+        assert msg.timestamp is not None
+
+
+class TestConversationState:
+    def test_create_state(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+        )
+        assert state.session_id == "test-session"
+        assert state.current_phase == "discovering"
+        assert len(state.recent_messages) == 0
+
+    def test_add_message(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+        )
+        state.add_message("user", "我想减脂")
+        state.add_message("assistant", "好的，我来帮你规划")
+
+        assert len(state.recent_messages) == 2
+        assert state.turn_count == 2
+
+    def test_message_truncation(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+        )
+        # 添加 25 条消息
+        for i in range(25):
+            state.add_message("user", f"消息 {i}")
+            state.add_message("assistant", f"回复 {i}")
+
+        # 应该只保留最近 20 条
+        assert len(state.recent_messages) == 20
+
+    def test_get_context_for_llm(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+        )
+        state.add_message("user", "消息1")
+        state.add_message("assistant", "回复1")
+        state.add_message("user", "消息2")
+        state.add_message("assistant", "回复2")
+
+        context = state.get_context_for_llm(max_turns=1)
+        # 只取最近 1 轮（2 条消息）
+        assert len(context) == 2
+        assert context[0]["content"] == "消息2"
+
+    def test_profile_complete(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+            collected_profile={
+                "gender": "male",
+                "age": 28,
+                "height": 175,
+                "weight": 72,
+                "activity_level": "moderate",
+            },
+        )
+        assert state.is_profile_complete() is True
+
+    def test_profile_incomplete(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+            collected_profile={"gender": "male"},
+        )
+        assert state.is_profile_complete() is False
+
+    def test_preferences_complete(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+            collected_preferences={
+                "health_goal": "lose_weight",
+                "budget": 80,
+            },
+        )
+        assert state.is_preferences_complete() is True
+
+    def test_ready_for_planning(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+            collected_profile={
+                "gender": "male",
+                "age": 28,
+                "height": 175,
+                "weight": 72,
+                "activity_level": "moderate",
+            },
+            collected_preferences={
+                "health_goal": "lose_weight",
+                "budget": 80,
+            },
+        )
+        assert state.is_ready_for_planning() is True
+
+    def test_merge_updates(self):
+        state = ConversationState(
+            session_id="test-session",
+            user_id="test-user",
+        )
+        state.merge_updates(
+            profile_updates={"height": 175, "weight": 72},
+            preference_updates={"health_goal": "lose_weight"},
+        )
+        assert state.collected_profile["height"] == 175
+        assert state.collected_preferences["health_goal"] == "lose_weight"
