@@ -21,15 +21,12 @@ from .exceptions import (
 
 from ..db import models
 from ..db.models import MealChatMessage, MealChatSession, User
-from ..meal_chat.crew_factory import build_meal_planning_crew
-from ..meal_chat.copy import normalize_locale, session_intro
-from ..meal_chat.crew_runner import CrewMealPlannerRunner
-from ..meal_chat.deepseek_extractor import DeepSeekSlotExtractor
-from ..meal_chat.intake_runtime import IntakeRuntime
-from ..meal_chat.local_trace import MealChatTraceWriter
-from ..meal_chat.orchestrator import MealChatOrchestrator
-from ..meal_chat.semantic_normalizer import normalize_goal
-from ..meal_chat.session_schema import ConversationMemory
+from ..meal_chat import (
+    create_meal_chat_flow,
+    UserProfileManager,
+    UserProfile,
+)
+from ..meal_chat.target_mapper import build_hidden_targets
 from .feasibility import feasibility_service
 from .schemas import (
     MealItem,
@@ -280,34 +277,52 @@ class StrictBudgetPlanner:
 
 
 class MealChatApplication:
-    def __init__(self):
-        self._orchestrator: Optional[MealChatOrchestrator] = None
-        self.trace_writer = MealChatTraceWriter()
+    """
+    对话式配餐应用服务 - 使用 DeepSeek 驱动的多 Agent 系统
+    """
 
-    @property
-    def orchestrator(self) -> MealChatOrchestrator:
-        if self._orchestrator is None:
-            planner = StrictBudgetPlanner()
-            intake_runtime = IntakeRuntime(
-                extractor=DeepSeekSlotExtractor(),
-            )
-            crew_runner = CrewMealPlannerRunner(build_meal_planning_crew, planner)
-            self._orchestrator = MealChatOrchestrator(
-                intake_runtime=intake_runtime,
-                crew_runner=crew_runner,
-            )
-        return self._orchestrator
+    def __init__(self):
+        self._profile_manager = UserProfileManager()
+
+    def _get_or_create_user_profile(self, user: User) -> UserProfile:
+        """获取或创建用户画像"""
+        profile = self._profile_manager.get_profile(str(user.id))
+        if profile:
+            return profile
+
+        # 从数据库用户信息创建新画像
+        profile = UserProfile(
+            user_id=str(user.id),
+            profile={
+                "gender": user.gender,
+                "age": user.age,
+                "height_cm": user.height,
+                "weight_kg": user.weight,
+                "activity_level": user.activity_level,
+            },
+            preferences={
+                "health_goal": user.health_goal or "healthy",
+                "budget_daily": None,
+            },
+        )
+        self._profile_manager.save_profile(profile)
+        return profile
 
     def _serialize_session(
         self, db: Session, session: MealChatSession
     ) -> Dict[str, Any]:
-        memory = ConversationMemory.model_validate(session.collected_slots or {})
         messages = (
             db.query(MealChatMessage)
             .filter(MealChatMessage.session_id == session.id)
             .order_by(MealChatMessage.created_at.asc())
             .all()
         )
+
+        # 解析收集的信息
+        collected_slots = session.collected_slots or {}
+        profile = collected_slots.get("profile", {})
+        preferences = collected_slots.get("preferences", {})
+
         return {
             "session_id": session.id,
             "status": session.status,
@@ -320,25 +335,19 @@ class MealChatApplication:
                 for message in messages
             ],
             "meal_plan": session.final_plan,
-            "crew_trace": memory.crew_events,
-            "open_questions": memory.open_questions,
-            "known_facts": memory.known_facts,
-            "follow_up_plan": (
-                memory.follow_up_plan.model_dump(mode="json")
-                if memory.follow_up_plan is not None
-                else None
-            ),
+            "crew_trace": [],
+            "open_questions": collected_slots.get("open_questions", []),
+            "known_facts": collected_slots.get("known_facts", {}),
+            "follow_up_plan": None,
             "presentation": {
-                "phase": memory.phase,
-                "overlay_state": memory.overlay_state,
+                "phase": session.status,
+                "overlay_state": "discovering",
                 "can_generate": session.status == "planning_ready",
-                "has_result_overlay": memory.overlay_state == "result",
+                "has_result_overlay": session.status == "finalized",
             },
-            "profile_snapshot": memory.profile,
-            "preferences_snapshot": memory.preferences,
-            "negotiation_options": [
-                option.model_dump(mode="json") for option in memory.negotiation_options
-            ],
+            "profile_snapshot": profile,
+            "preferences_snapshot": preferences,
+            "negotiation_options": [],
         }
 
     def _load_session(
@@ -351,45 +360,46 @@ class MealChatApplication:
         )
 
     def start_session(self, db: Session, user: User, locale: str = "zh") -> Dict[str, Any]:
-        resolved_locale = normalize_locale(locale)
-        memory = ConversationMemory(
-            phase="discovering",
-            profile={
-                "gender": user.gender,
-                "age": user.age,
-                "height": user.height,
-                "weight": user.weight,
-                "activity_level": user.activity_level,
-            },
-            preferences={"health_goal": normalize_goal(user.health_goal) or "healthy"},
-            known_facts={"locale": resolved_locale},
-        )
+        """开始新会话"""
+        # 确保用户画像存在
+        profile = self._get_or_create_user_profile(user)
+
+        # 创建初始状态
+        initial_slots = {
+            "profile": profile.profile,
+            "preferences": profile.preferences,
+            "known_facts": {"locale": locale},
+        }
+
         session = MealChatSession(
             id=str(uuid.uuid4())[:8],
             user_id=user.id,
             status="discovering",
-            collected_slots=memory.model_dump(mode="json"),
+            collected_slots=initial_slots,
         )
         db.add(session)
+
+        # 生成欢迎消息
+        welcome_message = self._generate_welcome_message(profile)
         db.add(
             MealChatMessage(
                 session_id=session.id,
                 role="assistant",
-                content=session_intro(resolved_locale),
+                content=welcome_message,
                 stage="discovering",
             )
         )
         db.commit()
-        self.trace_writer.write(
-            session_id=session.id,
-            event="session_started",
-            payload={
-                "user_id": user.id,
-                "status": session.status,
-            },
-        )
         db.refresh(session)
         return self._serialize_session(db, session)
+
+    def _generate_welcome_message(self, profile: UserProfile) -> str:
+        """生成欢迎消息"""
+        summary = profile.get_summary_for_context()
+        if summary == "新用户，暂无已知信息":
+            return "你好！我是你的营养师助手，专门帮你规划一日三餐。告诉我你的目标吧，比如想减脂、增肌还是健康饮食？"
+
+        return f"你好！根据你的信息（{summary}），我可以帮你规划适合的饮食方案。你想了解什么，或者需要我帮你配餐？"
 
     def get_session(
         self, db: Session, user: User, session_id: str
@@ -407,31 +417,64 @@ class MealChatApplication:
         content: str,
         locale: str = "zh",
     ) -> Dict[str, Any]:
+        """处理用户消息"""
         session = self._load_session(db, user, session_id)
         if session is None:
             raise ValueError("session_not_found")
 
         stage_before = session.status
-        resolved_locale = normalize_locale(locale)
-        current_slots = dict(session.collected_slots or {})
-        current_known_facts = dict(current_slots.get("known_facts") or {})
-        current_known_facts["locale"] = resolved_locale
-        current_slots["known_facts"] = current_known_facts
-        session.collected_slots = current_slots
+        collected_slots = dict(session.collected_slots or {})
+
+        # 添加用户消息
+        db.add(
+            MealChatMessage(
+                session_id=session.id,
+                role="user",
+                content=content,
+                stage=stage_before,
+            )
+        )
 
         try:
-            db.add(
-                MealChatMessage(
-                    session_id=session.id,
-                    role="user",
-                    content=content,
-                    stage=stage_before,
-                )
+            # 使用 MealChatFlow 处理
+            flow = create_meal_chat_flow(
+                user_id=str(user.id),
+                session_id=session.id,
+                profile_manager=self._profile_manager,
             )
-            result = self.orchestrator.advance(user, session, content)
-            session.status = result["status"]
-            if result["meal_plan"] is not None:
-                session.final_plan = result["meal_plan"]
+
+            # 恢复之前的状态
+            flow.state.collected_profile = collected_slots.get("profile", {})
+            flow.state.collected_preferences = collected_slots.get("preferences", {})
+            flow.state.current_phase = stage_before
+            flow.state.user_message = content
+
+            # 执行
+            flow.kickoff()
+
+            # 获取回复
+            assistant_message = ""
+            if flow.state.recent_messages:
+                for msg in reversed(flow.state.recent_messages):
+                    if msg.role == "assistant":
+                        assistant_message = msg.content
+                        break
+
+            if not assistant_message:
+                assistant_message = "我理解了，请继续告诉我更多信息。"
+
+            # 更新会话状态
+            new_status = flow.state.current_phase
+            session.status = new_status
+
+            # 更新收集的信息
+            collected_slots["profile"] = flow.state.collected_profile
+            collected_slots["preferences"] = flow.state.collected_preferences
+            session.collected_slots = collected_slots
+
+            # 如果有配餐结果
+            if flow.state.current_meal_plan:
+                session.final_plan = flow.state.current_meal_plan
 
             db.add(user)
             db.add(session)
@@ -439,40 +482,19 @@ class MealChatApplication:
                 MealChatMessage(
                     session_id=session.id,
                     role="assistant",
-                    content=result["assistant_message"],
+                    content=assistant_message,
                     stage=session.status,
                 )
             )
             db.commit()
-            self.trace_writer.write(
-                session_id=session.id,
-                event="turn_processed",
-                payload={
-                    "user_id": user.id,
-                    "status": result["status"],
-                    "stage_before": stage_before,
-                    "user_message": content,
-                    "assistant_message": result["assistant_message"],
-                    "trace": result.get("trace", {}),
-                },
-            )
             db.refresh(session)
             return self._serialize_session(db, session)
         except Exception as exc:
             db.rollback()
-            self.trace_writer.write(
-                session_id=session.id,
-                event="turn_failed",
-                payload={
-                    "user_id": user.id,
-                    "stage_before": stage_before,
-                    "user_message": content,
-                    "error": repr(exc),
-                },
-            )
             raise
 
     def generate_session(self, db: Session, user: User, session_id: str) -> Dict[str, Any]:
+        """生成配餐方案"""
         session = self._load_session(db, user, session_id)
         if session is None:
             raise ValueError("session_not_found")
@@ -483,47 +505,56 @@ class MealChatApplication:
             raise ValueError("generation_not_ready")
 
         try:
-            result = self.orchestrator.generate(user, session)
-            updated_memory = ConversationMemory.model_validate(session.collected_slots or {})
-            updated_memory.overlay_state = "result"
-            session.collected_slots = updated_memory.model_dump(mode="json")
-            session.status = result["status"]
-            if result["meal_plan"] is not None:
-                session.final_plan = result["meal_plan"]
+            collected_slots = session.collected_slots or {}
+            profile = collected_slots.get("profile", {})
+            preferences = collected_slots.get("preferences", {})
+
+            # 使用 PlanningCrew 生成方案
+            from ..meal_chat.crews.planning_crew import PlanningCrew
+            planning_crew = PlanningCrew()
+
+            health_goal = preferences.get("health_goal", "healthy")
+            budget = preferences.get("budget", 80)
+
+            result = planning_crew.run(
+                profile=profile,
+                preferences=preferences,
+            )
+
+            if result.status == "ok":
+                session.final_plan = {
+                    "id": str(uuid.uuid4())[:8],
+                    "meals": result.meal_plan.get("meals", []),
+                    "nutrition": {
+                        "total_calories": result.total_calories,
+                        "total_protein": result.total_protein,
+                        "total_cost": result.total_cost,
+                    },
+                    "target": {
+                        "health_goal": health_goal,
+                        "budget": budget,
+                    },
+                    "explanation": result.explanation,
+                    "highlights": result.highlights,
+                }
+                session.status = "finalized"
+            else:
+                session.status = "error"
 
             db.add(session)
             db.add(
                 MealChatMessage(
                     session_id=session.id,
                     role="assistant",
-                    content=result["assistant_message"],
+                    content=result.explanation,
                     stage=session.status,
                 )
             )
             db.commit()
-            self.trace_writer.write(
-                session_id=session.id,
-                event="generation_completed",
-                payload={
-                    "user_id": user.id,
-                    "status": result["status"],
-                    "assistant_message": result["assistant_message"],
-                    "trace": result.get("trace", {}),
-                },
-            )
             db.refresh(session)
             return self._serialize_session(db, session)
         except Exception as exc:
             db.rollback()
-            self.trace_writer.write(
-                session_id=session.id,
-                event="generation_failed",
-                payload={
-                    "user_id": user.id,
-                    "status": session.status,
-                    "error": repr(exc),
-                },
-            )
             raise
 
     def update_session_presentation(
@@ -537,9 +568,9 @@ class MealChatApplication:
         if session is None:
             raise ValueError("session_not_found")
 
-        memory = ConversationMemory.model_validate(session.collected_slots or {})
-        memory.overlay_state = overlay_state
-        session.collected_slots = memory.model_dump(mode="json")
+        # 简单更新状态
+        collected_slots = dict(session.collected_slots or {})
+        session.collected_slots = collected_slots
 
         db.add(session)
         db.commit()

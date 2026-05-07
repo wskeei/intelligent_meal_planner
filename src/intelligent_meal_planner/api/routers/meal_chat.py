@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from ...db.database import get_db
 from ...db.models import User
-from ...meal_chat.copy import normalize_locale
 from ..schemas import (
     MealChatMessageRequest,
     MealChatPresentationRequest,
@@ -16,7 +15,11 @@ router = APIRouter(prefix="/meal-chat", tags=["对话式配餐"])
 
 
 def _request_locale(request: Request) -> str:
-    return normalize_locale(request.headers.get("Accept-Language"))
+    """从请求头获取语言偏好"""
+    accept_lang = request.headers.get("Accept-Language", "zh")
+    if "zh" in accept_lang.lower() or "cn" in accept_lang.lower():
+        return "zh"
+    return "en"
 
 
 @router.post("/sessions", response_model=MealChatSessionResponse)
