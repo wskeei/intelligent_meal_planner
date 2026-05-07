@@ -118,19 +118,19 @@ def create_info_extraction_task(
 
 def create_intent_result_task(
     agent: Agent,
-    intent_analysis: str,
-    info_extraction: str,
+    analysis_task: Task,
+    extraction_task: Task,
 ) -> Task:
     """创建结果整合任务"""
     return Task(
-        description=f"""
+        description="""
 整合分析结果，生成结构化输出。
 
 ## 意图分析
-{intent_analysis}
+{analysis_output}
 
 ## 信息提取
-{info_extraction}
+{extraction_output}
 
 ## 输出格式
 按照 IntentResult 格式输出，包含：
@@ -145,6 +145,7 @@ def create_intent_result_task(
 """,
         expected_output="IntentResult 结构化输出",
         agent=agent,
+        context=[analysis_task, extraction_task],  # 使用 context 建立依赖
         output_pydantic=IntentResult,
     )
 
@@ -191,8 +192,8 @@ class IntentCrew:
 
         result_task = create_intent_result_task(
             agent=self.analyst,
-            intent_analysis=analysis_task.output,
-            info_extraction=extraction_task.output,
+            analysis_task=analysis_task,
+            extraction_task=extraction_task,
         )
 
         # 创建 Crew
