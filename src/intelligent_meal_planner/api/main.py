@@ -29,9 +29,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def run_migrations() -> bool:
+    """Run Alembic migrations. Returns True if successful."""
+    try:
+        from alembic.config import Config
+        from alembic import command
+
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic migrations applied successfully")
+        return True
+    except Exception as e:
+        logger.warning("Alembic migrations failed, falling back to create_all: %s", e)
+        return False
+
+
 def init_db() -> None:
-    """Initialize tables and seed the default user plus recipe catalog."""
-    models.Base.metadata.create_all(bind=database.engine)
+    """Initialize database with migrations or fallback to create_all."""
+    # Try Alembic migrations first
+    if not run_migrations():
+        # Fallback: create tables directly (for tests or fresh installs without alembic)
+        models.Base.metadata.create_all(bind=database.engine)
 
     session = database.SessionLocal()
     try:

@@ -9,6 +9,7 @@
 - **强化学习**: Stable-Baselines3 + sb3-contrib (MaskablePPO)
 - **环境**: Gymnasium
 - **后端**: FastAPI
+- **数据库**: SQLite + Alembic 迁移
 - **前端**: Streamlit (规划中)
 - **多Agent**: CrewAI (规划中)
 
@@ -149,6 +150,42 @@ python scripts/test_different_targets.py
 ```bash
 python scripts/verify_new_recipes.py
 ```
+
+## 数据库迁移 (Alembic)
+
+项目使用 Alembic 管理数据库迁移，确保模型变更能正确应用到数据库。
+
+### 常用命令
+
+```bash
+# 查看当前迁移状态
+uv run alembic current
+
+# 应用所有待执行的迁移
+uv run alembic upgrade head
+
+# 回滚到上一个版本
+uv run alembic downgrade -1
+
+# 自动生成迁移文件（基于模型变更）
+uv run alembic revision --autogenerate -m "描述变更内容"
+
+# 查看迁移历史
+uv run alembic history
+```
+
+### 开发流程
+
+1. 修改 `src/intelligent_meal_planner/db/models.py` 中的模型定义
+2. 运行 `uv run alembic revision --autogenerate -m "变更描述"` 生成迁移文件
+3. 检查生成的迁移文件，确保变更正确
+4. 运行 `uv run alembic upgrade head` 应用迁移
+
+### 注意事项
+
+- SQLite 不支持通过 ALTER TABLE 添加外键约束，迁移时会跳过此类操作
+- 测试环境使用内存数据库，每次测试都会重新创建表结构
+- 应用启动时会自动尝试运行迁移（见 `api/main.py`）
 
 ## 默认参数
 
