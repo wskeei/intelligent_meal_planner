@@ -66,8 +66,9 @@ def create_meal_plan_dict(
     生成配餐方案并返回字典。
 
     这是一个便捷函数，用于在 Crew 内部调用。
+    注意：@tool 装饰的函数应直接调用，而非使用 .run() 方法。
     """
-    result_str = dqn_meal_planning_tool.run(
+    result_str = dqn_meal_planning_tool(
         health_goal=health_goal,
         budget=budget,
         disliked_foods=disliked_foods,
