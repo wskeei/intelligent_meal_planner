@@ -552,6 +552,24 @@ class MealChatApplication:
             )
             db.commit()
             db.refresh(session)
+
+            # 使用 MemoryUpdateCrew 更新用户认知文件
+            from ..meal_chat.crews.memory_crew import MemoryUpdateCrew
+            from ..meal_chat.models.intent import IntentResult
+
+            memory_crew = MemoryUpdateCrew(profile_manager=self._profile_manager)
+            memory_crew.run(
+                user_id=str(user.id),
+                user_message="[用户请求生成配餐方案]",
+                assistant_message=result.explanation,
+                intent_result=IntentResult(
+                    intent="request_plan",
+                    confidence=1.0,
+                    profile_updates=profile,
+                    preference_updates=preferences,
+                ),
+            )
+
             return self._serialize_session(db, session)
         except Exception as exc:
             db.rollback()
