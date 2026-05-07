@@ -15,10 +15,13 @@ class MessageTurn(BaseModel):
 class ConversationState(BaseModel):
     """对话状态 - CrewAI Flow 的状态管理"""
 
-    # 会话基础信息
-    session_id: str = Field(description="会话唯一标识")
-    user_id: str = Field(description="用户 ID")
+    # 会话基础信息 (默认值用于 Flow 初始化)
+    session_id: str = Field(default="", description="会话唯一标识")
+    user_id: str = Field(default="", description="用户 ID")
     turn_count: int = Field(default=0, description="对话轮数")
+
+    # 用户输入 (通过 kickoff 传入)
+    user_message: str = Field(default="", description="当前用户消息")
 
     # 当前上下文
     recent_messages: list[MessageTurn] = Field(
