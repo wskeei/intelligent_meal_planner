@@ -52,9 +52,9 @@ env/
 # uv
 .uv/
 
-# Models and Training
-models/
-!models/.gitkeep
+# Models and Training (only root models/ directory)
+/models/
+!/models/.gitkeep
 *.zip
 *.pkl
 *.pth
