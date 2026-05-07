@@ -93,7 +93,7 @@ defineEmits<{
   gap: 12px;
   padding: 14px;
   border-radius: 12px;
-  background: var(--color-surface-raised);
+  background: var(--gradient-surface);
   border: 1px solid var(--color-border-soft);
 }
 

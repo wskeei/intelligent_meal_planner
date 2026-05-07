@@ -52,6 +52,19 @@
               </el-badge>
             </router-link>
 
+            <el-dropdown trigger="click" @command="handleMoreCommand">
+              <span class="utility-link">
+                <el-icon><MoreFilled /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="/dashboard">{{ $t('nav.dashboard') }}</el-dropdown-item>
+                  <el-dropdown-item command="/intake">{{ $t('nav.intake') }}</el-dropdown-item>
+                  <el-dropdown-item command="/reports">{{ $t('nav.reports') }}</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+
             <el-dropdown @command="handleCommand">
               <span class="utility-link">
                 {{ locale === 'zh' ? '中文' : 'English' }}
@@ -127,12 +140,12 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, Calendar, Clock, DataAnalysis, Document, EditPen, Food, MagicStick, ShoppingCart, User } from '@element-plus/icons-vue'
+import { ArrowDown, Calendar, Clock, DataAnalysis, Document, EditPen, Food, MagicStick, MoreFilled, ShoppingCart, User } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuthStore } from '@/stores/auth'
 import { useShoppingStore } from '@/stores/shopping'
@@ -140,6 +153,7 @@ import { useShoppingStore } from '@/stores/shopping'
 const { locale } = useI18n()
 const auth = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 
 const authPageNames = ['login', 'register']
 const showPrimaryNav = computed(() => !authPageNames.includes(route.name as string))
@@ -153,6 +167,10 @@ watch(showPrimaryNav, (visible) => {
 
 function handleLogout() {
   auth.logout()
+}
+
+function handleMoreCommand(command: string) {
+  void router.push(command)
 }
 
 function handleCommand(command: string) {
