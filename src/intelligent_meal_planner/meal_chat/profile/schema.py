@@ -1,4 +1,13 @@
 # src/intelligent_meal_planner/meal_chat/profile/schema.py
+"""
+用户认知文件 Schema
+
+注意：部分字段命名与 Plan 文档有差异，原因如下：
+- FeedbackRecord.feedback_date (而非 date): 避免与 Python 内置 date 类型冲突
+- GoalHistory.changed_at (而非 date): 同上，且更语义化
+- GoalHistory.budget 为 Optional[float]: 支持记录不含预算信息的目标变更
+"""
+
 from datetime import date
 from pydantic import BaseModel, Field
 from typing import Literal
