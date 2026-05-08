@@ -146,11 +146,10 @@ class TestMealChatFlowWithPlanning:
         profile_manager.get_profile.return_value.get_summary_for_context.return_value = "测试用户"
         return profile_manager
 
-    def test_flow_with_planning(self, mock_managers):
-        """测试带方案生成的流程"""
+    def test_flow_transitions_to_planning_ready(self, mock_managers):
+        """测试请求配餐时流程转换到 planning_ready（不自动生成方案）"""
         with patch("intelligent_meal_planner.meal_chat.flow.IntentCrew") as mock_intent, \
              patch("intelligent_meal_planner.meal_chat.flow.ConversationCrew") as mock_conv, \
-             patch("intelligent_meal_planner.meal_chat.flow.PlanningCrew") as mock_plan, \
              patch("intelligent_meal_planner.meal_chat.flow.MemoryUpdateCrew") as mock_memory:
 
             mock_intent_instance = MagicMock()
@@ -161,23 +160,12 @@ class TestMealChatFlowWithPlanning:
             )
             mock_intent.return_value = mock_intent_instance
 
-            mock_plan_instance = MagicMock()
-            mock_plan_instance.run.return_value = PlanningResult(
-                meal_plan={"breakfast_0": 1, "lunch_0": 2, "dinner_0": 3},
-                total_calories=1800,
-                total_cost=75.0,
-                explanation="方案已生成",
-                highlights=["热量达标"],
-                status="ok",
-            )
-            mock_plan.return_value = mock_plan_instance
-
             mock_conv_instance = MagicMock()
             mock_conv_instance.run.return_value = ConversationResult(
-                assistant_message="方案已生成",
-                suggested_phase="explaining",
+                assistant_message="信息已齐全，点击生成配餐方案按钮开始。",
+                suggested_phase="planning_ready",
+                should_generate_plan=True,
             )
-            mock_conv_instance.explain_plan.return_value = "这个方案很适合你的减脂目标。"
             mock_conv.return_value = mock_conv_instance
 
             mock_memory_instance = MagicMock()
@@ -191,7 +179,6 @@ class TestMealChatFlowWithPlanning:
                 profile_manager=mock_managers,
             )
 
-            # 设置已收集的信息
             flow.state.collected_profile = {
                 "gender": "male",
                 "age": 28,
@@ -208,8 +195,10 @@ class TestMealChatFlowWithPlanning:
             # 执行
             flow.kickoff()
 
-            # 验证方案生成
-            assert flow.state.current_meal_plan is not None
+            # 验证：流程转换到 planning_ready（前端显示按钮）
+            assert flow.state.current_phase == "planning_ready"
+            # 不再自动生成方案（由 generate_session 端点触发）
+            assert flow.state.current_meal_plan is None
 
 
 class TestCreateMealChatFlow:

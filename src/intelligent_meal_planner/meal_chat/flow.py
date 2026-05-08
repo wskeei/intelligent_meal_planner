@@ -77,13 +77,6 @@ class MealChatFlow(Flow[ConversationState]):
         # 获取对话上下文
         recent_messages = self.state.get_context_for_llm()
 
-        # 检查是否需要生成方案
-        should_plan = (
-            intent_result.intent == "request_plan"
-            or intent_result.ready_for_planning
-            or self.state.is_ready_for_planning()
-        )
-
         # 计算缺失字段，用于引导对话
         missing_fields = self.state.get_missing_fields()
         info_complete = len(missing_fields) == 0
@@ -94,69 +87,30 @@ class MealChatFlow(Flow[ConversationState]):
             for key in ["mood", "specific_requests", "avoid_today", "time_constraint"]:
                 if self.state.collected_preferences.get(key):
                     today_requirements[key] = self.state.collected_preferences[key]
-            # 也把本次会话中 health_goal/budget 的更新视为今日需求的一部分
             if self.state.collected_preferences.get("health_goal"):
                 today_requirements["health_goal"] = self.state.collected_preferences["health_goal"]
 
-        # 如果需要生成方案
-        if should_plan and self.state.current_meal_plan is None:
-            planning_result = self._generate_plan()
-            self.state.current_meal_plan = planning_result.meal_plan
+        # 对话阶段：只负责信息收集，不自动生成方案
+        # 方案生成由 generate_session 端点（用户点击按钮）触发
+        conversation_result = self.conversation_crew.run(
+            intent_result=intent_result,
+            recent_messages=recent_messages,
+            profile_summary=profile_summary,
+            current_phase=self.state.current_phase,
+            missing_fields=missing_fields,
+            info_complete=info_complete,
+            today_requirements=today_requirements,
+        )
 
-            # 存储元数据用于构建 API 响应
-            self.state.current_meal_plan_metadata = {
-                "total_cost": planning_result.total_cost,
-                "total_calories": planning_result.total_calories,
-                "total_protein": planning_result.total_protein,
-                "total_carbs": planning_result.total_carbs,
-                "total_fat": planning_result.total_fat,
-                "calories_achievement": planning_result.calories_achievement,
-                "protein_achievement": planning_result.protein_achievement,
-                "budget_usage": planning_result.budget_usage,
-                "status": planning_result.status,
-                "highlights": planning_result.highlights,
-            }
-
-            # 使用方案生成带解读的回复
-            conversation_result = self.conversation_crew.run(
-                intent_result=intent_result,
-                recent_messages=recent_messages,
-                profile_summary=profile_summary,
-                current_phase="planning",
-                missing_fields=missing_fields,
-                info_complete=info_complete,
-                today_requirements=today_requirements,
-            )
-
-            # 添加方案解读
-            conversation_result.assistant_message = self._build_plan_response(
-                planning_result,
-                conversation_result.assistant_message,
-            )
-            conversation_result.should_generate_plan = True
-            self.state.current_phase = "explaining"
-        else:
-            # 普通对话
-            conversation_result = self.conversation_crew.run(
-                intent_result=intent_result,
-                recent_messages=recent_messages,
-                profile_summary=profile_summary,
-                current_phase=self.state.current_phase,
-                missing_fields=missing_fields,
-                info_complete=info_complete,
-                today_requirements=today_requirements,
-            )
-
-            # 检查阶段转换
-            # 1. 信息完整 或 LLM 判断应该生成方案
-            if info_complete or conversation_result.should_generate_plan:
-                self.state.current_phase = "planning_ready"
-            # 2. 安全网：对话超过 6 轮且只剩 1-2 个缺失字段，强制进入准备状态
-            elif self.state.turn_count >= 6 and len(missing_fields) <= 2:
-                self.state.current_phase = "planning_ready"
-            # 3. 用户明确请求方案时，即使信息不全也尝试生成（使用默认值）
-            elif intent_result.intent == "request_plan":
-                self.state.current_phase = "planning_ready"
+        # 阶段转换：收集完毕后进入 planning_ready，前端显示"生成配餐"按钮
+        if info_complete or conversation_result.should_generate_plan:
+            self.state.current_phase = "planning_ready"
+        elif self.state.turn_count >= 6 and len(missing_fields) <= 2:
+            # 安全网：对话超过 6 轮且只剩 1-2 个缺失字段
+            self.state.current_phase = "planning_ready"
+        elif intent_result.intent == "request_plan":
+            # 用户明确请求方案
+            self.state.current_phase = "planning_ready"
 
         # 记录助手回复
         self.state.add_message("assistant", conversation_result.assistant_message)
