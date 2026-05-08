@@ -151,8 +151,13 @@ async def log_requests(request: Request, call_next):
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(_request: Request, exc: Exception):
-    logger.error("Unhandled exception: %s", exc)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception(
+        "Unhandled exception on %s %s: %s",
+        request.method,
+        request.url.path,
+        exc,
+    )
     return JSONResponse(
         status_code=500,
         content={"success": False, "error": "服务器内部错误", "detail": str(exc)},
