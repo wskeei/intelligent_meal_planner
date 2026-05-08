@@ -3,13 +3,16 @@
 import json
 import logging
 import time
+import uuid
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pythonjsonlogger import jsonlogger
 
 from ..db import database, models
 from .routers import (
@@ -25,8 +28,47 @@ from .routers import (
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Context variable to store request ID across the request lifecycle
+request_id_var: ContextVar[str] = ContextVar("request_id", default="")
+
+
+class RequestIDFormatter(jsonlogger.JsonFormatter):
+    """Custom JSON formatter that includes request ID in all log records."""
+
+    def add_fields(self, log_record: dict, record: logging.LogRecord, message_dict: dict):
+        super().add_fields(log_record, record, message_dict)
+
+        # Add request ID if available
+        request_id = request_id_var.get()
+        if request_id:
+            log_record["request_id"] = request_id
+
+        # Add standard fields
+        log_record["level"] = record.levelname
+        log_record["logger"] = record.name
+        log_record["module"] = record.module
+        log_record["function"] = record.funcName
+        log_record["line"] = record.lineno
+
+
+def setup_logging():
+    """Configure structured JSON logging."""
+    log_handler = logging.StreamHandler()
+    formatter = RequestIDFormatter(
+        "%(timestamp)s %(level)s %(name)s %(message)s",
+        timestamp=True,
+    )
+    log_handler.setFormatter(formatter)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.handlers = [log_handler]
+
+    return logging.getLogger(__name__)
+
+
+logger = setup_logging()
 
 
 def run_migrations() -> bool:
@@ -136,31 +178,76 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def request_tracking_middleware(request: Request, call_next):
+    """Middleware that generates request ID and tracks request lifecycle."""
+
+    # Generate unique request ID
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+
+    # Set in context variable for logging
+    request_id_var.set(request_id)
+
+    # Add to request state for potential use in handlers
+    request.state.request_id = request_id
+
     start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
+
+    # Log request start
     logger.info(
-        "%s %s - %s - %.3fs",
-        request.method,
-        request.url.path,
-        response.status_code,
-        process_time,
+        "Request started",
+        extra={
+            "event": "request_start",
+            "method": request.method,
+            "path": request.url.path,
+            "query": str(request.query_params),
+            "client_ip": request.client.host if request.client else None,
+        }
     )
+
+    # Process request
+    response = await call_next(request)
+
+    # Calculate duration
+    process_time = time.time() - start_time
+
+    # Log request completion
+    logger.info(
+        "Request completed",
+        extra={
+            "event": "request_end",
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": round(process_time * 1000, 2),
+        }
+    )
+
+    # Add request ID to response headers
+    response.headers["X-Request-ID"] = request_id
+
     return response
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception(
-        "Unhandled exception on %s %s: %s",
-        request.method,
-        request.url.path,
-        exc,
+        "Unhandled exception",
+        extra={
+            "event": "unhandled_exception",
+            "method": request.method,
+            "path": request.url.path,
+            "exception_type": type(exc).__name__,
+            "exception_message": str(exc),
+        }
     )
     return JSONResponse(
         status_code=500,
-        content={"success": False, "error": "服务器内部错误", "detail": str(exc)},
+        content={
+            "success": False,
+            "error": "服务器内部错误",
+            "detail": str(exc),
+            "request_id": request_id_var.get(),
+        },
     )
 
 

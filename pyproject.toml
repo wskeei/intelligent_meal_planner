@@ -24,6 +24,7 @@ dependencies = [
     "langchain-openai>=0.3.23",
     "python-dotenv>=1.1.1",
     "litellm>=1.50.0",
+    "python-json-logger>=4.1.0",
 ]
 
 [build-system]
