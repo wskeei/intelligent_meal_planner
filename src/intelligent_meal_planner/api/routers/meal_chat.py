@@ -55,7 +55,7 @@ async def send_message(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return meal_chat_app.handle_message(
+    return await meal_chat_app.handle_message(
         db,
         current_user,
         session_id,
