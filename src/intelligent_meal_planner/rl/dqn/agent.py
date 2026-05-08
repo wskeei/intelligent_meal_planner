@@ -267,6 +267,8 @@ class MaskableDQNAgent:
 
         if device:
             config['device'] = device
+        elif not torch.cuda.is_available() and config.get('device', '').startswith('cuda'):
+            config['device'] = 'cpu'
 
         agent = cls(config=config)
         agent.load(path)
