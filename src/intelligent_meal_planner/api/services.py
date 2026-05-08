@@ -308,6 +308,73 @@ class MealChatApplication:
         self._profile_manager.save_profile(profile)
         return profile
 
+    def _build_meal_plan_response(
+        self,
+        meal_plan: dict,
+        metadata: dict,
+        preferences: dict,
+    ) -> Dict[str, Any]:
+        """
+        将原始 meal_plan 格式转换为 API 响应格式
+
+        Args:
+            meal_plan: 原始格式 {"breakfast_0": 2, "breakfast_1": 132, ...}
+            metadata: 元数据 {"total_cost": 50, "total_calories": 2000, ...}
+            preferences: 用户偏好 {"health_goal": "gain_muscle", "budget": 100}
+
+        Returns:
+            MealPlanResponse 格式的字典
+        """
+        meals = []
+        for key, recipe_id in meal_plan.items():
+            meal_type = key.split("_")[0] if "_" in key else key
+            recipe = recipe_service.get_by_id(recipe_id)
+            if recipe:
+                meals.append(
+                    MealItem(
+                        meal_type=meal_type,
+                        recipe_id=recipe.id,
+                        recipe_name=recipe.name,
+                        calories=recipe.calories,
+                        protein=recipe.protein,
+                        carbs=recipe.carbs,
+                        fat=recipe.fat,
+                        price=recipe.price,
+                    )
+                )
+
+        nutrition = NutritionSummary(
+            total_calories=metadata.get("total_calories", 0),
+            total_protein=metadata.get("total_protein", 0),
+            total_carbs=metadata.get("total_carbs", 0),
+            total_fat=metadata.get("total_fat", 0),
+            total_price=metadata.get("total_cost", 0),
+            calories_achievement=metadata.get("calories_achievement", 0),
+            protein_achievement=metadata.get("protein_achievement", 0),
+            budget_usage=metadata.get("budget_usage", 0),
+        )
+
+        user_prefs = UserPreferences(
+            health_goal=preferences.get("health_goal", "healthy"),
+            target_calories=metadata.get("total_calories", 2000),
+            target_protein=metadata.get("total_protein", 100),
+            target_carbs=metadata.get("total_carbs", 250),
+            target_fat=metadata.get("total_fat", 65),
+            max_budget=preferences.get("budget", 100),
+            disliked_foods=preferences.get("disliked_foods", []),
+            preferred_tags=preferences.get("preferred_tags", []),
+        )
+
+        response = MealPlanResponse(
+            id=str(uuid.uuid4())[:8],
+            created_at=datetime.now(),
+            meals=meals,
+            nutrition=nutrition,
+            target=user_prefs,
+            score=0.0,  # TODO: 从 metadata 获取 final_reward
+        )
+        return response.model_dump(mode="json")
+
     def _serialize_session(
         self, db: Session, session: MealChatSession
     ) -> Dict[str, Any]:
@@ -409,7 +476,7 @@ class MealChatApplication:
             return None
         return self._serialize_session(db, session)
 
-    def handle_message(
+    async def handle_message(
         self,
         db: Session,
         user: User,
@@ -449,8 +516,8 @@ class MealChatApplication:
             flow.state.current_phase = stage_before
             flow.state.user_message = content
 
-            # 执行
-            flow.kickoff()
+            # 执行 (使用 kickoff_async 在异步上下文中)
+            await flow.kickoff_async()
 
             # 获取回复
             assistant_message = ""
@@ -474,7 +541,12 @@ class MealChatApplication:
 
             # 如果有配餐结果
             if flow.state.current_meal_plan:
-                session.final_plan = flow.state.current_meal_plan
+                # 将原始格式转换为 API 响应格式
+                session.final_plan = self._build_meal_plan_response(
+                    meal_plan=flow.state.current_meal_plan,
+                    metadata=flow.state.current_meal_plan_metadata,
+                    preferences=flow.state.collected_preferences,
+                )
 
             db.add(user)
             db.add(session)

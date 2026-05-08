@@ -54,7 +54,13 @@ class ConversationState(BaseModel):
     # 配餐结果
     current_meal_plan: dict | None = Field(
         default=None,
-        description="当前配餐方案",
+        description="当前配餐方案（原始 meal_plan 格式）",
+    )
+
+    # 配餐结果元数据（用于构建 API 响应）
+    current_meal_plan_metadata: dict = Field(
+        default_factory=dict,
+        description="配餐方案元数据：total_cost, total_calories, total_protein, 等",
     )
 
     # 意图分析缓存

@@ -255,6 +255,7 @@ class PlanningCrew:
             )
 
         # 构建结果
+        metrics = meal_plan_result.get("metrics", {})
         return PlanningResult(
             meal_plan=meal_plan_result.get("meal_plan", {}),
             target_ranges=target_ranges,
@@ -265,8 +266,14 @@ class PlanningCrew:
                 budget,
             ),
             highlights=self._extract_highlights(meal_plan_result, target_ranges),
-            total_cost=meal_plan_result.get("metrics", {}).get("total_cost", 0),
-            total_calories=meal_plan_result.get("metrics", {}).get("total_calories", 0),
+            total_cost=metrics.get("total_cost", 0),
+            total_calories=metrics.get("total_calories", 0),
+            total_protein=metrics.get("total_protein", 0),
+            total_carbs=metrics.get("total_carbs", 0),
+            total_fat=metrics.get("total_fat", 0),
+            calories_achievement=metrics.get("calories_achievement", 0),
+            protein_achievement=metrics.get("protein_achievement", 0),
+            budget_usage=metrics.get("budget_usage", 0),
             status=meal_plan_result.get("status", "ok"),
         )
 

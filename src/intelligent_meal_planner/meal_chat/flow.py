@@ -89,6 +89,20 @@ class MealChatFlow(Flow[ConversationState]):
             planning_result = self._generate_plan()
             self.state.current_meal_plan = planning_result.meal_plan
 
+            # 存储元数据用于构建 API 响应
+            self.state.current_meal_plan_metadata = {
+                "total_cost": planning_result.total_cost,
+                "total_calories": planning_result.total_calories,
+                "total_protein": planning_result.total_protein,
+                "total_carbs": planning_result.total_carbs,
+                "total_fat": planning_result.total_fat,
+                "calories_achievement": planning_result.calories_achievement,
+                "protein_achievement": planning_result.protein_achievement,
+                "budget_usage": planning_result.budget_usage,
+                "status": planning_result.status,
+                "highlights": planning_result.highlights,
+            }
+
             # 使用方案生成带解读的回复
             conversation_result = self.conversation_crew.run(
                 intent_result=intent_result,

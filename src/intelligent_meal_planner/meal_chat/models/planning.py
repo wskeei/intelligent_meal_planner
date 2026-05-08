@@ -40,6 +40,36 @@ class PlanningResult(BaseModel):
         description="方案总热量",
     )
 
+    total_protein: float = Field(
+        default=0.0,
+        description="总蛋白质",
+    )
+
+    total_carbs: float = Field(
+        default=0.0,
+        description="总碳水",
+    )
+
+    total_fat: float = Field(
+        default=0.0,
+        description="总脂肪",
+    )
+
+    calories_achievement: float = Field(
+        default=0.0,
+        description="热量达标率",
+    )
+
+    protein_achievement: float = Field(
+        default=0.0,
+        description="蛋白质达标率",
+    )
+
+    budget_usage: float = Field(
+        default=0.0,
+        description="预算使用率",
+    )
+
     status: str = Field(
         default="ok",
         description="生成状态：ok, budget_infeasible, error",
