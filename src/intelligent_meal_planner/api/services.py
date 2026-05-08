@@ -368,7 +368,7 @@ class MealChatApplication:
             target_protein=metadata.get("total_protein", 100),
             target_carbs=metadata.get("total_carbs", 250),
             target_fat=metadata.get("total_fat", 65),
-            max_budget=preferences.get("budget", 100),
+            max_budget=preferences.get("budget") or 100,
             disliked_foods=preferences.get("disliked_foods", []),
             preferred_tags=preferences.get("preferred_tags", []),
         )
@@ -599,8 +599,8 @@ class MealChatApplication:
             from ..meal_chat.crews.planning_crew import PlanningCrew
             planning_crew = PlanningCrew()
 
-            health_goal = preferences.get("health_goal", "healthy")
-            budget = preferences.get("budget", 80)
+            health_goal = preferences.get("health_goal") or "healthy"
+            budget = preferences.get("budget") or 80
 
             result = planning_crew.run(
                 profile=profile,
