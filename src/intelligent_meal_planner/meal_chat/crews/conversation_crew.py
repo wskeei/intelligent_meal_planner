@@ -74,25 +74,45 @@ def create_conversation_task(
     missing_fields = missing_fields or []
     today_requirements = today_requirements or {}
 
+    # 从当前消息中提取到的信息（明确告知 agent）
+    just_extracted_profile = intent_result.profile_updates or {}
+    just_extracted_prefs = intent_result.preference_updates or {}
+    just_extracted = {**just_extracted_profile, **just_extracted_prefs}
+
+    field_labels = {
+        "gender": "性别", "age": "年龄", "height_cm": "身高",
+        "weight_kg": "体重", "activity_level": "活动量",
+        "health_goal": "健康目标", "budget": "预算",
+        "disliked_foods": "忌口", "mood": "今日状态",
+        "specific_requests": "今日要求", "avoid_today": "今日忌口",
+    }
+
+    if just_extracted:
+        extracted_items = []
+        for k, v in just_extracted.items():
+            label = field_labels.get(k, k)
+            extracted_items.append(f"{label}={v}")
+        just_extracted_str = "、".join(extracted_items)
+    else:
+        just_extracted_str = "无"
+
     if missing_fields:
         missing_str = "、".join(missing_fields)
         collection_guidance = f"""
 ## 当前阶段：收集基础信息
+**当前消息提取到的信息**: {just_extracted_str}
 **还需要收集的信息**: {missing_str}
 
-### 信息收集规则
-1. 你需要主动引导用户提供以上缺失信息，但要自然，像朋友聊天一样
-2. 每次只询问 1-2 个信息，不要一次性列出所有缺失项
-3. 优先询问顺序：性别 → 年龄 → 身高体重 → 活动量 → 健康目标 → 预算
-4. 如果用户主动提供了某项信息，表示感谢并继续询问下一项
-5. 不要重复询问用户已经提供的信息
+### 重要规则
+1. 如果当前消息提取到了新信息（见上方"当前消息提取到的信息"），**必须先确认收到**，再问下一个问题
+2. **绝对不要重复询问用户已经提供的信息**（包括用户画像中已有的信息和本次提取到的信息）
+3. 每次只问 1-2 个缺失信息
+4. 优先询问顺序：性别 → 年龄 → 身高体重 → 活动量 → 健康目标 → 预算
+5. 如果提取到了信息但还有缺失，确认后自然地问下一个缺失项
 
-### 信息收集话术参考
-- 询问性别年龄："方便告诉我你的性别和年龄吗？这样我能更准确地评估营养需求。"
-- 询问身高体重："你的身高和体重大概是多少？这有助于我计算适合你的热量范围。"
-- 询问活动量："你平时的运动量怎么样？久坐为主、偶尔运动还是经常锻炼？"
-- 询问目标："你的饮食目标是什么？减脂、增肌、维持体重还是追求健康饮食？"
-- 询问预算："你每天的餐费预算大概是多少？我会据此推荐性价比最高的方案。"
+### 回复模式
+- 如果提取到了信息："好的，[确认信息]。[然后问下一个缺失项]"
+- 如果没有提取到信息且用户说的是其他内容：先回应用户，再引导回缺失信息
 """
         plan_guidance = """
 ### 生成方案指导
@@ -144,8 +164,14 @@ def create_conversation_task(
         description=f"""
 你是一位专业营养师，正在与用户对话以了解其饮食需求，最终为用户生成个性化配餐方案。
 
-## 用户画像
+## 用户已提供的信息
 {profile_summary}
+
+## 当前消息新提取到的信息
+{just_extracted_str}
+
+## 还需要收集的信息
+{"、".join(missing_fields) if missing_fields else "无（信息齐全）"}
 
 ## 对话历史
 {history_str if history_str else "(新对话)"}
@@ -153,12 +179,11 @@ def create_conversation_task(
 ## 当前阶段
 {current_phase}
 
-## 意图分析
-- 意图: {intent_result.intent}
-- 置信度: {intent_result.confidence}
-- 提取的信息: 档案={intent_result.profile_updates}, 偏好={intent_result.preference_updates}
+## 当前意图
+{intent_result.intent}（置信度: {intent_result.confidence}）
+{intent_guidance.get(intent_result.intent, "")}
 
-## 当前意图处理
+## 对话指导
 {intent_guidance.get(intent_result.intent, "")}
 {collection_guidance}
 {plan_guidance}

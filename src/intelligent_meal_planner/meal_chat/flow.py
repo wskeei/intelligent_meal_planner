@@ -148,7 +148,14 @@ class MealChatFlow(Flow[ConversationState]):
             )
 
             # 检查阶段转换
+            # 1. 信息完整 或 LLM 判断应该生成方案
             if info_complete or conversation_result.should_generate_plan:
+                self.state.current_phase = "planning_ready"
+            # 2. 安全网：对话超过 6 轮且只剩 1-2 个缺失字段，强制进入准备状态
+            elif self.state.turn_count >= 6 and len(missing_fields) <= 2:
+                self.state.current_phase = "planning_ready"
+            # 3. 用户明确请求方案时，即使信息不全也尝试生成（使用默认值）
+            elif intent_result.intent == "request_plan":
                 self.state.current_phase = "planning_ready"
 
         # 记录助手回复
