@@ -608,21 +608,23 @@ class MealChatApplication:
             )
 
             if result.status == "ok":
-                session.final_plan = {
-                    "id": str(uuid.uuid4())[:8],
-                    "meals": result.meal_plan.get("meals", []),
-                    "nutrition": {
-                        "total_calories": result.total_calories,
-                        "total_protein": result.total_protein,
-                        "total_cost": result.total_cost,
-                    },
-                    "target": {
-                        "health_goal": health_goal,
-                        "budget": budget,
-                    },
-                    "explanation": result.explanation,
+                metadata = {
+                    "total_cost": result.total_cost,
+                    "total_calories": result.total_calories,
+                    "total_protein": result.total_protein,
+                    "total_carbs": result.total_carbs,
+                    "total_fat": result.total_fat,
+                    "calories_achievement": result.calories_achievement,
+                    "protein_achievement": result.protein_achievement,
+                    "budget_usage": result.budget_usage,
+                    "status": result.status,
                     "highlights": result.highlights,
                 }
+                session.final_plan = self._build_meal_plan_response(
+                    meal_plan=result.meal_plan,
+                    metadata=metadata,
+                    preferences=preferences,
+                )
                 session.status = "finalized"
             else:
                 session.status = "error"
