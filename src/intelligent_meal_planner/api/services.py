@@ -285,26 +285,34 @@ class MealChatApplication:
         self._profile_manager = UserProfileManager()
 
     def _get_or_create_user_profile(self, user: User) -> UserProfile:
-        """获取或创建用户画像"""
+        """获取或创建用户画像，从注册数据自动填充"""
         profile = self._profile_manager.get_profile(str(user.id))
-        if profile:
+
+        # 检查画像是否已有实际数据（非全 None）
+        has_data = any(v is not None for v in profile.profile.values())
+        if has_data:
             return profile
 
-        # 从数据库用户信息创建新画像
-        profile = UserProfile(
-            user_id=str(user.id),
-            profile={
-                "gender": user.gender,
-                "age": user.age,
-                "height_cm": user.height,
-                "weight_kg": user.weight,
-                "activity_level": user.activity_level,
-            },
-            preferences={
-                "health_goal": user.health_goal or "healthy",
-                "budget_daily": None,
-            },
-        )
+        # 新用户或空画像：从数据库注册信息填充
+        db_profile = {
+            "gender": user.gender,
+            "age": user.age,
+            "height_cm": user.height,
+            "weight_kg": user.weight,
+            "activity_level": user.activity_level,
+        }
+        db_preferences = {
+            "health_goal": user.health_goal or "healthy",
+        }
+
+        # 将注册数据合并到画像（保留已有非 None 值）
+        for k, v in db_profile.items():
+            if v is not None and profile.profile.get(k) is None:
+                profile.profile[k] = v
+        for k, v in db_preferences.items():
+            if v is not None and profile.preferences.get(k) is None:
+                profile.preferences[k] = v
+
         self._profile_manager.save_profile(profile)
         return profile
 
@@ -428,13 +436,19 @@ class MealChatApplication:
 
     def start_session(self, db: Session, user: User, locale: str = "zh") -> Dict[str, Any]:
         """开始新会话"""
-        # 确保用户画像存在
+        # 确保用户画像存在（从注册数据自动填充）
         profile = self._get_or_create_user_profile(user)
 
-        # 创建初始状态
+        # 创建初始状态（规范化键名，与 ConversationState 对齐）
+        initial_profile = dict(profile.profile)
+        initial_preferences = {
+            "health_goal": profile.preferences.get("health_goal"),
+            "budget": profile.preferences.get("budget_daily"),
+            "disliked_foods": profile.preferences.get("disliked_foods", []),
+        }
         initial_slots = {
-            "profile": profile.profile,
-            "preferences": profile.preferences,
+            "profile": initial_profile,
+            "preferences": initial_preferences,
             "known_facts": {"locale": locale},
         }
 

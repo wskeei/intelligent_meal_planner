@@ -154,8 +154,8 @@ class TestConversationState:
             collected_profile={
                 "gender": "male",
                 "age": 28,
-                "height": 175,
-                "weight": 72,
+                "height_cm": 175,
+                "weight_kg": 72,
                 "activity_level": "moderate",
             },
         )
@@ -187,8 +187,8 @@ class TestConversationState:
             collected_profile={
                 "gender": "male",
                 "age": 28,
-                "height": 175,
-                "weight": 72,
+                "height_cm": 175,
+                "weight_kg": 72,
                 "activity_level": "moderate",
             },
             collected_preferences={

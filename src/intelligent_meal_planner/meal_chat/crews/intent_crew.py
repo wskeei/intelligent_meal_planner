@@ -105,6 +105,12 @@ def create_info_extraction_task(
 - disliked_foods: 忌口食材列表
 - preferred_tags: 口味偏好标签列表
 
+今日配餐需求字段（用户对本次配餐的具体要求）：
+- mood: 今天的状态（如"不太饿"、"很饿"、"精力不足"）
+- specific_requests: 今天的具体要求（如"少吃一点"、"想吃清淡的"、"想吃辣的"）
+- avoid_today: 今天不想吃的东西（如"不想吃米饭"、"不想吃肉"）
+- time_constraint: 时间限制（如"赶时间"、"需要快手菜"）
+
 ## 提取规则
 1. 只提取用户明确提及的信息
 2. 没有提及的字段留空

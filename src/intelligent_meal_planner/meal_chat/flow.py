@@ -84,6 +84,20 @@ class MealChatFlow(Flow[ConversationState]):
             or self.state.is_ready_for_planning()
         )
 
+        # 计算缺失字段，用于引导对话
+        missing_fields = self.state.get_missing_fields()
+        info_complete = len(missing_fields) == 0
+
+        # 今日需求：从已收集的偏好中提取（IntentCrew 会话级提取）
+        today_requirements = {}
+        if info_complete:
+            for key in ["mood", "specific_requests", "avoid_today", "time_constraint"]:
+                if self.state.collected_preferences.get(key):
+                    today_requirements[key] = self.state.collected_preferences[key]
+            # 也把本次会话中 health_goal/budget 的更新视为今日需求的一部分
+            if self.state.collected_preferences.get("health_goal"):
+                today_requirements["health_goal"] = self.state.collected_preferences["health_goal"]
+
         # 如果需要生成方案
         if should_plan and self.state.current_meal_plan is None:
             planning_result = self._generate_plan()
@@ -109,6 +123,9 @@ class MealChatFlow(Flow[ConversationState]):
                 recent_messages=recent_messages,
                 profile_summary=profile_summary,
                 current_phase="planning",
+                missing_fields=missing_fields,
+                info_complete=info_complete,
+                today_requirements=today_requirements,
             )
 
             # 添加方案解读
@@ -125,10 +142,13 @@ class MealChatFlow(Flow[ConversationState]):
                 recent_messages=recent_messages,
                 profile_summary=profile_summary,
                 current_phase=self.state.current_phase,
+                missing_fields=missing_fields,
+                info_complete=info_complete,
+                today_requirements=today_requirements,
             )
 
             # 检查阶段转换
-            if conversation_result.should_generate_plan:
+            if info_complete or conversation_result.should_generate_plan:
                 self.state.current_phase = "planning_ready"
 
         # 记录助手回复

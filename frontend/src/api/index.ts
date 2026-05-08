@@ -8,6 +8,26 @@ const api = axios.create({
   timeout: 120000
 })
 
+// Longer timeout for LLM-powered endpoints (CrewAI flow runs 3 sequential crews)
+const longApi = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 300000
+})
+
+for (const instance of [api, longApi]) {
+  instance.interceptors.request.use((config) => {
+    const token = safeStorageGet('token')
+    const locale = safeStorageGet('locale') || 'zh'
+    if (token) {
+      config.headers = config.headers ?? {}
+      ;(config.headers as Record<string, string>).Authorization = `Bearer ${token}`
+    }
+    config.headers = config.headers ?? {}
+    ;(config.headers as Record<string, string>)['Accept-Language'] = locale
+    return config
+  })
+}
+
 export function isUnauthorizedError(error: unknown) {
   return axios.isAxiosError(error) && error.response?.status === 401
 }
@@ -17,18 +37,6 @@ export function getApiErrorDetail(error: unknown) {
   const detail = error.response?.data?.detail
   return typeof detail === 'string' ? detail : ''
 }
-
-api.interceptors.request.use((config) => {
-  const token = safeStorageGet('token')
-  const locale = safeStorageGet('locale') || 'zh'
-  if (token) {
-    config.headers = config.headers ?? {}
-    ;(config.headers as Record<string, string>).Authorization = `Bearer ${token}`
-  }
-  config.headers = config.headers ?? {}
-  ;(config.headers as Record<string, string>)['Accept-Language'] = locale
-  return config
-})
 
 export interface Recipe {
   id: number
@@ -310,13 +318,13 @@ export const mealChatApi = {
   createSession: () => api.post<MealChatSession>('/meal-chat/sessions'),
   getSession: (sessionId: string) => api.get<MealChatSession>(`/meal-chat/sessions/${sessionId}`),
   generateSession: (sessionId: string) =>
-    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/generate`),
+    longApi.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/generate`),
   updatePresentation: (sessionId: string, overlayState: 'hidden' | 'result') =>
     api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/presentation`, {
       overlay_state: overlayState
     }),
   sendMessage: (sessionId: string, content: string) =>
-    api.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/messages`, { content })
+    longApi.post<MealChatSession>(`/meal-chat/sessions/${sessionId}/messages`, { content })
 }
 
 export const feasibilityApi = {

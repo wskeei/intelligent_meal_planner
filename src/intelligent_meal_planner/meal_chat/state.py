@@ -48,7 +48,7 @@ class ConversationState(BaseModel):
 
     collected_preferences: dict = Field(
         default_factory=dict,
-        description="收集到的用户偏好信息",
+        description="收集到的用户偏好信息（含本次会话的具体需求）",
     )
 
     # 配餐结果
@@ -87,7 +87,7 @@ class ConversationState(BaseModel):
 
     def is_profile_complete(self) -> bool:
         """检查档案信息是否完整"""
-        required = ["gender", "age", "height", "weight", "activity_level"]
+        required = ["gender", "age", "height_cm", "weight_kg", "activity_level"]
         return all(
             self.collected_profile.get(field) is not None
             for field in required
@@ -104,6 +104,26 @@ class ConversationState(BaseModel):
     def is_ready_for_planning(self) -> bool:
         """检查是否可以生成配餐方案"""
         return self.is_profile_complete() and self.is_preferences_complete()
+
+    def get_missing_fields(self) -> list[str]:
+        """返回尚未收集的必填字段列表"""
+        field_labels = {
+            "gender": "性别",
+            "age": "年龄",
+            "height_cm": "身高",
+            "weight_kg": "体重",
+            "activity_level": "活动量",
+            "health_goal": "健康目标",
+            "budget": "每日预算",
+        }
+        missing = []
+        for field in ["gender", "age", "height_cm", "weight_kg", "activity_level"]:
+            if self.collected_profile.get(field) is None:
+                missing.append(field_labels.get(field, field))
+        for field in ["health_goal", "budget"]:
+            if self.collected_preferences.get(field) is None:
+                missing.append(field_labels.get(field, field))
+        return missing
 
     def merge_updates(
         self,

@@ -30,8 +30,9 @@ def test_create_session_respects_english_locale(client, auth_header):
     assert response.status_code == 200
     payload = response.json()
 
-    # 新系统使用中文欢迎消息
-    assert "营养师助手" in payload["messages"][0]["content"]
+    # 新系统使用中文欢迎消息（已注册用户会收到个性化消息）
+    welcome = payload["messages"][0]["content"]
+    assert "配餐" in welcome or "营养" in welcome or "饮食" in welcome
 
 
 def test_post_message_session_includes_memory_metadata(

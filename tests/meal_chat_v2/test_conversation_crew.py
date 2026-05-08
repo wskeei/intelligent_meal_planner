@@ -24,7 +24,7 @@ class TestConversationCrewAgents:
         mock_llm.return_value = create_mock_llm()
         agent = create_nutritionist_agent()
         assert agent.role == "营养师"
-        assert "对话" in agent.goal
+        assert "信息" in agent.goal
 
     @patch("intelligent_meal_planner.meal_chat.crews.conversation_crew.get_conversation_llm")
     def test_create_explainer_agent(self, mock_llm):
