@@ -74,6 +74,20 @@ def test_post_message_session_includes_memory_metadata(
                 "budget": 100.0,
             }
 
+        async def kickoff_async(self):
+            # 异步版本，模拟真实行为
+            self.state.collected_profile = {
+                "gender": "male",
+                "age": 24,
+                "height_cm": 175,
+                "weight_kg": 68,
+                "activity_level": "moderate",
+            }
+            self.state.collected_preferences = {
+                "health_goal": "lose_weight",
+                "budget": 100.0,
+            }
+
     with patch(
         "intelligent_meal_planner.api.services.create_meal_chat_flow",
         return_value=MockFlow(),

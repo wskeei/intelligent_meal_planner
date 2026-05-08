@@ -35,9 +35,11 @@ def test_send_message_accepts_negotiating_status(client, auth_header, monkeypatc
         ],
         "meal_plan": None,
     }
+    async def fake_handle_message(db, user, session_id, content, locale="zh"):
+        return fake_response
     monkeypatch.setattr(
         "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
-        lambda db, user, session_id, content, locale="zh": fake_response,
+        fake_handle_message,
     )
 
     response = client.post(
@@ -64,9 +66,11 @@ def test_send_message_accepts_discovering_clarification_status(
         ],
         "meal_plan": None,
     }
+    async def fake_handle_message(db, user, session_id, content, locale="zh"):
+        return fake_response
     monkeypatch.setattr(
         "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
-        lambda db, user, session_id, content, locale="zh": fake_response,
+        fake_handle_message,
     )
 
     response = client.post(
@@ -151,9 +155,11 @@ def test_send_message_accepts_dual_plan_payload(client, auth_header, monkeypatch
             ],
         },
     }
+    async def fake_handle_message(db, user, session_id, content, locale="zh"):
+        return fake_response
     monkeypatch.setattr(
         "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
-        lambda db, user, session_id, content, locale="zh": fake_response,
+        fake_handle_message,
     )
 
     response = client.post(
@@ -204,9 +210,11 @@ def test_send_message_returns_visible_crew_events(client, auth_header, monkeypat
             {"agent": "DQN 配餐师", "status": "completed", "message": "DQN 配餐完成"},
         ],
     }
+    async def fake_handle_message(db, user, session_id, content, locale="zh"):
+        return fake_response
     monkeypatch.setattr(
         "intelligent_meal_planner.api.routers.meal_chat.meal_chat_app.handle_message",
-        lambda db, user, session_id, content, locale="zh": fake_response,
+        fake_handle_message,
     )
 
     response = client.post(
